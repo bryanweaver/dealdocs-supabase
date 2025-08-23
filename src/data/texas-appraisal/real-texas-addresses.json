@@ -1,0 +1,947 @@
+{
+  "meta": {
+    "generatedAt": "2025-06-16T22:19:29.029Z",
+    "source": "Texas County Appraisal Districts",
+    "totalAddresses": 40,
+    "counties": [
+      "Harris",
+      "Dallas",
+      "Travis",
+      "Fort Bend",
+      "Tarrant",
+      "Collin",
+      "Williamson",
+      "Montgomery"
+    ],
+    "sources": {
+      "harris": {
+        "name": "Harris County (Houston)",
+        "url": "https://hcad.org/pdata/pdata-property-downloads.html",
+        "downloadUrl": "https://hcad.org/pdata/Real_acct.zip",
+        "format": "tab-delimited",
+        "population": 4700000,
+        "properties": 1800000
+      },
+      "dallas": {
+        "name": "Dallas County",
+        "url": "https://www.dallascad.org/DataProducts.aspx",
+        "downloadUrl": "https://www.dallascad.org/ViewPDFs.aspx?type=3&id=DCAD2025_CURRENT.ZIP",
+        "format": "comma-delimited",
+        "population": 2600000,
+        "properties": 1200000
+      },
+      "travis": {
+        "name": "Travis County (Austin)",
+        "url": "https://traviscad.org/propertysearch/",
+        "format": "searchable-only",
+        "population": 1280000,
+        "properties": 600000
+      },
+      "fortbend": {
+        "name": "Fort Bend County",
+        "url": "https://www.fbcad.org/certified-and-supplements-reports/",
+        "downloadUrl": "https://www.fbcad.org/wp-content/uploads/2025/06/June-Property-Data-Files.zip",
+        "format": "excel/csv",
+        "population": 820000,
+        "properties": 350000
+      },
+      "bexar": {
+        "name": "Bexar County (San Antonio)",
+        "url": "https://www.bcad.org/",
+        "format": "searchable-only",
+        "population": 2000000,
+        "properties": 800000
+      }
+    }
+  },
+  "addressesByMarket": {
+    "high activity": [
+      {
+        "houseNumber": "8900",
+        "fullAddress": "8900 Richmond Ave, Houston, TX 77063",
+        "streetName": "Richmond Ave",
+        "city": "Houston",
+        "county": "Harris",
+        "zip": "77063",
+        "source": "HCAD",
+        "marketType": "high activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "1600",
+        "fullAddress": "1600 Smith St, Houston, TX 77002",
+        "streetName": "Smith St",
+        "city": "Houston",
+        "county": "Harris",
+        "zip": "77002",
+        "source": "HCAD",
+        "marketType": "high activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "2800",
+        "fullAddress": "2800 Post Oak Blvd, Houston, TX 77056",
+        "streetName": "Post Oak Blvd",
+        "city": "Houston",
+        "county": "Harris",
+        "zip": "77056",
+        "source": "HCAD",
+        "marketType": "high activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "7600",
+        "fullAddress": "7600 Katy Fwy, Houston, TX 77024",
+        "streetName": "Katy Fwy",
+        "city": "Houston",
+        "county": "Harris",
+        "zip": "77024",
+        "source": "HCAD",
+        "marketType": "high activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "4400",
+        "fullAddress": "4400 Westheimer Rd, Houston, TX 77027",
+        "streetName": "Westheimer Rd",
+        "city": "Houston",
+        "county": "Harris",
+        "zip": "77027",
+        "source": "HCAD",
+        "marketType": "high activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "1700",
+        "fullAddress": "1700 Pacific Ave, Dallas, TX 75201",
+        "streetName": "Pacific Ave",
+        "city": "Dallas",
+        "county": "Dallas",
+        "zip": "75201",
+        "source": "DCAD",
+        "marketType": "high activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "3200",
+        "fullAddress": "3200 McKinney Ave, Dallas, TX 75204",
+        "streetName": "McKinney Ave",
+        "city": "Dallas",
+        "county": "Dallas",
+        "zip": "75204",
+        "source": "DCAD",
+        "marketType": "high activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "1800",
+        "fullAddress": "1800 Main St, Dallas, TX 75201",
+        "streetName": "Main St",
+        "city": "Dallas",
+        "county": "Dallas",
+        "zip": "75201",
+        "source": "DCAD",
+        "marketType": "high activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "5500",
+        "fullAddress": "5500 Greenville Ave, Dallas, TX 75206",
+        "streetName": "Greenville Ave",
+        "city": "Dallas",
+        "county": "Dallas",
+        "zip": "75206",
+        "source": "DCAD",
+        "marketType": "high activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "8300",
+        "fullAddress": "8300 Douglas Ave, Dallas, TX 75225",
+        "streetName": "Douglas Ave",
+        "city": "Dallas",
+        "county": "Dallas",
+        "zip": "75225",
+        "source": "DCAD",
+        "marketType": "high activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "1200",
+        "fullAddress": "1200 E 15th St, Plano, TX 75074",
+        "streetName": "E 15th St",
+        "city": "Plano",
+        "county": "Collin",
+        "zip": "75074",
+        "source": "CCAD",
+        "marketType": "high activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "3600",
+        "fullAddress": "3600 W Parker Rd, Plano, TX 75023",
+        "streetName": "W Parker Rd",
+        "city": "Plano",
+        "county": "Collin",
+        "zip": "75023",
+        "source": "CCAD",
+        "marketType": "high activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "2200",
+        "fullAddress": "2200 Preston Rd, Frisco, TX 75034",
+        "streetName": "Preston Rd",
+        "city": "Frisco",
+        "county": "Collin",
+        "zip": "75034",
+        "source": "CCAD",
+        "marketType": "high activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "5100",
+        "fullAddress": "5100 Legacy Dr, Frisco, TX 75034",
+        "streetName": "Legacy Dr",
+        "city": "Frisco",
+        "county": "Collin",
+        "zip": "75034",
+        "source": "CCAD",
+        "marketType": "high activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "1800",
+        "fullAddress": "1800 Custer Rd, McKinney, TX 75071",
+        "streetName": "Custer Rd",
+        "city": "McKinney",
+        "county": "Collin",
+        "zip": "75071",
+        "source": "CCAD",
+        "marketType": "high activity",
+        "confidence": "HIGH"
+      }
+    ],
+    "medium activity": [
+      {
+        "houseNumber": "1100",
+        "fullAddress": "1100 Congress Ave, Austin, TX 78701",
+        "streetName": "Congress Ave",
+        "city": "Austin",
+        "county": "Travis",
+        "zip": "78701",
+        "source": "TCAD",
+        "marketType": "medium activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "2400",
+        "fullAddress": "2400 E Cesar Chavez St, Austin, TX 78702",
+        "streetName": "E Cesar Chavez St",
+        "city": "Austin",
+        "county": "Travis",
+        "zip": "78702",
+        "source": "TCAD",
+        "marketType": "medium activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "1500",
+        "fullAddress": "1500 Guadalupe St, Austin, TX 78701",
+        "streetName": "Guadalupe St",
+        "city": "Austin",
+        "county": "Travis",
+        "zip": "78701",
+        "source": "TCAD",
+        "marketType": "medium activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "3600",
+        "fullAddress": "3600 Lamar Blvd, Austin, TX 78704",
+        "streetName": "Lamar Blvd",
+        "city": "Austin",
+        "county": "Travis",
+        "zip": "78704",
+        "source": "TCAD",
+        "marketType": "medium activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "5200",
+        "fullAddress": "5200 Airport Blvd, Austin, TX 78751",
+        "streetName": "Airport Blvd",
+        "city": "Austin",
+        "county": "Travis",
+        "zip": "78751",
+        "source": "TCAD",
+        "marketType": "medium activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "1400",
+        "fullAddress": "1400 Highway 6, Sugar Land, TX 77478",
+        "streetName": "Highway 6",
+        "city": "Sugar Land",
+        "county": "Fort Bend",
+        "zip": "77478",
+        "source": "FBCAD",
+        "marketType": "medium activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "2800",
+        "fullAddress": "2800 Town Center Blvd, Sugar Land, TX 77479",
+        "streetName": "Town Center Blvd",
+        "city": "Sugar Land",
+        "county": "Fort Bend",
+        "zip": "77479",
+        "source": "FBCAD",
+        "marketType": "medium activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "3300",
+        "fullAddress": "3300 Highway 6, Missouri City, TX 77459",
+        "streetName": "Highway 6",
+        "city": "Missouri City",
+        "county": "Fort Bend",
+        "zip": "77459",
+        "source": "FBCAD",
+        "marketType": "medium activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "4200",
+        "fullAddress": "4200 Lexington Blvd, Missouri City, TX 77459",
+        "streetName": "Lexington Blvd",
+        "city": "Missouri City",
+        "county": "Fort Bend",
+        "zip": "77459",
+        "source": "FBCAD",
+        "marketType": "medium activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "1800",
+        "fullAddress": "1800 Austin Pkwy, Sugar Land, TX 77479",
+        "streetName": "Austin Pkwy",
+        "city": "Sugar Land",
+        "county": "Fort Bend",
+        "zip": "77479",
+        "source": "FBCAD",
+        "marketType": "medium activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "1200",
+        "fullAddress": "1200 Main St, Fort Worth, TX 76102",
+        "streetName": "Main St",
+        "city": "Fort Worth",
+        "county": "Tarrant",
+        "zip": "76102",
+        "source": "TCAD-Tarrant",
+        "marketType": "medium activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "3500",
+        "fullAddress": "3500 Hulen St, Fort Worth, TX 76107",
+        "streetName": "Hulen St",
+        "city": "Fort Worth",
+        "county": "Tarrant",
+        "zip": "76107",
+        "source": "TCAD-Tarrant",
+        "marketType": "medium activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "2400",
+        "fullAddress": "2400 W 7th St, Fort Worth, TX 76107",
+        "streetName": "W 7th St",
+        "city": "Fort Worth",
+        "county": "Tarrant",
+        "zip": "76107",
+        "source": "TCAD-Tarrant",
+        "marketType": "medium activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "5800",
+        "fullAddress": "5800 Camp Bowie Blvd, Fort Worth, TX 76107",
+        "streetName": "Camp Bowie Blvd",
+        "city": "Fort Worth",
+        "county": "Tarrant",
+        "zip": "76107",
+        "source": "TCAD-Tarrant",
+        "marketType": "medium activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "1500",
+        "fullAddress": "1500 E Lancaster Ave, Fort Worth, TX 76102",
+        "streetName": "E Lancaster Ave",
+        "city": "Fort Worth",
+        "county": "Tarrant",
+        "zip": "76102",
+        "source": "TCAD-Tarrant",
+        "marketType": "medium activity",
+        "confidence": "HIGH"
+      }
+    ],
+    "low activity": [
+      {
+        "houseNumber": "1400",
+        "fullAddress": "1400 Round Rock Ave, Round Rock, TX 78664",
+        "streetName": "Round Rock Ave",
+        "city": "Round Rock",
+        "county": "Williamson",
+        "zip": "78664",
+        "source": "WCAD",
+        "marketType": "low activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "2800",
+        "fullAddress": "2800 S IH-35, Round Rock, TX 78664",
+        "streetName": "S IH-35",
+        "city": "Round Rock",
+        "county": "Williamson",
+        "zip": "78664",
+        "source": "WCAD",
+        "marketType": "low activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "3200",
+        "fullAddress": "3200 E Whitestone Blvd, Cedar Park, TX 78613",
+        "streetName": "E Whitestone Blvd",
+        "city": "Cedar Park",
+        "county": "Williamson",
+        "zip": "78613",
+        "source": "WCAD",
+        "marketType": "low activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "1600",
+        "fullAddress": "1600 E University Blvd, Georgetown, TX 78626",
+        "streetName": "E University Blvd",
+        "city": "Georgetown",
+        "county": "Williamson",
+        "zip": "78626",
+        "source": "WCAD",
+        "marketType": "low activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "4500",
+        "fullAddress": "4500 W Parmer Ln, Cedar Park, TX 78613",
+        "streetName": "W Parmer Ln",
+        "city": "Cedar Park",
+        "county": "Williamson",
+        "zip": "78613",
+        "source": "WCAD",
+        "marketType": "low activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "1200",
+        "fullAddress": "1200 Lake Robbins Dr, The Woodlands, TX 77380",
+        "streetName": "Lake Robbins Dr",
+        "city": "The Woodlands",
+        "county": "Montgomery",
+        "zip": "77380",
+        "source": "MCAD",
+        "marketType": "low activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "2400",
+        "fullAddress": "2400 Research Forest Dr, The Woodlands, TX 77381",
+        "streetName": "Research Forest Dr",
+        "city": "The Woodlands",
+        "county": "Montgomery",
+        "zip": "77381",
+        "source": "MCAD",
+        "marketType": "low activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "3600",
+        "fullAddress": "3600 FM 1488, Conroe, TX 77384",
+        "streetName": "FM 1488",
+        "city": "Conroe",
+        "county": "Montgomery",
+        "zip": "77384",
+        "source": "MCAD",
+        "marketType": "low activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "1800",
+        "fullAddress": "1800 Interstate 45, Conroe, TX 77301",
+        "streetName": "Interstate 45",
+        "city": "Conroe",
+        "county": "Montgomery",
+        "zip": "77301",
+        "source": "MCAD",
+        "marketType": "low activity",
+        "confidence": "HIGH"
+      },
+      {
+        "houseNumber": "5200",
+        "fullAddress": "5200 W Davis St, Conroe, TX 77304",
+        "streetName": "W Davis St",
+        "city": "Conroe",
+        "county": "Montgomery",
+        "zip": "77304",
+        "source": "MCAD",
+        "marketType": "low activity",
+        "confidence": "HIGH"
+      }
+    ]
+  },
+  "allAddresses": [
+    {
+      "houseNumber": "8900",
+      "fullAddress": "8900 Richmond Ave, Houston, TX 77063",
+      "streetName": "Richmond Ave",
+      "city": "Houston",
+      "county": "Harris",
+      "zip": "77063",
+      "source": "HCAD",
+      "marketType": "high activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "1600",
+      "fullAddress": "1600 Smith St, Houston, TX 77002",
+      "streetName": "Smith St",
+      "city": "Houston",
+      "county": "Harris",
+      "zip": "77002",
+      "source": "HCAD",
+      "marketType": "high activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "2800",
+      "fullAddress": "2800 Post Oak Blvd, Houston, TX 77056",
+      "streetName": "Post Oak Blvd",
+      "city": "Houston",
+      "county": "Harris",
+      "zip": "77056",
+      "source": "HCAD",
+      "marketType": "high activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "7600",
+      "fullAddress": "7600 Katy Fwy, Houston, TX 77024",
+      "streetName": "Katy Fwy",
+      "city": "Houston",
+      "county": "Harris",
+      "zip": "77024",
+      "source": "HCAD",
+      "marketType": "high activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "4400",
+      "fullAddress": "4400 Westheimer Rd, Houston, TX 77027",
+      "streetName": "Westheimer Rd",
+      "city": "Houston",
+      "county": "Harris",
+      "zip": "77027",
+      "source": "HCAD",
+      "marketType": "high activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "1700",
+      "fullAddress": "1700 Pacific Ave, Dallas, TX 75201",
+      "streetName": "Pacific Ave",
+      "city": "Dallas",
+      "county": "Dallas",
+      "zip": "75201",
+      "source": "DCAD",
+      "marketType": "high activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "3200",
+      "fullAddress": "3200 McKinney Ave, Dallas, TX 75204",
+      "streetName": "McKinney Ave",
+      "city": "Dallas",
+      "county": "Dallas",
+      "zip": "75204",
+      "source": "DCAD",
+      "marketType": "high activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "1800",
+      "fullAddress": "1800 Main St, Dallas, TX 75201",
+      "streetName": "Main St",
+      "city": "Dallas",
+      "county": "Dallas",
+      "zip": "75201",
+      "source": "DCAD",
+      "marketType": "high activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "5500",
+      "fullAddress": "5500 Greenville Ave, Dallas, TX 75206",
+      "streetName": "Greenville Ave",
+      "city": "Dallas",
+      "county": "Dallas",
+      "zip": "75206",
+      "source": "DCAD",
+      "marketType": "high activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "8300",
+      "fullAddress": "8300 Douglas Ave, Dallas, TX 75225",
+      "streetName": "Douglas Ave",
+      "city": "Dallas",
+      "county": "Dallas",
+      "zip": "75225",
+      "source": "DCAD",
+      "marketType": "high activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "1100",
+      "fullAddress": "1100 Congress Ave, Austin, TX 78701",
+      "streetName": "Congress Ave",
+      "city": "Austin",
+      "county": "Travis",
+      "zip": "78701",
+      "source": "TCAD",
+      "marketType": "medium activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "2400",
+      "fullAddress": "2400 E Cesar Chavez St, Austin, TX 78702",
+      "streetName": "E Cesar Chavez St",
+      "city": "Austin",
+      "county": "Travis",
+      "zip": "78702",
+      "source": "TCAD",
+      "marketType": "medium activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "1500",
+      "fullAddress": "1500 Guadalupe St, Austin, TX 78701",
+      "streetName": "Guadalupe St",
+      "city": "Austin",
+      "county": "Travis",
+      "zip": "78701",
+      "source": "TCAD",
+      "marketType": "medium activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "3600",
+      "fullAddress": "3600 Lamar Blvd, Austin, TX 78704",
+      "streetName": "Lamar Blvd",
+      "city": "Austin",
+      "county": "Travis",
+      "zip": "78704",
+      "source": "TCAD",
+      "marketType": "medium activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "5200",
+      "fullAddress": "5200 Airport Blvd, Austin, TX 78751",
+      "streetName": "Airport Blvd",
+      "city": "Austin",
+      "county": "Travis",
+      "zip": "78751",
+      "source": "TCAD",
+      "marketType": "medium activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "1400",
+      "fullAddress": "1400 Highway 6, Sugar Land, TX 77478",
+      "streetName": "Highway 6",
+      "city": "Sugar Land",
+      "county": "Fort Bend",
+      "zip": "77478",
+      "source": "FBCAD",
+      "marketType": "medium activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "2800",
+      "fullAddress": "2800 Town Center Blvd, Sugar Land, TX 77479",
+      "streetName": "Town Center Blvd",
+      "city": "Sugar Land",
+      "county": "Fort Bend",
+      "zip": "77479",
+      "source": "FBCAD",
+      "marketType": "medium activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "3300",
+      "fullAddress": "3300 Highway 6, Missouri City, TX 77459",
+      "streetName": "Highway 6",
+      "city": "Missouri City",
+      "county": "Fort Bend",
+      "zip": "77459",
+      "source": "FBCAD",
+      "marketType": "medium activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "4200",
+      "fullAddress": "4200 Lexington Blvd, Missouri City, TX 77459",
+      "streetName": "Lexington Blvd",
+      "city": "Missouri City",
+      "county": "Fort Bend",
+      "zip": "77459",
+      "source": "FBCAD",
+      "marketType": "medium activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "1800",
+      "fullAddress": "1800 Austin Pkwy, Sugar Land, TX 77479",
+      "streetName": "Austin Pkwy",
+      "city": "Sugar Land",
+      "county": "Fort Bend",
+      "zip": "77479",
+      "source": "FBCAD",
+      "marketType": "medium activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "1200",
+      "fullAddress": "1200 Main St, Fort Worth, TX 76102",
+      "streetName": "Main St",
+      "city": "Fort Worth",
+      "county": "Tarrant",
+      "zip": "76102",
+      "source": "TCAD-Tarrant",
+      "marketType": "medium activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "3500",
+      "fullAddress": "3500 Hulen St, Fort Worth, TX 76107",
+      "streetName": "Hulen St",
+      "city": "Fort Worth",
+      "county": "Tarrant",
+      "zip": "76107",
+      "source": "TCAD-Tarrant",
+      "marketType": "medium activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "2400",
+      "fullAddress": "2400 W 7th St, Fort Worth, TX 76107",
+      "streetName": "W 7th St",
+      "city": "Fort Worth",
+      "county": "Tarrant",
+      "zip": "76107",
+      "source": "TCAD-Tarrant",
+      "marketType": "medium activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "5800",
+      "fullAddress": "5800 Camp Bowie Blvd, Fort Worth, TX 76107",
+      "streetName": "Camp Bowie Blvd",
+      "city": "Fort Worth",
+      "county": "Tarrant",
+      "zip": "76107",
+      "source": "TCAD-Tarrant",
+      "marketType": "medium activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "1500",
+      "fullAddress": "1500 E Lancaster Ave, Fort Worth, TX 76102",
+      "streetName": "E Lancaster Ave",
+      "city": "Fort Worth",
+      "county": "Tarrant",
+      "zip": "76102",
+      "source": "TCAD-Tarrant",
+      "marketType": "medium activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "1200",
+      "fullAddress": "1200 E 15th St, Plano, TX 75074",
+      "streetName": "E 15th St",
+      "city": "Plano",
+      "county": "Collin",
+      "zip": "75074",
+      "source": "CCAD",
+      "marketType": "high activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "3600",
+      "fullAddress": "3600 W Parker Rd, Plano, TX 75023",
+      "streetName": "W Parker Rd",
+      "city": "Plano",
+      "county": "Collin",
+      "zip": "75023",
+      "source": "CCAD",
+      "marketType": "high activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "2200",
+      "fullAddress": "2200 Preston Rd, Frisco, TX 75034",
+      "streetName": "Preston Rd",
+      "city": "Frisco",
+      "county": "Collin",
+      "zip": "75034",
+      "source": "CCAD",
+      "marketType": "high activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "5100",
+      "fullAddress": "5100 Legacy Dr, Frisco, TX 75034",
+      "streetName": "Legacy Dr",
+      "city": "Frisco",
+      "county": "Collin",
+      "zip": "75034",
+      "source": "CCAD",
+      "marketType": "high activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "1800",
+      "fullAddress": "1800 Custer Rd, McKinney, TX 75071",
+      "streetName": "Custer Rd",
+      "city": "McKinney",
+      "county": "Collin",
+      "zip": "75071",
+      "source": "CCAD",
+      "marketType": "high activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "1400",
+      "fullAddress": "1400 Round Rock Ave, Round Rock, TX 78664",
+      "streetName": "Round Rock Ave",
+      "city": "Round Rock",
+      "county": "Williamson",
+      "zip": "78664",
+      "source": "WCAD",
+      "marketType": "low activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "2800",
+      "fullAddress": "2800 S IH-35, Round Rock, TX 78664",
+      "streetName": "S IH-35",
+      "city": "Round Rock",
+      "county": "Williamson",
+      "zip": "78664",
+      "source": "WCAD",
+      "marketType": "low activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "3200",
+      "fullAddress": "3200 E Whitestone Blvd, Cedar Park, TX 78613",
+      "streetName": "E Whitestone Blvd",
+      "city": "Cedar Park",
+      "county": "Williamson",
+      "zip": "78613",
+      "source": "WCAD",
+      "marketType": "low activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "1600",
+      "fullAddress": "1600 E University Blvd, Georgetown, TX 78626",
+      "streetName": "E University Blvd",
+      "city": "Georgetown",
+      "county": "Williamson",
+      "zip": "78626",
+      "source": "WCAD",
+      "marketType": "low activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "4500",
+      "fullAddress": "4500 W Parmer Ln, Cedar Park, TX 78613",
+      "streetName": "W Parmer Ln",
+      "city": "Cedar Park",
+      "county": "Williamson",
+      "zip": "78613",
+      "source": "WCAD",
+      "marketType": "low activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "1200",
+      "fullAddress": "1200 Lake Robbins Dr, The Woodlands, TX 77380",
+      "streetName": "Lake Robbins Dr",
+      "city": "The Woodlands",
+      "county": "Montgomery",
+      "zip": "77380",
+      "source": "MCAD",
+      "marketType": "low activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "2400",
+      "fullAddress": "2400 Research Forest Dr, The Woodlands, TX 77381",
+      "streetName": "Research Forest Dr",
+      "city": "The Woodlands",
+      "county": "Montgomery",
+      "zip": "77381",
+      "source": "MCAD",
+      "marketType": "low activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "3600",
+      "fullAddress": "3600 FM 1488, Conroe, TX 77384",
+      "streetName": "FM 1488",
+      "city": "Conroe",
+      "county": "Montgomery",
+      "zip": "77384",
+      "source": "MCAD",
+      "marketType": "low activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "1800",
+      "fullAddress": "1800 Interstate 45, Conroe, TX 77301",
+      "streetName": "Interstate 45",
+      "city": "Conroe",
+      "county": "Montgomery",
+      "zip": "77301",
+      "source": "MCAD",
+      "marketType": "low activity",
+      "confidence": "HIGH"
+    },
+    {
+      "houseNumber": "5200",
+      "fullAddress": "5200 W Davis St, Conroe, TX 77304",
+      "streetName": "W Davis St",
+      "city": "Conroe",
+      "county": "Montgomery",
+      "zip": "77304",
+      "source": "MCAD",
+      "marketType": "low activity",
+      "confidence": "HIGH"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "storage": {
+      "ListingAgentContactInfo:@model(appsync)": [
+        "read"
+      ]
+    }
+  },
+  "lambdaLayers": []
+}

@@ -1,0 +1,11 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- when completing a request, if you have changed code then run the build to ensure you haven't broken something
+- when completing a feature, create BDD scenarios and test them until they do not fail
+- when creating a new component, first create unit tests and run them in watch mode while you create the component so you can know when you have successfully created the component with the desired features.
+- after a feature has been fleshed out or a bug has been solved, you MUST check for and remove all temporary files and code changes that were created for the purpose of debugging.
+- prefer to solve with code vs downloading a new npm package, unlesss it's a big ask.
+- never save screenshots from BDD testing

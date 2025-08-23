@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "paths": {
+    "/anvil": {
+      "name": "/anvil",
+      "lambdaFunction": "anvilProxy",
+      "permissions": {
+        "setting": "private",
+        "auth": [
+          "read",
+          "update"
+        ]
+      }
+    },
+    "/fill": {
+      "name": "/fill",
+      "lambdaFunction": "anvilPdfFill",
+      "permissions": {
+        "setting": "private",
+        "auth": [
+          "create",
+          "read",
+          "update",
+          "delete"
+        ]
+      }
+    },
+    "/esign": {
+      "name": "/esign",
+      "lambdaFunction": "anvilPdfEsign",
+      "permissions": {
+        "setting": "private",
+        "auth": [
+          "create",
+          "read",
+          "update",
+          "delete"
+        ]
+      }
+    },
+    "/document-group": {
+      "name": "/document-group",
+      "lambdaFunction": "fetchAnvilDocumentGroup",
+      "permissions": {
+        "setting": "open"
+      }
+    }
+  }
+}

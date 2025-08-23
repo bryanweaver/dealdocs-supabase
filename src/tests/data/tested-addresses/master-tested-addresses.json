@@ -1,0 +1,148 @@
+{
+  "addresses": [
+    {
+      "id": "1440-1750116659887-0",
+      "address": "1440 Waseca St, Houston",
+      "houseNumber": "1440",
+      "source": "Redfin",
+      "scrapedAt": "2025-06-16T23:30:59.887Z",
+      "method": "pattern-1",
+      "firstTestedAt": "2025-06-16T23:31:12.819Z",
+      "lastTestedAt": "2025-06-16T23:31:12.819Z",
+      "totalTests": 1,
+      "metrics": {
+        "hasDropdownResults": true,
+        "dropdownResultCount": 3,
+        "reachedPropertyDetails": true,
+        "hasImage": false,
+        "hasPrice": true,
+        "hasDescription": false,
+        "hasBedrooms": false,
+        "hasBathrooms": false,
+        "hasSquareFootage": false,
+        "hasAddress": true,
+        "overallSuccess": true,
+        "contentQualityScore": 30,
+        "lastContentCheck": "2025-06-16T23:31:12.819Z"
+      },
+      "testSessions": [
+        {
+          "sessionId": "real-test-1750116624198",
+          "timestamp": "2025-06-16T23:31:12.816Z",
+          "status": "FULL_SUCCESS",
+          "testIndex": 1,
+          "source": "redfin-real-address",
+          "details": {
+            "hasDropdownResults": true,
+            "resultCount": 3,
+            "reachedPropertyDetails": true,
+            "contentQualityScore": 30,
+            "propertyMetrics": {
+              "hasImage": false,
+              "hasPrice": true,
+              "hasDescription": false,
+              "hasBedrooms": false,
+              "hasBathrooms": false,
+              "hasSquareFootage": false,
+              "hasAddress": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "9851-1750116659887-1",
+      "address": "9851 Farrell Dr, Houston",
+      "houseNumber": "9851",
+      "source": "Redfin",
+      "scrapedAt": "2025-06-16T23:30:59.887Z",
+      "method": "pattern-1",
+      "firstTestedAt": "2025-06-17T15:18:10.713Z",
+      "lastTestedAt": "2025-06-17T15:18:10.713Z",
+      "totalTests": 1,
+      "metrics": {
+        "hasDropdownResults": false,
+        "dropdownResultCount": 0,
+        "reachedPropertyDetails": false,
+        "hasImage": null,
+        "hasPrice": null,
+        "hasDescription": null,
+        "hasBedrooms": null,
+        "hasBathrooms": null,
+        "hasSquareFootage": null,
+        "hasAddress": null,
+        "overallSuccess": false,
+        "contentQualityScore": 0,
+        "lastContentCheck": "2025-06-17T15:18:10.713Z"
+      },
+      "testSessions": []
+    },
+    {
+      "id": "4727-1750116659887-2",
+      "address": "4727 Arvilla Ln, Houston",
+      "houseNumber": "4727",
+      "source": "Redfin",
+      "scrapedAt": "2025-06-16T23:30:59.887Z",
+      "method": "pattern-1",
+      "firstTestedAt": "2025-06-17T15:18:10.713Z",
+      "lastTestedAt": "2025-06-17T15:18:10.713Z",
+      "totalTests": 1,
+      "metrics": {
+        "hasDropdownResults": false,
+        "dropdownResultCount": 0,
+        "reachedPropertyDetails": false,
+        "hasImage": null,
+        "hasPrice": null,
+        "hasDescription": null,
+        "hasBedrooms": null,
+        "hasBathrooms": null,
+        "hasSquareFootage": null,
+        "hasAddress": null,
+        "overallSuccess": false,
+        "contentQualityScore": 0,
+        "lastContentCheck": "2025-06-17T15:18:10.713Z"
+      },
+      "testSessions": []
+    },
+    {
+      "id": "17043-1750116659887-3",
+      "address": "17043 Macleish Dr, Houston",
+      "houseNumber": "17043",
+      "source": "Redfin",
+      "scrapedAt": "2025-06-16T23:30:59.887Z",
+      "method": "pattern-1",
+      "firstTestedAt": "2025-06-17T15:18:10.713Z",
+      "lastTestedAt": "2025-06-17T15:18:10.713Z",
+      "totalTests": 1,
+      "metrics": {
+        "hasDropdownResults": false,
+        "dropdownResultCount": 0,
+        "reachedPropertyDetails": false,
+        "hasImage": null,
+        "hasPrice": null,
+        "hasDescription": null,
+        "hasBedrooms": null,
+        "hasBathrooms": null,
+        "hasSquareFootage": null,
+        "hasAddress": null,
+        "overallSuccess": false,
+        "contentQualityScore": 0,
+        "lastContentCheck": "2025-06-17T15:18:10.713Z"
+      },
+      "testSessions": []
+    }
+  ],
+  "summary": {
+    "totalAddresses": 4,
+    "totalTestSessions": 1,
+    "successfulAddresses": 1,
+    "addressesWithDropdownResults": 1,
+    "addressesWithPropertyDetails": 1,
+    "addressesWithImages": 0,
+    "addressesWithPrices": 1,
+    "addressesWithDescriptions": 0,
+    "averageContentQualityScore": 7.5,
+    "overallSuccessRate": "25.0%",
+    "lastUpdated": "2025-06-17T15:18:10.713Z"
+  }
+}

@@ -1,0 +1,549 @@
+[
+  {
+    "sessionId": "session-1750174850514-v0qwh4qf4",
+    "address": {
+      "fullAddress": "1919 Tallulah Ln, Houston, TX",
+      "houseNumber": 1919,
+      "streetName": "Tallulah Ln",
+      "city": "Houston",
+      "state": "TX",
+      "id": "1919-TallulahLn-Houston-undefined",
+      "selectedProperty": "1919 Tallulah Ln , Houston, TX 77077"
+    },
+    "timestamp": "2025-06-17T15:40:50.514Z",
+    "errorType": "console_error",
+    "errorMessage": "Test completed with 1 console errors",
+    "consoleErrors": [
+      "2025-06-17T15:40:48.075Z: [JavaScript Error: \"[JavaScript Error: \"Error: Error: strict mode violation: locator('text=Property Details') resolved to 4 elements:\n    1) <span data-v-c26b8477=\"\" class=\"text-xs sm:text-sm font-medium text-primary\">Property Details</span> aka locator('span').filter({ hasText: /^Property Details$/ })\n    2) <span data-v-c26b8477=\"\" class=\"text-sm font-medium text-primary\"> Step 3 of 3: Property Details</span> aka getByText('Step 3 of 3: Property Details')\n    3) <h1 data-v-eac86aa2=\"\" class=\"text-2xl sm:text-3xl font-bold text-gray-900 text-center\"> Property Details </h1> aka locator('h1')\n    4) <h3 data-v-eac86aa2=\"\" class=\"font-semibold text-gray-900 mb-4 text-lg\"> Property Details </h3> aka locator('h3').filter({ hasText: 'Property Details' })\n\" {file: \"debugger eval code\" line: 7299}]\" {file: \"debugger eval code\" line: 7299}]"
+    ],
+    "propertyMetrics": {
+      "hasImage": false,
+      "hasPrice": true,
+      "hasDescription": false,
+      "hasBedrooms": true,
+      "hasBathrooms": true,
+      "hasSquareFootage": true,
+      "hasPropertyType": false,
+      "hasLotSize": false,
+      "hasYearBuilt": false,
+      "hasAddress": true
+    },
+    "contentQualityScore": 50,
+    "additionalData": {
+      "url": "http://localhost:5173/login#/contracts/new",
+      "title": "",
+      "selectedProperty": "1919 Tallulah Ln , Houston, TX 77077",
+      "hasDropdownResults": true,
+      "dropdownResultCount": 3
+    }
+  },
+  {
+    "sessionId": "session-1750175076218-mn138gidz",
+    "address": {
+      "fullAddress": "1919 Tallulah Ln, Houston, TX",
+      "houseNumber": 1919,
+      "streetName": "Tallulah Ln",
+      "city": "Houston",
+      "state": "TX",
+      "id": "1919-TallulahLn-Houston-undefined",
+      "selectedProperty": "1919 Tallulah Ln , Houston, TX 77077"
+    },
+    "timestamp": "2025-06-17T15:44:36.218Z",
+    "errorType": "console_error",
+    "errorMessage": "Test completed with 1 console errors",
+    "consoleErrors": [
+      "2025-06-17T15:44:33.882Z: [JavaScript Error: \"[JavaScript Error: \"Error: Error: strict mode violation: locator('text=Property Details') resolved to 4 elements:\n    1) <span data-v-c26b8477=\"\" class=\"text-xs sm:text-sm font-medium text-primary\">Property Details</span> aka locator('span').filter({ hasText: /^Property Details$/ })\n    2) <span data-v-c26b8477=\"\" class=\"text-sm font-medium text-primary\"> Step 3 of 3: Property Details</span> aka getByText('Step 3 of 3: Property Details')\n    3) <h1 data-v-eac86aa2=\"\" class=\"text-2xl sm:text-3xl font-bold text-gray-900 text-center\"> Property Details </h1> aka locator('h1')\n    4) <h3 data-v-eac86aa2=\"\" class=\"font-semibold text-gray-900 mb-4 text-lg\"> Property Details </h3> aka locator('h3').filter({ hasText: 'Property Details' })\n\" {file: \"debugger eval code\" line: 7299}]\" {file: \"debugger eval code\" line: 7299}]"
+    ],
+    "propertyMetrics": {
+      "hasImage": false,
+      "hasPrice": true,
+      "hasDescription": false,
+      "hasBedrooms": true,
+      "hasBathrooms": true,
+      "hasSquareFootage": true,
+      "hasPropertyType": false,
+      "hasLotSize": false,
+      "hasYearBuilt": false,
+      "hasAddress": true
+    },
+    "contentQualityScore": 50,
+    "additionalData": {
+      "url": "http://localhost:5173/login#/contracts/new",
+      "title": "",
+      "selectedProperty": "1919 Tallulah Ln , Houston, TX 77077",
+      "hasDropdownResults": true,
+      "dropdownResultCount": 3
+    }
+  },
+  {
+    "sessionId": "session-1750175294731-e4a9o3axy",
+    "address": {
+      "fullAddress": "2301 Main St, Houston, TX",
+      "houseNumber": 2301,
+      "streetName": "Main St",
+      "city": "Houston",
+      "state": "TX",
+      "id": "2301-MainSt-Houston-undefined",
+      "selectedProperty": "2301 Main St , Houston, TX 77002"
+    },
+    "timestamp": "2025-06-17T15:48:14.731Z",
+    "errorType": "console_error",
+    "errorMessage": "Test completed with 1 console errors",
+    "consoleErrors": [
+      "2025-06-17T15:48:12.533Z: [JavaScript Error: \"[JavaScript Error: \"Error: Error: strict mode violation: locator('text=Property Details') resolved to 4 elements:\n    1) <span data-v-c26b8477=\"\" class=\"text-xs sm:text-sm font-medium text-primary\">Property Details</span> aka locator('span').filter({ hasText: /^Property Details$/ })\n    2) <span data-v-c26b8477=\"\" class=\"text-sm font-medium text-primary\"> Step 3 of 3: Property Details</span> aka getByText('Step 3 of 3: Property Details')\n    3) <h1 data-v-eac86aa2=\"\" class=\"text-2xl sm:text-3xl font-bold text-gray-900 text-center\"> Property Details </h1> aka locator('h1')\n    4) <h3 data-v-eac86aa2=\"\" class=\"font-semibold text-gray-900 mb-4 text-lg\"> Property Details </h3> aka locator('h3').filter({ hasText: 'Property Details' })\n\" {file: \"debugger eval code\" line: 7299}]\" {file: \"debugger eval code\" line: 7299}]"
+    ],
+    "propertyMetrics": {
+      "hasImage": false,
+      "hasPrice": true,
+      "hasDescription": false,
+      "hasBedrooms": true,
+      "hasBathrooms": true,
+      "hasSquareFootage": true,
+      "hasPropertyType": false,
+      "hasLotSize": false,
+      "hasYearBuilt": false,
+      "hasAddress": true
+    },
+    "contentQualityScore": 50,
+    "additionalData": {
+      "url": "http://localhost:5173/login#/contracts/new",
+      "title": "",
+      "selectedProperty": "2301 Main St , Houston, TX 77002",
+      "hasDropdownResults": true,
+      "dropdownResultCount": 12
+    }
+  },
+  {
+    "sessionId": "session-1750175314497-e23kcarxc",
+    "address": {
+      "fullAddress": "4567 Oak Ave, Houston, TX",
+      "houseNumber": 4567,
+      "streetName": "Oak Ave",
+      "city": "Houston",
+      "state": "TX",
+      "id": "4567-OakAve-Houston-undefined",
+      "selectedProperty": "4567 Oak Shores Dr , Plano, TX 75024"
+    },
+    "timestamp": "2025-06-17T15:48:34.497Z",
+    "errorType": "console_error",
+    "errorMessage": "Test completed with 1 console errors",
+    "consoleErrors": [
+      "2025-06-17T15:48:32.194Z: [JavaScript Error: \"[JavaScript Error: \"Error: Error: strict mode violation: locator('text=Property Details') resolved to 4 elements:\n    1) <span data-v-c26b8477=\"\" class=\"text-xs sm:text-sm font-medium text-primary\">Property Details</span> aka locator('span').filter({ hasText: /^Property Details$/ })\n    2) <span data-v-c26b8477=\"\" class=\"text-sm font-medium text-primary\"> Step 3 of 3: Property Details</span> aka getByText('Step 3 of 3: Property Details')\n    3) <h1 data-v-eac86aa2=\"\" class=\"text-2xl sm:text-3xl font-bold text-gray-900 text-center\"> Property Details </h1> aka locator('h1')\n    4) <h3 data-v-eac86aa2=\"\" class=\"font-semibold text-gray-900 mb-4 text-lg\"> Property Details </h3> aka locator('h3').filter({ hasText: 'Property Details' })\n\" {file: \"debugger eval code\" line: 7299}]\" {file: \"debugger eval code\" line: 7299}]"
+    ],
+    "propertyMetrics": {
+      "hasImage": false,
+      "hasPrice": true,
+      "hasDescription": false,
+      "hasBedrooms": true,
+      "hasBathrooms": true,
+      "hasSquareFootage": true,
+      "hasPropertyType": false,
+      "hasLotSize": false,
+      "hasYearBuilt": false,
+      "hasAddress": true
+    },
+    "contentQualityScore": 50,
+    "additionalData": {
+      "url": "http://localhost:5173/login#/contracts/new",
+      "title": "",
+      "selectedProperty": "4567 Oak Shores Dr , Plano, TX 75024",
+      "hasDropdownResults": true,
+      "dropdownResultCount": 12
+    }
+  },
+  {
+    "sessionId": "session-1750175353795-w0c1s0x7l",
+    "address": {
+      "fullAddress": "8910 Pine St, Houston, TX",
+      "houseNumber": 8910,
+      "streetName": "Pine St",
+      "city": "Houston",
+      "state": "TX",
+      "id": "8910-PineSt-Houston-undefined",
+      "selectedProperty": "8910 Pine Forest Dr , Rowlett, TX 75088"
+    },
+    "timestamp": "2025-06-17T15:49:13.795Z",
+    "errorType": "console_error",
+    "errorMessage": "Test completed with 5 console errors",
+    "consoleErrors": [
+      "2025-06-17T15:48:49.513Z: [JavaScript Error: \"❌ All property data sources failed\" {file: \"http://localhost:5173/src/views/PropertyData.vue\" line: 129}]",
+      "2025-06-17T15:48:49.513Z: [JavaScript Error: \"Property data fetch failed: allSourcesFailed\" {file: \"http://localhost:5173/src/views/PropertyData.vue\" line: 78}]",
+      "2025-06-17T15:48:49.514Z: [JavaScript Error: \"Error data: JSHandle@object\" {file: \"http://localhost:5173/src/views/PropertyData.vue\" line: 79}]",
+      "2025-06-17T15:48:51.638Z: [JavaScript Error: \"[JavaScript Error: \"Error: Error: strict mode violation: locator('text=Property Details') resolved to 3 elements:\n    1) <span data-v-c26b8477=\"\" class=\"text-xs sm:text-sm font-medium text-primary\">Property Details</span> aka locator('span').filter({ hasText: /^Property Details$/ })\n    2) <span data-v-c26b8477=\"\" class=\"text-sm font-medium text-primary\"> Step 3 of 3: Property Details</span> aka getByText('Step 3 of 3: Property Details')\n    3) <h1 data-v-eac86aa2=\"\" class=\"text-2xl sm:text-3xl font-bold text-gray-900 text-center\"> Property Details </h1> aka getByRole('heading', { name: 'Property Details' })\n\" {file: \"debugger eval code\" line: 7299}]\" {file: \"debugger eval code\" line: 7299}]",
+      "2025-06-17T15:48:51.662Z: [JavaScript Error: \"[JavaScript Error: \"Error: Error: strict mode violation: locator('text=Address') resolved to 4 elements:\n    1) <span data-v-c26b8477=\"\" class=\"text-xs sm:text-sm font-medium text-primary\">Verify Address</span> aka getByText('Verify Address')\n    2) <h3 data-v-eac86aa2=\"\" class=\"text-lg font-medium text-gray-900 mb-2\">No property records found for this address</h3> aka getByRole('heading', { name: 'No property records found for' })\n    3) <p data-v-eac86aa2=\"\" class=\"text-gray-600 mb-6 max-w-md mx-auto\">The property database returned 0 results for this…</p> aka getByText('The property database')\n    4) <button data-v-eac86aa2=\"\" class=\"inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary\">…</button> aka getByRole('button', { name: 'Try Different Address' })\n\" {file: \"debugger eval code\" line: 7299}]\" {file: \"debugger eval code\" line: 7299}]"
+    ],
+    "propertyMetrics": {
+      "hasImage": false,
+      "hasPrice": false,
+      "hasDescription": false,
+      "hasBedrooms": false,
+      "hasBathrooms": false,
+      "hasSquareFootage": false,
+      "hasPropertyType": false,
+      "hasLotSize": false,
+      "hasYearBuilt": false,
+      "hasAddress": true
+    },
+    "contentQualityScore": 10,
+    "additionalData": {
+      "url": "http://localhost:5173/login#/contracts/new",
+      "title": "",
+      "selectedProperty": "8910 Pine Forest Dr , Rowlett, TX 75088",
+      "hasDropdownResults": true,
+      "dropdownResultCount": 12
+    }
+  },
+  {
+    "sessionId": "session-1750176094305-pwpc4dgfu",
+    "address": {
+      "fullAddress": "2301 Main St, Houston, TX",
+      "houseNumber": 2301,
+      "streetName": "Main St",
+      "city": "Houston",
+      "state": "TX",
+      "id": "2301-MainSt-Houston-undefined",
+      "selectedProperty": "2301 Main St , Houston, TX 77002"
+    },
+    "timestamp": "2025-06-17T16:01:34.305Z",
+    "errorType": "console_error",
+    "errorMessage": "Test completed with 1 console errors",
+    "consoleErrors": [
+      "2025-06-17T16:01:32.086Z: [JavaScript Error: \"[JavaScript Error: \"Error: Error: strict mode violation: locator('text=Property Details') resolved to 4 elements:\n    1) <span data-v-c26b8477=\"\" class=\"text-xs sm:text-sm font-medium text-primary\">Property Details</span> aka locator('span').filter({ hasText: /^Property Details$/ })\n    2) <span data-v-c26b8477=\"\" class=\"text-sm font-medium text-primary\"> Step 3 of 3: Property Details</span> aka getByText('Step 3 of 3: Property Details')\n    3) <h1 data-v-eac86aa2=\"\" class=\"text-2xl sm:text-3xl font-bold text-gray-900 text-center\"> Property Details </h1> aka locator('h1')\n    4) <h3 data-v-eac86aa2=\"\" class=\"font-semibold text-gray-900 mb-4 text-lg\"> Property Details </h3> aka locator('h3').filter({ hasText: 'Property Details' })\n\" {file: \"debugger eval code\" line: 7299}]\" {file: \"debugger eval code\" line: 7299}]"
+    ],
+    "propertyMetrics": {
+      "hasImage": false,
+      "hasPrice": true,
+      "hasDescription": false,
+      "hasBedrooms": true,
+      "hasBathrooms": true,
+      "hasSquareFootage": true,
+      "hasPropertyType": false,
+      "hasLotSize": false,
+      "hasYearBuilt": false,
+      "hasAddress": true
+    },
+    "contentQualityScore": 50,
+    "additionalData": {
+      "url": "http://localhost:5173/login#/contracts/new",
+      "title": "",
+      "selectedProperty": "2301 Main St , Houston, TX 77002",
+      "hasDropdownResults": true,
+      "dropdownResultCount": 12
+    }
+  },
+  {
+    "sessionId": "session-1750176114408-ih0k3sspv",
+    "address": {
+      "fullAddress": "4567 Oak Ave, Houston, TX",
+      "houseNumber": 4567,
+      "streetName": "Oak Ave",
+      "city": "Houston",
+      "state": "TX",
+      "id": "4567-OakAve-Houston-undefined",
+      "selectedProperty": "4567 Oak Shores Dr , Plano, TX 75024"
+    },
+    "timestamp": "2025-06-17T16:01:54.408Z",
+    "errorType": "console_error",
+    "errorMessage": "Test completed with 1 console errors",
+    "consoleErrors": [
+      "2025-06-17T16:01:52.066Z: [JavaScript Error: \"[JavaScript Error: \"Error: Error: strict mode violation: locator('text=Property Details') resolved to 4 elements:\n    1) <span data-v-c26b8477=\"\" class=\"text-xs sm:text-sm font-medium text-primary\">Property Details</span> aka locator('span').filter({ hasText: /^Property Details$/ })\n    2) <span data-v-c26b8477=\"\" class=\"text-sm font-medium text-primary\"> Step 3 of 3: Property Details</span> aka getByText('Step 3 of 3: Property Details')\n    3) <h1 data-v-eac86aa2=\"\" class=\"text-2xl sm:text-3xl font-bold text-gray-900 text-center\"> Property Details </h1> aka locator('h1')\n    4) <h3 data-v-eac86aa2=\"\" class=\"font-semibold text-gray-900 mb-4 text-lg\"> Property Details </h3> aka locator('h3').filter({ hasText: 'Property Details' })\n\" {file: \"debugger eval code\" line: 7299}]\" {file: \"debugger eval code\" line: 7299}]"
+    ],
+    "propertyMetrics": {
+      "hasImage": false,
+      "hasPrice": true,
+      "hasDescription": false,
+      "hasBedrooms": true,
+      "hasBathrooms": true,
+      "hasSquareFootage": true,
+      "hasPropertyType": false,
+      "hasLotSize": false,
+      "hasYearBuilt": false,
+      "hasAddress": true
+    },
+    "contentQualityScore": 50,
+    "additionalData": {
+      "url": "http://localhost:5173/login#/contracts/new",
+      "title": "",
+      "selectedProperty": "4567 Oak Shores Dr , Plano, TX 75024",
+      "hasDropdownResults": true,
+      "dropdownResultCount": 12
+    }
+  },
+  {
+    "sessionId": "session-1750176153762-poz0yx79f",
+    "address": {
+      "fullAddress": "8910 Pine St, Houston, TX",
+      "houseNumber": 8910,
+      "streetName": "Pine St",
+      "city": "Houston",
+      "state": "TX",
+      "id": "8910-PineSt-Houston-undefined",
+      "selectedProperty": "8910 Pine Forest Dr , Rowlett, TX 75088"
+    },
+    "timestamp": "2025-06-17T16:02:33.762Z",
+    "errorType": "console_error",
+    "errorMessage": "Test completed with 5 console errors",
+    "consoleErrors": [
+      "2025-06-17T16:02:09.321Z: [JavaScript Error: \"❌ All property data sources failed\" {file: \"http://localhost:5173/src/views/PropertyData.vue\" line: 129}]",
+      "2025-06-17T16:02:09.322Z: [JavaScript Error: \"Property data fetch failed: allSourcesFailed\" {file: \"http://localhost:5173/src/views/PropertyData.vue\" line: 78}]",
+      "2025-06-17T16:02:09.322Z: [JavaScript Error: \"Error data: JSHandle@object\" {file: \"http://localhost:5173/src/views/PropertyData.vue\" line: 79}]",
+      "2025-06-17T16:02:11.611Z: [JavaScript Error: \"[JavaScript Error: \"Error: Error: strict mode violation: locator('text=Property Details') resolved to 3 elements:\n    1) <span data-v-c26b8477=\"\" class=\"text-xs sm:text-sm font-medium text-primary\">Property Details</span> aka locator('span').filter({ hasText: /^Property Details$/ })\n    2) <span data-v-c26b8477=\"\" class=\"text-sm font-medium text-primary\"> Step 3 of 3: Property Details</span> aka getByText('Step 3 of 3: Property Details')\n    3) <h1 data-v-eac86aa2=\"\" class=\"text-2xl sm:text-3xl font-bold text-gray-900 text-center\"> Property Details </h1> aka getByRole('heading', { name: 'Property Details' })\n\" {file: \"debugger eval code\" line: 7299}]\" {file: \"debugger eval code\" line: 7299}]",
+      "2025-06-17T16:02:11.637Z: [JavaScript Error: \"[JavaScript Error: \"Error: Error: strict mode violation: locator('text=Address') resolved to 4 elements:\n    1) <span data-v-c26b8477=\"\" class=\"text-xs sm:text-sm font-medium text-primary\">Verify Address</span> aka getByText('Verify Address')\n    2) <h3 data-v-eac86aa2=\"\" class=\"text-lg font-medium text-gray-900 mb-2\">No property records found for this address</h3> aka getByRole('heading', { name: 'No property records found for' })\n    3) <p data-v-eac86aa2=\"\" class=\"text-gray-600 mb-6 max-w-md mx-auto\">The property database returned 0 results for this…</p> aka getByText('The property database')\n    4) <button data-v-eac86aa2=\"\" class=\"inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary\">…</button> aka getByRole('button', { name: 'Try Different Address' })\n\" {file: \"debugger eval code\" line: 7299}]\" {file: \"debugger eval code\" line: 7299}]"
+    ],
+    "propertyMetrics": {
+      "hasImage": false,
+      "hasPrice": false,
+      "hasDescription": false,
+      "hasBedrooms": false,
+      "hasBathrooms": false,
+      "hasSquareFootage": false,
+      "hasPropertyType": false,
+      "hasLotSize": false,
+      "hasYearBuilt": false,
+      "hasAddress": true
+    },
+    "contentQualityScore": 10,
+    "additionalData": {
+      "url": "http://localhost:5173/login#/contracts/new",
+      "title": "",
+      "selectedProperty": "8910 Pine Forest Dr , Rowlett, TX 75088",
+      "hasDropdownResults": true,
+      "dropdownResultCount": 12
+    }
+  },
+  {
+    "sessionId": "session-1750176233827-m930jhrd4",
+    "address": {
+      "fullAddress": "2301 Main St, Houston, TX",
+      "houseNumber": 2301,
+      "streetName": "Main St",
+      "city": "Houston",
+      "state": "TX",
+      "id": "2301-MainSt-Houston-undefined",
+      "selectedProperty": "2301 Main St , Houston, TX 77002"
+    },
+    "timestamp": "2025-06-17T16:03:53.827Z",
+    "errorType": "console_error",
+    "errorMessage": "Test completed with 1 console errors",
+    "consoleErrors": [
+      "2025-06-17T16:03:51.608Z: [JavaScript Error: \"[JavaScript Error: \"Error: Error: strict mode violation: locator('text=Property Details') resolved to 4 elements:\n    1) <span data-v-c26b8477=\"\" class=\"text-xs sm:text-sm font-medium text-primary\">Property Details</span> aka locator('span').filter({ hasText: /^Property Details$/ })\n    2) <span data-v-c26b8477=\"\" class=\"text-sm font-medium text-primary\"> Step 3 of 3: Property Details</span> aka getByText('Step 3 of 3: Property Details')\n    3) <h1 data-v-eac86aa2=\"\" class=\"text-2xl sm:text-3xl font-bold text-gray-900 text-center\"> Property Details </h1> aka locator('h1')\n    4) <h3 data-v-eac86aa2=\"\" class=\"font-semibold text-gray-900 mb-4 text-lg\"> Property Details </h3> aka locator('h3').filter({ hasText: 'Property Details' })\n\" {file: \"debugger eval code\" line: 7299}]\" {file: \"debugger eval code\" line: 7299}]"
+    ],
+    "propertyMetrics": {
+      "hasImage": false,
+      "hasPrice": true,
+      "hasDescription": false,
+      "hasBedrooms": true,
+      "hasBathrooms": true,
+      "hasSquareFootage": true,
+      "hasPropertyType": false,
+      "hasLotSize": false,
+      "hasYearBuilt": false,
+      "hasAddress": true
+    },
+    "contentQualityScore": 50,
+    "additionalData": {
+      "url": "http://localhost:5173/login#/contracts/new",
+      "title": "",
+      "selectedProperty": "2301 Main St , Houston, TX 77002",
+      "hasDropdownResults": true,
+      "dropdownResultCount": 12
+    }
+  },
+  {
+    "sessionId": "session-1750176253966-zxtammy4f",
+    "address": {
+      "fullAddress": "4567 Oak Ave, Houston, TX",
+      "houseNumber": 4567,
+      "streetName": "Oak Ave",
+      "city": "Houston",
+      "state": "TX",
+      "id": "4567-OakAve-Houston-undefined",
+      "selectedProperty": "4567 Oak Shores Dr , Plano, TX 75024"
+    },
+    "timestamp": "2025-06-17T16:04:13.966Z",
+    "errorType": "console_error",
+    "errorMessage": "Test completed with 1 console errors",
+    "consoleErrors": [
+      "2025-06-17T16:04:11.665Z: [JavaScript Error: \"[JavaScript Error: \"Error: Error: strict mode violation: locator('text=Property Details') resolved to 4 elements:\n    1) <span data-v-c26b8477=\"\" class=\"text-xs sm:text-sm font-medium text-primary\">Property Details</span> aka locator('span').filter({ hasText: /^Property Details$/ })\n    2) <span data-v-c26b8477=\"\" class=\"text-sm font-medium text-primary\"> Step 3 of 3: Property Details</span> aka getByText('Step 3 of 3: Property Details')\n    3) <h1 data-v-eac86aa2=\"\" class=\"text-2xl sm:text-3xl font-bold text-gray-900 text-center\"> Property Details </h1> aka locator('h1')\n    4) <h3 data-v-eac86aa2=\"\" class=\"font-semibold text-gray-900 mb-4 text-lg\"> Property Details </h3> aka locator('h3').filter({ hasText: 'Property Details' })\n\" {file: \"debugger eval code\" line: 7299}]\" {file: \"debugger eval code\" line: 7299}]"
+    ],
+    "propertyMetrics": {
+      "hasImage": false,
+      "hasPrice": true,
+      "hasDescription": false,
+      "hasBedrooms": true,
+      "hasBathrooms": true,
+      "hasSquareFootage": true,
+      "hasPropertyType": false,
+      "hasLotSize": false,
+      "hasYearBuilt": false,
+      "hasAddress": true
+    },
+    "contentQualityScore": 50,
+    "additionalData": {
+      "url": "http://localhost:5173/login#/contracts/new",
+      "title": "",
+      "selectedProperty": "4567 Oak Shores Dr , Plano, TX 75024",
+      "hasDropdownResults": true,
+      "dropdownResultCount": 12
+    }
+  },
+  {
+    "sessionId": "session-1750176293280-7606sr4t7",
+    "address": {
+      "fullAddress": "8910 Pine St, Houston, TX",
+      "houseNumber": 8910,
+      "streetName": "Pine St",
+      "city": "Houston",
+      "state": "TX",
+      "id": "8910-PineSt-Houston-undefined",
+      "selectedProperty": "8910 Pine Forest Dr , Rowlett, TX 75088"
+    },
+    "timestamp": "2025-06-17T16:04:53.280Z",
+    "errorType": "console_error",
+    "errorMessage": "Test completed with 5 console errors",
+    "consoleErrors": [
+      "2025-06-17T16:04:29.055Z: [JavaScript Error: \"❌ All property data sources failed\" {file: \"http://localhost:5173/src/views/PropertyData.vue\" line: 129}]",
+      "2025-06-17T16:04:29.055Z: [JavaScript Error: \"Property data fetch failed: allSourcesFailed\" {file: \"http://localhost:5173/src/views/PropertyData.vue\" line: 78}]",
+      "2025-06-17T16:04:29.056Z: [JavaScript Error: \"Error data: JSHandle@object\" {file: \"http://localhost:5173/src/views/PropertyData.vue\" line: 79}]",
+      "2025-06-17T16:04:31.139Z: [JavaScript Error: \"[JavaScript Error: \"Error: Error: strict mode violation: locator('text=Property Details') resolved to 3 elements:\n    1) <span data-v-c26b8477=\"\" class=\"text-xs sm:text-sm font-medium text-primary\">Property Details</span> aka locator('span').filter({ hasText: /^Property Details$/ })\n    2) <span data-v-c26b8477=\"\" class=\"text-sm font-medium text-primary\"> Step 3 of 3: Property Details</span> aka getByText('Step 3 of 3: Property Details')\n    3) <h1 data-v-eac86aa2=\"\" class=\"text-2xl sm:text-3xl font-bold text-gray-900 text-center\"> Property Details </h1> aka getByRole('heading', { name: 'Property Details' })\n\" {file: \"debugger eval code\" line: 7299}]\" {file: \"debugger eval code\" line: 7299}]",
+      "2025-06-17T16:04:31.167Z: [JavaScript Error: \"[JavaScript Error: \"Error: Error: strict mode violation: locator('text=Address') resolved to 4 elements:\n    1) <span data-v-c26b8477=\"\" class=\"text-xs sm:text-sm font-medium text-primary\">Verify Address</span> aka getByText('Verify Address')\n    2) <h3 data-v-eac86aa2=\"\" class=\"text-lg font-medium text-gray-900 mb-2\">No property records found for this address</h3> aka getByRole('heading', { name: 'No property records found for' })\n    3) <p data-v-eac86aa2=\"\" class=\"text-gray-600 mb-6 max-w-md mx-auto\">The property database returned 0 results for this…</p> aka getByText('The property database')\n    4) <button data-v-eac86aa2=\"\" class=\"inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary\">…</button> aka getByRole('button', { name: 'Try Different Address' })\n\" {file: \"debugger eval code\" line: 7299}]\" {file: \"debugger eval code\" line: 7299}]"
+    ],
+    "propertyMetrics": {
+      "hasImage": false,
+      "hasPrice": false,
+      "hasDescription": false,
+      "hasBedrooms": false,
+      "hasBathrooms": false,
+      "hasSquareFootage": false,
+      "hasPropertyType": false,
+      "hasLotSize": false,
+      "hasYearBuilt": false,
+      "hasAddress": true
+    },
+    "contentQualityScore": 10,
+    "additionalData": {
+      "url": "http://localhost:5173/login#/contracts/new",
+      "title": "",
+      "selectedProperty": "8910 Pine Forest Dr , Rowlett, TX 75088",
+      "hasDropdownResults": true,
+      "dropdownResultCount": 12
+    }
+  },
+  {
+    "sessionId": "session-1750432780300-jzyn91w9i",
+    "address": {
+      "fullAddress": "2301 Main St, Houston, TX",
+      "houseNumber": 2301,
+      "streetName": "Main St",
+      "city": "Houston",
+      "state": "TX",
+      "id": "2301-MainSt-Houston-undefined",
+      "selectedProperty": "2301 Main St , Houston, TX 77002"
+    },
+    "timestamp": "2025-06-20T15:19:40.300Z",
+    "errorType": "console_error",
+    "errorMessage": "Test completed with 1 console errors",
+    "consoleErrors": [
+      "2025-06-20T15:19:38.166Z: [JavaScript Error: \"[JavaScript Error: \"Error: Error: strict mode violation: locator('text=Property Details') resolved to 3 elements:\n    1) <span data-v-c26b8477=\"\" class=\"text-xs sm:text-sm font-medium text-primary\">Property Details</span> aka locator('span').filter({ hasText: /^Property Details$/ })\n    2) <span data-v-c26b8477=\"\" class=\"text-sm font-medium text-primary\"> Step 3 of 3: Property Details</span> aka getByText('Step 3 of 3: Property Details')\n    3) <h1 data-v-eac86aa2=\"\" class=\"text-2xl sm:text-3xl font-bold text-gray-900 text-center\"> Property Details </h1> aka getByRole('heading', { name: 'Property Details' })\n\" {file: \"debugger eval code\" line: 7299}]\" {file: \"debugger eval code\" line: 7299}]"
+    ],
+    "propertyMetrics": {
+      "hasImage": false,
+      "hasPrice": false,
+      "hasDescription": false,
+      "hasBedrooms": false,
+      "hasBathrooms": false,
+      "hasSquareFootage": false,
+      "hasPropertyType": false,
+      "hasLotSize": false,
+      "hasYearBuilt": false,
+      "hasAddress": true
+    },
+    "contentQualityScore": 10,
+    "additionalData": {
+      "url": "http://localhost:5173/login#/contracts/new",
+      "title": "",
+      "selectedProperty": "2301 Main St , Houston, TX 77002",
+      "hasDropdownResults": true,
+      "dropdownResultCount": 12
+    }
+  },
+  {
+    "sessionId": "session-1750432800139-yqk3cq527",
+    "address": {
+      "fullAddress": "4567 Oak Ave, Houston, TX",
+      "houseNumber": 4567,
+      "streetName": "Oak Ave",
+      "city": "Houston",
+      "state": "TX",
+      "id": "4567-OakAve-Houston-undefined",
+      "selectedProperty": "4567 Oak Shores Dr , Plano, TX 75024"
+    },
+    "timestamp": "2025-06-20T15:20:00.139Z",
+    "errorType": "console_error",
+    "errorMessage": "Test completed with 4 console errors",
+    "consoleErrors": [
+      "2025-06-20T15:19:56.741Z: [JavaScript Error: \"Error fetching property data: Error\" {file: \"http://localhost:5173/src/views/PropertyData.vue?t=1750432618845\" line: 188}]",
+      "2025-06-20T15:19:56.741Z: [JavaScript Error: \"Property data fetch failed: requestSetup\" {file: \"http://localhost:5173/src/views/PropertyData.vue?t=1750432618845\" line: 98}]",
+      "2025-06-20T15:19:56.742Z: [JavaScript Error: \"Error data: JSHandle@object\" {file: \"http://localhost:5173/src/views/PropertyData.vue?t=1750432618845\" line: 99}]",
+      "2025-06-20T15:19:57.901Z: [JavaScript Error: \"[JavaScript Error: \"Error: Error: strict mode violation: locator('text=Property Details') resolved to 4 elements:\n    1) <span data-v-c26b8477=\"\" class=\"text-xs sm:text-sm font-medium text-primary\">Property Details</span> aka locator('span').filter({ hasText: /^Property Details$/ })\n    2) <span data-v-c26b8477=\"\" class=\"text-sm font-medium text-primary\"> Step 3 of 3: Property Details</span> aka getByText('Step 3 of 3: Property Details')\n    3) <h1 data-v-eac86aa2=\"\" class=\"text-2xl sm:text-3xl font-bold text-gray-900 text-center\"> Property Details </h1> aka locator('h1')\n    4) <h3 data-v-eac86aa2=\"\" class=\"font-semibold text-gray-900 mb-4 text-lg\"> Property Details </h3> aka locator('h3').filter({ hasText: 'Property Details' })\n\" {file: \"debugger eval code\" line: 7299}]\" {file: \"debugger eval code\" line: 7299}]"
+    ],
+    "propertyMetrics": {
+      "hasImage": false,
+      "hasPrice": true,
+      "hasDescription": false,
+      "hasBedrooms": true,
+      "hasBathrooms": true,
+      "hasSquareFootage": true,
+      "hasPropertyType": false,
+      "hasLotSize": false,
+      "hasYearBuilt": false,
+      "hasAddress": true
+    },
+    "contentQualityScore": 50,
+    "additionalData": {
+      "url": "http://localhost:5173/login#/contracts/new",
+      "title": "",
+      "selectedProperty": "4567 Oak Shores Dr , Plano, TX 75024",
+      "hasDropdownResults": true,
+      "dropdownResultCount": 12
+    }
+  },
+  {
+    "sessionId": "session-1750432819553-tx5585a0f",
+    "address": {
+      "fullAddress": "8910 Pine St, Houston, TX",
+      "houseNumber": 8910,
+      "streetName": "Pine St",
+      "city": "Houston",
+      "state": "TX",
+      "id": "8910-PineSt-Houston-undefined",
+      "selectedProperty": "8910 Pine Forest Dr , Rowlett, TX 75088"
+    },
+    "timestamp": "2025-06-20T15:20:19.553Z",
+    "errorType": "console_error",
+    "errorMessage": "Test completed with 1 console errors",
+    "consoleErrors": [
+      "2025-06-20T15:20:17.416Z: [JavaScript Error: \"[JavaScript Error: \"Error: Error: strict mode violation: locator('text=Property Details') resolved to 3 elements:\n    1) <span data-v-c26b8477=\"\" class=\"text-xs sm:text-sm font-medium text-primary\">Property Details</span> aka locator('span').filter({ hasText: /^Property Details$/ })\n    2) <span data-v-c26b8477=\"\" class=\"text-sm font-medium text-primary\"> Step 3 of 3: Property Details</span> aka getByText('Step 3 of 3: Property Details')\n    3) <h1 data-v-eac86aa2=\"\" class=\"text-2xl sm:text-3xl font-bold text-gray-900 text-center\"> Property Details </h1> aka getByRole('heading', { name: 'Property Details' })\n\" {file: \"debugger eval code\" line: 7299}]\" {file: \"debugger eval code\" line: 7299}]"
+    ],
+    "propertyMetrics": {
+      "hasImage": false,
+      "hasPrice": false,
+      "hasDescription": false,
+      "hasBedrooms": false,
+      "hasBathrooms": false,
+      "hasSquareFootage": false,
+      "hasPropertyType": false,
+      "hasLotSize": false,
+      "hasYearBuilt": false,
+      "hasAddress": true
+    },
+    "contentQualityScore": 10,
+    "additionalData": {
+      "url": "http://localhost:5173/login#/contracts/new",
+      "title": "",
+      "selectedProperty": "8910 Pine Forest Dr , Rowlett, TX 75088",
+      "hasDropdownResults": true,
+      "dropdownResultCount": 12
+    }
+  }
+]

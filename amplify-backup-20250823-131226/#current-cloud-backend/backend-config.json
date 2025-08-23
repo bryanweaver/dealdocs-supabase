@@ -1,0 +1,350 @@
+{
+  "analytics": {
+    "dealdocs": {
+      "providerPlugin": "awscloudformation",
+      "service": "Pinpoint"
+    }
+  },
+  "api": {
+    "api0ca09615": {
+      "dependsOn": [
+        {
+          "attributes": [
+            "Name",
+            "Arn"
+          ],
+          "category": "function",
+          "resourceName": "anvilProxy"
+        },
+        {
+          "attributes": [
+            "Name",
+            "Arn"
+          ],
+          "category": "function",
+          "resourceName": "anvilPdfFill"
+        },
+        {
+          "attributes": [
+            "Name",
+            "Arn"
+          ],
+          "category": "function",
+          "resourceName": "anvilPdfEsign"
+        },
+        {
+          "attributes": [
+            "Name",
+            "Arn"
+          ],
+          "category": "function",
+          "resourceName": "fetchAnvilDocumentGroup"
+        }
+      ],
+      "providerPlugin": "awscloudformation",
+      "service": "API Gateway"
+    },
+    "dealdocs": {
+      "dependsOn": [
+        {
+          "attributes": [
+            "UserPoolId"
+          ],
+          "category": "auth",
+          "resourceName": "dealdocsef4d1e4c"
+        }
+      ],
+      "output": {
+        "authConfig": {
+          "additionalAuthenticationProviders": [
+            {
+              "authenticationType": "AMAZON_COGNITO_USER_POOLS",
+              "userPoolConfig": {
+                "userPoolId": "authdealdocsef4d1e4c"
+              }
+            }
+          ],
+          "defaultAuthentication": {
+            "apiKeyConfig": {
+              "apiKeyExpirationDate": "2026-04-27T17:52:58.496Z",
+              "apiKeyExpirationDays": 365,
+              "description": "api-db-key"
+            },
+            "authenticationType": "API_KEY"
+          }
+        }
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "AppSync"
+    }
+  },
+  "auth": {
+    "dealdocsef4d1e4c": {
+      "customAuth": false,
+      "dependsOn": [],
+      "frontendAuthConfig": {
+        "mfaConfiguration": "OFF",
+        "mfaTypes": [
+          "SMS"
+        ],
+        "passwordProtectionSettings": {
+          "passwordPolicyCharacters": [],
+          "passwordPolicyMinLength": 8
+        },
+        "signupAttributes": [
+          "EMAIL"
+        ],
+        "socialProviders": [],
+        "usernameAttributes": [
+          "EMAIL"
+        ],
+        "verificationMechanisms": [
+          "EMAIL"
+        ]
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "Cognito"
+    }
+  },
+  "function": {
+    "agentStatsResolver": {
+      "build": true,
+      "dependsOn": [
+        {
+          "attributes": [
+            "GraphQLAPIIdOutput"
+          ],
+          "category": "api",
+          "resourceName": "dealdocs"
+        }
+      ],
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
+    "anvilPdfEsign": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
+    "anvilPdfFill": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
+    "anvilProxy": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
+    "contractPackageEmailer": {
+      "build": true,
+      "dependsOn": [
+        {
+          "attributes": [
+            "GraphQLAPIIdOutput",
+            "GraphQLAPIEndpointOutput"
+          ],
+          "category": "api",
+          "resourceName": "dealdocs"
+        },
+        {
+          "attributes": [
+            "BucketName"
+          ],
+          "category": "storage",
+          "resourceName": "turbotractscontracts"
+        }
+      ],
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
+    "fetchAnvilDocumentGroup": {
+      "build": true,
+      "dependsOn": [],
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
+    "scanListingAgentContactInfos": {
+      "build": true,
+      "dependsOn": [
+        {
+          "attributes": [
+            "GraphQLAPIIdOutput"
+          ],
+          "category": "api",
+          "resourceName": "dealdocs"
+        }
+      ],
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    }
+  },
+  "hosting": {
+    "amplifyhosting": {
+      "providerPlugin": "awscloudformation",
+      "service": "amplifyhosting",
+      "type": "manual"
+    }
+  },
+  "parameters": {
+    "AMPLIFY_function_agentStatsResolver_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "agentStatsResolver"
+        }
+      ]
+    },
+    "AMPLIFY_function_agentStatsResolver_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "agentStatsResolver"
+        }
+      ]
+    },
+    "AMPLIFY_function_anvilPdfEsign_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "anvilPdfEsign"
+        }
+      ]
+    },
+    "AMPLIFY_function_anvilPdfEsign_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "anvilPdfEsign"
+        }
+      ]
+    },
+    "AMPLIFY_function_anvilPdfFill_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "anvilPdfFill"
+        }
+      ]
+    },
+    "AMPLIFY_function_anvilPdfFill_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "anvilPdfFill"
+        }
+      ]
+    },
+    "AMPLIFY_function_anvilProxy_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "anvilProxy"
+        }
+      ]
+    },
+    "AMPLIFY_function_anvilProxy_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "anvilProxy"
+        }
+      ]
+    },
+    "AMPLIFY_function_anvilProxy_secretsPathAmplifyAppId": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "anvilProxy"
+        }
+      ]
+    },
+    "AMPLIFY_function_contractPackageEmailer_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "contractPackageEmailer"
+        }
+      ]
+    },
+    "AMPLIFY_function_contractPackageEmailer_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "contractPackageEmailer"
+        }
+      ]
+    },
+    "AMPLIFY_function_contractPackageEmailer_sesFromEmail": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "contractPackageEmailer"
+        }
+      ]
+    },
+    "AMPLIFY_function_fetchAnvilDocumentGroup_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "fetchAnvilDocumentGroup"
+        }
+      ]
+    },
+    "AMPLIFY_function_fetchAnvilDocumentGroup_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "fetchAnvilDocumentGroup"
+        }
+      ]
+    },
+    "AMPLIFY_function_scanListingAgentContactInfos_agentTableName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "scanListingAgentContactInfos"
+        }
+      ]
+    },
+    "AMPLIFY_function_scanListingAgentContactInfos_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "scanListingAgentContactInfos"
+        }
+      ]
+    },
+    "AMPLIFY_function_scanListingAgentContactInfos_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "scanListingAgentContactInfos"
+        }
+      ]
+    },
+    "AMPLIFY_hosting_amplifyhosting_appId": {
+      "usedBy": [
+        {
+          "category": "hosting",
+          "resourceName": "amplifyhosting"
+        }
+      ]
+    },
+    "AMPLIFY_hosting_amplifyhosting_type": {
+      "usedBy": [
+        {
+          "category": "hosting",
+          "resourceName": "amplifyhosting"
+        }
+      ]
+    }
+  },
+  "storage": {
+    "turbotractscontracts": {
+      "dependsOn": [],
+      "providerPlugin": "awscloudformation",
+      "service": "S3"
+    }
+  }
+}

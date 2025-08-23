@@ -1,0 +1,7 @@
+{
+  "lambdaLayers": [],
+  "secretNames": [
+    "ANV_API_KEY"
+  ],
+  "environmentVariableList": []
+}

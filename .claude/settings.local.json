@@ -1,0 +1,45 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(npm run format:*)",
+      "Bash(npm run lint)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(npm run test:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh workflow:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(npx yaml-lint:*)",
+      "Bash(gh run watch:*)",
+      "Bash(git push:*)",
+      "Bash(git fetch:*)",
+      "Bash(amplify status:*)",
+      "Bash(grep:*)",
+      "Bash(amplify env:*)",
+      "Bash(amplify:*)",
+      "Bash(aws configure:*)",
+      "Bash(mv:*)",
+      "Bash(powershell:*)",
+      "Bash(cp:*)",
+      "WebFetch(domain:docs.amplify.aws)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(node:*)",
+      "Bash(npm i)",
+      "Bash(npm audit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "Bash(aws ssm get-parameter:*)",
+      "Bash(git restore:*)"
+    ],
+    "deny": [],
+    "ask": [],
+    "additionalDirectories": [
+      "C:\\"
+    ]
+  }
+}

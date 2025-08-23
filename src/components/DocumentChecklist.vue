@@ -1,0 +1,222 @@
+<template>
+  <div class="document-checklist">
+    <DataView :value="documents" layout="list" data-key="name">
+      <template #header>
+        <h2 class="text-xl font-semibold mb-4">Document Checklist</h2>
+      </template>
+      <template #list="slotProps">
+        <div class="flex flex-col divide-y divide-gray-200">
+          <div v-for="(doc, index) in slotProps.items" :key="index">
+            <div
+              class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 hover:bg-gray-50 gap-3"
+            >
+              <div class="flex items-center">
+                <div class="font-medium text-base sm:text-lg text-gray-900">
+                  {{ doc.name }}
+                </div>
+              </div>
+              <div
+                v-if="doc.exists"
+                class="flex items-center text-green-600 bg-green-50 px-3 py-1 rounded-full text-xs sm:text-sm w-full sm:w-auto justify-center sm:justify-start"
+              >
+                <i class="pi pi-check text-xs sm:text-sm"></i>
+                <span
+                  class="ml-2 font-medium truncate max-w-[200px] sm:whitespace-normal sm:overflow-visible sm:max-w-full"
+                  >{{ doc.filename }}</span
+                >
+              </div>
+              <div
+                v-else
+                class="flex items-center text-red-600 bg-red-50 px-3 py-1 rounded-full text-xs sm:text-sm w-full sm:w-auto justify-center sm:justify-start"
+              >
+                <i class="pi pi-times text-xs sm:text-sm"></i>
+                <span class="ml-2 font-medium">Not uploaded</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+    </DataView>
+  </div>
+</template>
+
+<script lang="ts">
+import { defineComponent, ref, onMounted, watch } from "vue";
+import { useStore } from "vuex";
+
+export default defineComponent({
+  name: "DocumentChecklist",
+  emits: ["checklist-status", "files-for-agent-email"],
+  setup(_, { emit }) {
+    const store = useStore();
+    const documents = ref([
+      {
+        name: "Residential Resale Contract",
+        bucket: "etch-packets",
+        formId: "residential_resale_contract",
+        exists: false,
+        filename: null,
+        filekey: null,
+      },
+      {
+        name: "HOA Addendum",
+        bucket: "etch-packets",
+        formId: "homeowners_addendum",
+        exists: false,
+        filename: null,
+        filekey: null,
+        showIf: (formData) =>
+          formData.homeownersAssociationAddendum?.hasHomeownersAssociation,
+      },
+      {
+        name: "Third Party Financing Addendum",
+        bucket: "etch-packets",
+        formId: "third_party_finance_addendum",
+        exists: false,
+        filename: null,
+        filekey: null,
+        showIf: (formData) =>
+          formData.finance?.financingType === "BYTHIRDPARTY",
+      },
+      {
+        name: "Lender Appraisal Termination Addendum",
+        bucket: "etch-packets",
+        formId: "lender_appraisal_termination_addendum",
+        exists: false,
+        filename: null,
+        filekey: null,
+        showIf: (formData) => {
+          const hasThirdPartyFinancing =
+            formData.finance?.financingType === "BYTHIRDPARTY";
+          const loanType = formData.finance?.loanType;
+          return (
+            hasThirdPartyFinancing &&
+            !["FHA", "VA", "VAGUARANTEED"].includes(loanType)
+          );
+        },
+      },
+      {
+        name: "Pre Approval Letter",
+        bucket: "preapproval",
+        exists: false,
+        filename: null,
+        filekey: null,
+      },
+      {
+        name: "Proof of Earnest Money Check",
+        bucket: "earnest",
+        exists: false,
+        filename: null,
+        filekey: null,
+      },
+      {
+        name: "Proof of Option Fee Check",
+        bucket: "optionfee",
+        exists: false,
+        filename: null,
+        filekey: null,
+      },
+    ]);
+
+    const updateDocumentStatus = () => {
+      const filteredDocuments = documents.value.filter(
+        (doc) => !doc.showIf || doc.showIf(store.state.formData),
+      );
+
+      filteredDocuments.forEach((doc) => {
+        if (doc.bucket === "etch-packets") {
+          const completedEtchPackets = store.state.etchPackets.filter(
+            (packet) =>
+              packet.documentGroup.signers.every(
+                (signer) => signer.status === "completed",
+              ),
+          );
+          if (completedEtchPackets.length > 0) {
+            const latestEtchPacket =
+              completedEtchPackets[completedEtchPackets.length - 1];
+            const signers = latestEtchPacket.documentGroup.signers;
+
+            // Find any uploadKey that contains the formId
+            const uploadKey = signers.reduce((found, signer) => {
+              if (found) return found;
+              return signer.uploadKeys?.find((key) => key.includes(doc.formId));
+            }, null);
+            const name = uploadKey ? uploadKey.split("/").pop() : null;
+
+            if (uploadKey) {
+              doc.exists = true;
+              doc.filename = name;
+              doc.filekey = uploadKey;
+            } else {
+              doc.exists = false;
+              doc.filename = null;
+              doc.filekey = null;
+            }
+          } else {
+            doc.exists = false;
+            doc.filename = null;
+            doc.filekey = null;
+          }
+        } else {
+          // Update this section to use the new getter
+          const uploadedDoc = store.getters.getUploadedDocument(doc.bucket);
+          if (uploadedDoc && uploadedDoc.isUploaded) {
+            doc.exists = true;
+            doc.filename = uploadedDoc.name;
+            doc.filekey = uploadedDoc.key;
+          } else {
+            doc.exists = false;
+            doc.filename = null;
+            doc.filekey = null;
+          }
+        }
+      });
+      const allDocumentsExist = documents.value.every((doc) => doc.exists);
+      emit("checklist-status", allDocumentsExist);
+      emit(
+        "files-for-agent-email",
+        documents.value.filter((doc) => doc.exists),
+      );
+    };
+
+    watch(
+      [
+        () => store.state.uploadedDocuments,
+        () => store.state.etchPackets,
+        () => store.state.formData,
+      ],
+      () => {
+        updateDocumentStatus();
+      },
+      { deep: true },
+    );
+
+    onMounted(() => {
+      updateDocumentStatus();
+    });
+
+    return {
+      documents,
+    };
+  },
+});
+</script>
+<style scoped>
+.document-checklist {
+  margin-bottom: 20px;
+}
+
+.document-name {
+  margin-right: 10px;
+}
+
+.checkmark {
+  color: green;
+  font-size: 20px;
+}
+
+.cross {
+  color: red;
+  font-size: 20px;
+}
+</style>

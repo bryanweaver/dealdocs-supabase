@@ -1,0 +1,12 @@
+{
+  "AppSyncApiName": "dealdocs",
+  "DynamoDBBillingMode": "PAY_PER_REQUEST",
+  "DynamoDBEnableServerSideEncryption": false,
+  "AuthModeLastUpdated": "2025-04-27T17:53:07.818Z",
+  "AuthCognitoUserPoolId": {
+    "Fn::GetAtt": [
+      "authdealdocsef4d1e4c",
+      "Outputs.UserPoolId"
+    ]
+  }
+}

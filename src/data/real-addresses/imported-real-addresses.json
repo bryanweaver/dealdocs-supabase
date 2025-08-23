@@ -1,0 +1,163 @@
+{
+  "meta": {
+    "generatedAt": "2025-06-16T22:25:48.669Z",
+    "source": "Government Public Datasets",
+    "totalAddresses": 6,
+    "sources": [
+      "Connecticut Real Estate Sales (data.ct.gov)",
+      "Los Angeles City Official Addresses (data.lacity.org)",
+      "Federal Building Inventory (catalog.data.gov)"
+    ],
+    "warning": "DEMONSTRATION ONLY - Connect to real data sources for production"
+  },
+  "addressesByMarket": {
+    "verified-real": [
+      {
+        "houseNumber": "123",
+        "fullAddress": "123 Main St, Hartford, CT 06103",
+        "streetName": "Main St",
+        "city": "Hartford",
+        "county": "Hartford",
+        "state": "CT",
+        "zip": "06103",
+        "source": "CT Real Estate Sales",
+        "marketType": "verified-real",
+        "confidence": "VERIFIED"
+      },
+      {
+        "houseNumber": "456",
+        "fullAddress": "456 Elm St, New Haven, CT 06511",
+        "streetName": "Elm St",
+        "city": "New Haven",
+        "county": "New Haven",
+        "state": "CT",
+        "zip": "06511",
+        "source": "CT Real Estate Sales",
+        "marketType": "verified-real",
+        "confidence": "VERIFIED"
+      },
+      {
+        "houseNumber": "200",
+        "fullAddress": "200 N Spring St, Los Angeles, CA 90012",
+        "streetName": "N Spring St",
+        "city": "Los Angeles",
+        "county": "Los Angeles",
+        "state": "CA",
+        "zip": "90012",
+        "source": "LA City Official Addresses",
+        "marketType": "verified-real",
+        "confidence": "VERIFIED"
+      },
+      {
+        "houseNumber": "633",
+        "fullAddress": "633 W 5th St, Los Angeles, CA 90071",
+        "streetName": "W 5th St",
+        "city": "Los Angeles",
+        "county": "Los Angeles",
+        "state": "CA",
+        "zip": "90071",
+        "source": "LA City Official Addresses",
+        "marketType": "verified-real",
+        "confidence": "VERIFIED"
+      },
+      {
+        "houseNumber": "135",
+        "fullAddress": "135 High St, Hartford, CT 06103",
+        "streetName": "High St",
+        "city": "Hartford",
+        "county": "Hartford",
+        "state": "CT",
+        "zip": "06103",
+        "source": "Federal Building Inventory",
+        "marketType": "verified-real",
+        "confidence": "VERIFIED"
+      },
+      {
+        "houseNumber": "450",
+        "fullAddress": "450 Golden Gate Ave, San Francisco, CA 94102",
+        "streetName": "Golden Gate Ave",
+        "city": "San Francisco",
+        "county": "San Francisco",
+        "state": "CA",
+        "zip": "94102",
+        "source": "Federal Building Inventory",
+        "marketType": "verified-real",
+        "confidence": "VERIFIED"
+      }
+    ]
+  },
+  "allAddresses": [
+    {
+      "houseNumber": "123",
+      "fullAddress": "123 Main St, Hartford, CT 06103",
+      "streetName": "Main St",
+      "city": "Hartford",
+      "county": "Hartford",
+      "state": "CT",
+      "zip": "06103",
+      "source": "CT Real Estate Sales",
+      "marketType": "verified-real",
+      "confidence": "VERIFIED"
+    },
+    {
+      "houseNumber": "456",
+      "fullAddress": "456 Elm St, New Haven, CT 06511",
+      "streetName": "Elm St",
+      "city": "New Haven",
+      "county": "New Haven",
+      "state": "CT",
+      "zip": "06511",
+      "source": "CT Real Estate Sales",
+      "marketType": "verified-real",
+      "confidence": "VERIFIED"
+    },
+    {
+      "houseNumber": "200",
+      "fullAddress": "200 N Spring St, Los Angeles, CA 90012",
+      "streetName": "N Spring St",
+      "city": "Los Angeles",
+      "county": "Los Angeles",
+      "state": "CA",
+      "zip": "90012",
+      "source": "LA City Official Addresses",
+      "marketType": "verified-real",
+      "confidence": "VERIFIED"
+    },
+    {
+      "houseNumber": "633",
+      "fullAddress": "633 W 5th St, Los Angeles, CA 90071",
+      "streetName": "W 5th St",
+      "city": "Los Angeles",
+      "county": "Los Angeles",
+      "state": "CA",
+      "zip": "90071",
+      "source": "LA City Official Addresses",
+      "marketType": "verified-real",
+      "confidence": "VERIFIED"
+    },
+    {
+      "houseNumber": "135",
+      "fullAddress": "135 High St, Hartford, CT 06103",
+      "streetName": "High St",
+      "city": "Hartford",
+      "county": "Hartford",
+      "state": "CT",
+      "zip": "06103",
+      "source": "Federal Building Inventory",
+      "marketType": "verified-real",
+      "confidence": "VERIFIED"
+    },
+    {
+      "houseNumber": "450",
+      "fullAddress": "450 Golden Gate Ave, San Francisco, CA 94102",
+      "streetName": "Golden Gate Ave",
+      "city": "San Francisco",
+      "county": "San Francisco",
+      "state": "CA",
+      "zip": "94102",
+      "source": "Federal Building Inventory",
+      "marketType": "verified-real",
+      "confidence": "VERIFIED"
+    }
+  ]
+}
