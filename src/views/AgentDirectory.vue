@@ -542,7 +542,7 @@
 <script>
 import { ref, onMounted, computed, watch } from "vue";
 import { useStore } from "vuex";
-import { AgentAPI, StatsAPI } from "@/services/api.js";
+import { AgentAPI } from "@/services/api.js";
 import { formatDate } from "@/utils/dateUtils";
 import debounce from "lodash/debounce";
 
@@ -566,74 +566,8 @@ const formatAgent = (agent) => {
 
 // Ensure formatAgent is used
 console.log('formatAgent function available:', typeof formatAgent === 'function');
-const getAgentCountsBySourceQuery = /* GraphQL */ `
-  query GetAgentCountsBySource($source: String!) {
-    listListingAgentContactInfos(
-      filter: { source: { eq: $source } }
-      limit: 1
-    ) {
-      items {
-        id: agent.id,
-      }
-      nextToken
-    }
-  }
-`;
-
 // Query for search
-const searchAgentsQuery = /* GraphQL */ `
-  query SearchAgents(
-    $filter: ModelListingAgentContactInfoFilterInput
-    $limit: Int
-  ) {
-    listListingAgentContactInfos(filter: $filter, limit: $limit) {
-      items {
-        id: agent.id,
-        name: agent.name,
-        agencyName: agent.agencyName,
-        profileUrl: agent.profileUrl,
-        phoneNumbers: agent.phoneNumbers,
-        emailAddresses: agent.emailAddresses,
-        source: agent.source,
-        importDate: agent.importDate,
-        metaData: agent.metaData,
-        createdAt: agent.createdAt,
-        updatedAt: agent.updatedAt,
-      }
-    }
-  }
-`;
-
 // Add the new scan query for Lambda-backed scan
-const scanListingAgentContactInfosQuery = /* GraphQL */ `
-  query ScanListingAgentContactInfos(
-    $query: String!
-    $limit: Int
-    $nextToken: String
-  ) {
-    scanListingAgentContactInfos(
-      query: $query
-      limit: $limit
-      nextToken: $nextToken
-    ) {
-      items {
-        id: agent.id,
-        name: agent.name,
-        agencyName: agent.agencyName,
-        profileUrl: agent.profileUrl,
-        phoneNumbers: agent.phoneNumbers,
-        emailAddresses: agent.emailAddresses,
-        source: agent.source,
-        importDate: agent.importDate,
-        metaData: agent.metaData,
-        createdAt: agent.createdAt,
-        updatedAt: agent.updatedAt,
-      }
-      nextToken
-    }
-  }
-`;
-
 export default {
   name: "AgentDirectory",
   setup() {
@@ -824,7 +758,6 @@ export default {
               source: source.key.toUpperCase(),
               limit: 999
             });
-            const convertedResp = { data: { listListingAgentContactInfos: { items: uppercaseResp } } };
 
             if (
               uppercaseResp.data?.listListingAgentContactInfos?.items?.length >
@@ -869,7 +802,7 @@ export default {
             // Search for agents with sources not in our dashboard list
             limit: 999
           });
-          const convertedOtherResp = { data: { listListingAgentContactInfos: { items: otherSourcesResp } } };
+          
           // Note: Complex filtering logic would need to be reimplemented in service layer
 
           if (otherSourcesResp.data?.listListingAgentContactInfos?.items) {
@@ -891,7 +824,7 @@ export default {
         // Also get a total count
         try {
           const totalResp = await AgentAPI.list({ limit: 1 });
-          const convertedTotalResp = { data: { listListingAgentContactInfos: { items: totalResp } } };
+          
 
           console.log(
             "Sample item:",
@@ -920,7 +853,6 @@ export default {
       loading.value = true;
       try {
         await store.dispatch("fetchAgentContactCounts", {
-          client,
           sources: dashboardSources.map((s) => s.key),
         });
         console.log("Store counts:", store.getters.getAgentContactCounts);
@@ -1009,7 +941,7 @@ export default {
           searchQuery.value || '',
           100
         );
-        const convertedResp = { data: { listListingAgentContactInfos: { items: resp } } };
+        
 
         console.log("Raw search response:", resp);
 
@@ -1056,7 +988,7 @@ export default {
           '',
           100
         );
-        const convertedResp = { data: { listListingAgentContactInfos: { items: resp } } };
+        
 
         if (resp.data?.listListingAgentContactInfos?.items) {
           searchResults.value = resp.data.listListingAgentContactInfos.items;

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+defineOptions({ name: "AuthComponent" })
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { AuthService } from "@/services/auth.js";
