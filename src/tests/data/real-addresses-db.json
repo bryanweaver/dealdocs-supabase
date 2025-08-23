@@ -1,30 +1,6 @@
 {
   "addresses": [
     {
-      "id": "2301-sample-1",
-      "address": "2301 Main St, Houston",
-      "houseNumber": "2301",
-      "source": "Sample",
-      "scrapedAt": "2025-06-17T15:50:00.000Z",
-      "method": "manual-sample"
-    },
-    {
-      "id": "4567-sample-2",
-      "address": "4567 Oak Ave, Houston",
-      "houseNumber": "4567",
-      "source": "Sample",
-      "scrapedAt": "2025-06-17T15:50:00.000Z",
-      "method": "manual-sample"
-    },
-    {
-      "id": "8910-sample-3",
-      "address": "8910 Pine St, Houston",
-      "houseNumber": "8910",
-      "source": "Sample",
-      "scrapedAt": "2025-06-17T15:50:00.000Z",
-      "method": "manual-sample"
-    },
-    {
       "id": "1122-sample-4",
       "address": "1122 Elm Dr, Houston",
       "houseNumber": "1122",
@@ -34,9 +10,9 @@
     }
   ],
   "metadata": {
-    "totalUntestedAddresses": 4,
+    "totalUntestedAddresses": 1,
     "lastScrapingSession": "2025-06-17T15:50:00.000Z",
-    "lastUpdated": "2025-06-17T15:50:00.000Z",
-    "nextAvailableForTesting": 4
+    "lastUpdated": "2025-08-23T23:23:36.458Z",
+    "nextAvailableForTesting": 1
   }
 }

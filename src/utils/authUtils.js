@@ -4,11 +4,8 @@
 // AuthService import removed - not used in this file
 import { getUser } from "@/lib/supabase.js";
 
-// Hardcoded admin user ID (update this to match Supabase user ID)
-const ADMIN_USER_ID = "79ff44e1-9e1b-47cd-9bbd-f848415a4883";
-
 /**
- * Check if the current user is an admin based on hardcoded user ID
+ * Check if the current user is an admin based on user metadata role
  * @returns {Promise<boolean>} True if user is an admin, false otherwise
  */
 export const isUserInAdminGroup = async () => {
@@ -21,8 +18,9 @@ export const isUserInAdminGroup = async () => {
       return false;
     }
 
-    // Check if user's ID matches the admin ID
-    return user.id === ADMIN_USER_ID;
+    // Check if user has admin role in user metadata
+    const userRole = user.user_metadata?.role || user.app_metadata?.role || 'user';
+    return userRole === 'admin';
   } catch (error) {
     console.error("Error checking admin status:", error);
     return false;

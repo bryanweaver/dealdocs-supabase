@@ -573,7 +573,7 @@ const getAgentCountsBySourceQuery = /* GraphQL */ `
       limit: 1
     ) {
       items {
-        id
+        id: agent.id,
       }
       nextToken
     }
@@ -588,17 +588,17 @@ const searchAgentsQuery = /* GraphQL */ `
   ) {
     listListingAgentContactInfos(filter: $filter, limit: $limit) {
       items {
-        id
-        name
-        agencyName
-        profileUrl
-        phoneNumbers
-        emailAddresses
-        source
-        importDate
-        metaData
-        createdAt
-        updatedAt
+        id: agent.id,
+        name: agent.name,
+        agencyName: agent.agencyName,
+        profileUrl: agent.profileUrl,
+        phoneNumbers: agent.phoneNumbers,
+        emailAddresses: agent.emailAddresses,
+        source: agent.source,
+        importDate: agent.importDate,
+        metaData: agent.metaData,
+        createdAt: agent.createdAt,
+        updatedAt: agent.updatedAt,
       }
     }
   }
@@ -617,17 +617,17 @@ const scanListingAgentContactInfosQuery = /* GraphQL */ `
       nextToken: $nextToken
     ) {
       items {
-        id
-        name
-        agencyName
-        profileUrl
-        phoneNumbers
-        emailAddresses
-        source
-        importDate
-        metaData
-        createdAt
-        updatedAt
+        id: agent.id,
+        name: agent.name,
+        agencyName: agent.agencyName,
+        profileUrl: agent.profileUrl,
+        phoneNumbers: agent.phoneNumbers,
+        emailAddresses: agent.emailAddresses,
+        source: agent.source,
+        importDate: agent.importDate,
+        metaData: agent.metaData,
+        createdAt: agent.createdAt,
+        updatedAt: agent.updatedAt,
       }
       nextToken
     }
@@ -791,7 +791,7 @@ export default {
       }
     };
 
-    // Fetch counts directly from DynamoDB for each source
+    // Fetch counts directly from DynamoDB for each source: agent.source,
     const fetchManualCounts = async () => {
       loading.value = true;
       statusMessage.value = "Fetching agent counts directly from database...";
@@ -1085,29 +1085,8 @@ export default {
       searchedOnce.value = true;
       searchResults.value = [];
       try {
-        // Use AgentAPI to search by name
-        const agents = await AgentAPI.search(nameQuery.value, 100);
-        const resp = {
-          data: {
-            listListingAgentContactInfosByName: {
-              items: agents.map(agent => ({
-                  id
-                  name
-                  agencyName
-                  profileUrl
-                  phoneNumbers
-                  emailAddresses
-                  source
-                  importDate
-                  metaData
-                  createdAt
-                  updatedAt
-                }
-              }
-            }
-          `,
-          variables: { name: exactNameQuery.value.trim() },
-        });
+        // Use AgentAPI to search by name: agent.name,
+        const agents = await AgentAPI.search(exactNameQuery.value, 100);        const resp = {          data: {            listListingAgentContactInfosByName: {              items: agents            }          }        };
         const items =
           resp.data?.listListingAgentContactInfosByName?.items || [];
         searchResults.value = items;
@@ -1154,8 +1133,9 @@ export default {
               scanListingAgentContactInfos: {
                 items: agents,
                 nextToken: null // Simplified for now
-            },
-          });
+              }
+            }
+          };
           if (scanCancelToken.cancelled) break; // <-- ADD THIS CHECK
           const items = resp.data?.scanListingAgentContactInfos?.items || [];
           searchResults.value.push(...items);

@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { encode } from 'https://deno.land/std@0.168.0/encoding/hex.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,6 +37,8 @@ serve(async (req) => {
     
     // Verify webhook signature if configured
     const webhookSecret = Deno.env.get('ANVIL_WEBHOOK_SECRET')
+    let body: string = ''
+    
     if (webhookSecret) {
       const signature = req.headers.get('x-anvil-signature')
       if (!signature) {
@@ -43,15 +46,19 @@ serve(async (req) => {
         return new Response('Unauthorized', { status: 401 })
       }
       
-      // TODO: Implement signature verification
-      // const body = await req.text()
-      // const expectedSignature = await generateSignature(body, webhookSecret)
-      // if (signature !== expectedSignature) {
-      //   return new Response('Invalid signature', { status: 401 })
-      // }
+      // Get the raw body for signature verification
+      body = await req.text()
+      
+      // Verify signature using HMAC-SHA256
+      const expectedSignature = await generateSignature(body, webhookSecret)
+      if (signature !== expectedSignature) {
+        console.error('Invalid webhook signature')
+        return new Response('Invalid signature', { status: 401 })
+      }
+      console.log('Webhook signature verified successfully')
     }
     
-    const payload: AnvilWebhookPayload = await req.json()
+    const payload: AnvilWebhookPayload = body ? JSON.parse(body) : await req.json()
     console.log('Webhook payload:', JSON.stringify(payload, null, 2))
     
     if (!payload.event || !payload.data?.eid) {
@@ -301,4 +308,27 @@ async function sendStatusNotification(
   } else {
     console.error('Failed to send notification:', await response.text())
   }
+}
+
+/**
+ * Generate HMAC-SHA256 signature for webhook verification
+ * @param payload - The raw request body as string
+ * @param secret - The webhook secret
+ * @returns Promise<string> - The hexadecimal signature
+ */
+async function generateSignature(payload: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const keyData = encoder.encode(secret)
+  const messageData = encoder.encode(payload)
+  
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+  
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData)
+  return encode(new Uint8Array(signature))
 }

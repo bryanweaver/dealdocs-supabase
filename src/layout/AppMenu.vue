@@ -5,7 +5,6 @@ import AppMenuItem from "./AppMenuItem.vue";
 import { useStore } from "vuex";
 import { useLayout } from "@/layout/composables/layout";
 import { isUserInAdminGroup } from "@/utils/authUtils";
-// import { useAuthenticator } from "@aws-amplify/ui-vue";
 
 const store = useStore();
 const route = useRoute();
