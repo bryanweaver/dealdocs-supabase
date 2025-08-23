@@ -785,9 +785,8 @@
 </template>
 
 <script lang="ts">
-import { generateClient } from "aws-amplify/api";
 import axios from "axios";
-import { createContract } from "../graphql/mutations";
+import { ContractAPI } from "@/services/api.js";
 import Button from "primevue/button";
 import ProgressSpinner from "primevue/progressspinner";
 import Card from "primevue/card";
@@ -808,7 +807,7 @@ const apikey = import.meta.env.VITE_DATAFINITY_API_KEY;
 const propertyEndpoint = import.meta.env.VITE_DATAFINITY_API_URL;
 const isLocal = import.meta.env.VITE_LOCAL_PROPERTY_DATA === "true";
 
-const client = generateClient();
+// Removed generateClient - using ContractAPI instead
 export default {
   name: "PropertyData",
   components: {
@@ -1183,20 +1182,19 @@ export default {
         );
         console.log("Listing agent for contract:", this.listingAgent);
 
-        const response = await client.graphql({
-          query: createContract,
-          variables: {
-            input: {
-              accountContractId: this.$store.state.accountId,
-              property,
-              sellers,
-              listingAgent: this.listingAgent,
-            },
-          },
-        });
+        const contractData = {
+          user_id: this.$store.state.userId,
+          property_info: property,
+          parties: { sellers },
+          listing_agent: this.listingAgent,
+          status: 'draft',
+          created_at: new Date().toISOString()
+        };
+
+        const response = await ContractAPI.create(contractData);
 
         // Save the created contract ID in the Vuex store
-        this.$store.commit("setContractId", response.data.createContract.id);
+        this.$store.commit("setContractId", response.id);
 
         // also save in vuex store
         this.$store.commit("setFormDataFromContract", {
@@ -1239,17 +1237,16 @@ export default {
 
     async createContractAndNavigateWithoutData() {
       try {
-        const response = await client.graphql({
-          query: createContract,
-          variables: {
-            input: {
-              accountContractId: this.$store.state.accountId,
-            },
-          },
-        });
+        const contractData = {
+          user_id: this.$store.state.userId,
+          status: 'draft',
+          created_at: new Date().toISOString()
+        };
+
+        const response = await ContractAPI.create(contractData);
 
         // Save the created contract ID in the Vuex store
-        this.$store.commit("setContractId", response.data.createContract.id);
+        this.$store.commit("setContractId", response.id);
 
         // Navigate to the "/QuestionFlow" route
         this.$router.replace({

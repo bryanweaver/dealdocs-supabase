@@ -83,14 +83,12 @@
 <script setup>
 import { computed } from "vue";
 import Drawer from "primevue/drawer";
-import { useAuthenticator } from "@aws-amplify/ui-vue";
+import { AuthService } from "@/services/auth.js";
 import { useRouter } from "vue-router";
 import { useLayout } from "./composables/layout";
 import AppConfigurator from "./AppConfigurator.vue";
 
 const router = useRouter();
-const auth = useAuthenticator();
-const { signOut } = auth;
 const { toggleDarkMode, isDarkTheme } = useLayout();
 
 const props = defineProps({
@@ -113,7 +111,7 @@ const visible = computed({
 
 const handleLogout = async () => {
   router.push("/contracts");
-  await signOut();
+  await AuthService.signOut();
 };
 </script>
 

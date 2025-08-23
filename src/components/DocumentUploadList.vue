@@ -111,8 +111,7 @@
 </template>
 
 <script lang="ts">
-import { uploadData } from "aws-amplify/storage";
-import { getUrl, remove } from "aws-amplify/storage";
+import { StorageAPI, DocumentAPI } from "@/services/api.js";
 import { defineComponent, ref } from "vue";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
@@ -228,25 +227,37 @@ export default defineComponent({
       const key = `accounts/${this.accountId}/contracts/${this.contractId}/${this.documentType}/${now}-${file.name}`;
 
       this.uploadProgress = 0;
-      const result = await uploadData({
+      
+      // Upload file to Supabase Storage
+      const result = await StorageAPI.upload(
+        file,
         key,
-        data: file,
-        options: {
-          contentType: file.type,
-          onProgress: ({ transferredBytes, totalBytes }) => {
-            if (totalBytes) {
-              // Ensure we're calculating percentage correctly
-              const percentage = (transferredBytes / totalBytes) * 100;
-              this.uploadProgress = Math.min(Math.round(percentage), 100);
-            }
-          },
-        },
-      }).result;
+        'contracts'
+      );
+      
+      // Simulate progress for now - Supabase doesn't have built-in progress tracking
+      // You could implement this with chunked uploads if needed
+      this.uploadProgress = 100;
 
       console.log("successfully saved document", result);
+      
+      // Save document metadata to database
+      const documentRecord = {
+        contract_id: this.contractId,
+        file_path: result.path,
+        file_name: file.name,
+        file_type: file.type,
+        file_size: file.size,
+        document_type: this.documentType,
+        storage_url: result.publicUrl,
+        is_current_version: true
+      };
+      
+      const savedDoc = await DocumentAPI.create(documentRecord);
+      
       const document = {
-        key: result.key,
-        filetype: result.key.split(".").pop().toLowerCase(),
+        key: result.path,
+        filetype: result.path.split(".").pop().toLowerCase(),
         date: new Date(now).toLocaleString([], {
           year: "numeric",
           month: "numeric",
@@ -254,8 +265,9 @@ export default defineComponent({
           hour: "numeric",
           minute: "numeric",
         }),
-        name: result.key.split("/").pop().split("-").slice(1).join("-"),
+        name: result.path.split("/").pop().split("-").slice(1).join("-"),
         documentType: this.documentType,
+        id: savedDoc.id
       };
 
       this.$store.dispatch("uploadDocument", {
@@ -281,29 +293,31 @@ export default defineComponent({
       this.showDeleteDialog = false;
     },
     async openUpload(uploadKey) {
-      const signedUrlOutput = await getUrl({
-        key: uploadKey,
-        options: {
-          validateObjectExistence: true,
-        },
-      });
+      // Get public URL for the file
+      const publicUrl = StorageAPI.getPublicUrl(uploadKey, 'contracts');
       window.open(
-        signedUrlOutput.url.toString(),
-        signedUrlOutput.url.toString(),
+        publicUrl,
+        publicUrl,
         "_blank",
       );
     },
     async deleteUpload(uploadKey) {
-      await remove({
-        key: uploadKey,
-      });
-      // Instead of updating a local array,
-      // dispatch an action (or commit a mutation) so that the store updates its list.
+      // Delete from Supabase Storage
+      await StorageAPI.delete(uploadKey, 'contracts');
+      
+      // Find the document record to delete from database
+      const upload = this.uploads.find(u => u.key === uploadKey);
+      if (upload && upload.id) {
+        await DocumentAPI.delete(upload.id);
+      }
+      
+      // Update store
       this.$store.dispatch("deleteUpload", {
         documentType: this.documentType,
         uploadKey: uploadKey,
       });
-      // Optionally, you may reset the state for this document type in the store.
+      
+      // Reset the state for this document type in the store
       this.$store.dispatch("uploadDocument", {
         documentType: this.documentType,
         document: {

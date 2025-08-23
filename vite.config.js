@@ -27,19 +27,16 @@ export default defineConfig({
             "primevue/inputtext",
             "primevue/progressspinner",
           ],
-          "vendor-aws": [
-            "aws-amplify",
-            "@aws-amplify/ui-vue",
-            "aws-amplify/api",
-            "aws-amplify/auth",
+          "vendor-supabase": [
+            "@supabase/supabase-js",
           ],
           "vendor-utils": ["axios", "uuid"],
 
           // Application chunks
-          "app-graphql": [
-            "./src/API.ts",
-            "./src/graphql/mutations.ts",
-            "./src/graphql/queries.ts",
+          "app-services": [
+            "./src/services/api.js",
+            "./src/services/auth.js",
+            "./src/lib/supabase.js",
           ],
           "app-utils": [
             "./src/utils/dataMapUtils.ts",
@@ -71,7 +68,7 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ["vue", "vue-router", "vuex", "primevue/config"],
-    exclude: ["aws-amplify"],
+    exclude: [],
   },
   plugins: [
     vue(),
@@ -104,9 +101,7 @@ export default defineConfig({
         "assets/**",
         "amplify/**",
         "src/.eslintrc.cjs",
-        "src/aws-exports.js",
-        "src/API.ts",
-        "src/graphql/**",
+        "src/lib/supabase.js",
         "src/__tests__/**",
         "src/tests/**",
         "**/*.test.{js,ts}",

@@ -1,4 +1,4 @@
-import { PartyType, SurveyType } from "../../API";
+import { PartyType, SurveyType } from "../../types/enums.js";
 
 export const SurveyConfig = [
   {

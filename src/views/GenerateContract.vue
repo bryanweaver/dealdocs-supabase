@@ -81,14 +81,12 @@
 
 <script lang="ts">
 import { ref, onMounted, computed } from "vue";
-import { list, remove, getUrl } from "aws-amplify/storage";
 import { useStore } from "vuex";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import Button from "primevue/button";
 import { formatDate } from "@/utils/dateUtils";
-import { generateClient } from "aws-amplify/api";
-import { deleteEtchPacket } from "@/graphql/mutations";
+import { EtchAPI, StorageAPI } from "@/services/api.js";
 import Tag from "@/components/Tag.vue";
 
 export default {
@@ -123,58 +121,53 @@ export default {
     const selectedEtchPacketEid = ref("");
 
     const fetchEtchPackets = async () => {
-      const accountId = store.state.accountId;
       const contractId = store.state.contractId;
-      const input = {
-        prefix: `accounts/${accountId}/contracts/${contractId}/etch-packets/`,
-      };
-      const result = await list(input);
-      contracts.value = await Promise.all(
-        result.items.map(async (item) => {
-          const getUrlInput = {
-            key: item.key,
-            options: {
-              validateObjectExistence: true,
-              expiresIn: 3600 // 1 hour expiration
+      
+      try {
+        // Fetch etch packets from Supabase
+        const etchPackets = await EtchAPI.list(contractId);
+        
+        // Fetch associated files from storage
+        const contractsWithFiles = await Promise.all(
+          etchPackets.map(async (packet) => {
+            const folderPath = `accounts/${store.state.accountId}/contracts/${contractId}/etch-packets/${packet.etch_packet_id}/`;
+            
+            try {
+              const files = await StorageAPI.list(folderPath);
+              return files.map(file => ({
+                key: `${folderPath}${file.name}`,
+                filetype: file.name.split(".").pop().toLowerCase(),
+                name: new Date(packet.created_at).toLocaleString([], {
+                  year: "numeric",
+                  month: "numeric", 
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "numeric",
+                }),
+                metadata: null,
+                etchPacketEid: packet.etch_packet_id,
+              }));
+            } catch (error) {
+              console.warn('No files found for packet:', packet.etch_packet_id);
+              return [];
             }
-          };
-          const urlResult = await getUrl(getUrlInput);
-          // Note: Metadata is not available via getUrl in v6
-          const metadata = null;
-          return {
-            key: item.key,
-            filetype: item.key.split(".").pop().toLowerCase(),
-            name: new Date(item.lastModified).toLocaleString([], {
-              year: "numeric",
-              month: "numeric",
-              day: "numeric",
-              hour: "numeric",
-              minute: "numeric",
-            }),
-            metadata,
-            etchPacketEid: item.key.split("etch-packets/")[1].split("/")[0],
-          };
-        }),
-      );
-      console.log("contracts", contracts.value);
+          })
+        );
+        
+        contracts.value = contractsWithFiles.flat();
+        console.log("contracts", contracts.value);
+      } catch (error) {
+        console.error('Error fetching etch packets:', error);
+      }
     };
 
     const openContract = async (data) => {
-      const signedUrlOutputs = await Promise.all(
-        data.uploadKeys.map(async (uploadKey) => {
-          return await getUrl({
-            key: uploadKey,
-            options: {
-              validateObjectExistence: true,
-            },
-          });
-        }),
-      );
-
-      signedUrlOutputs.forEach((signedUrlOutput) => {
+      // Open contract files using Supabase Storage public URLs
+      data.uploadKeys.forEach((uploadKey) => {
+        const publicUrl = StorageAPI.getPublicUrl(uploadKey, 'contracts');
         window.open(
-          signedUrlOutput.url.toString(),
-          signedUrlOutput.url.toString(),
+          publicUrl,
+          publicUrl,
           "_blank",
         );
       });
@@ -186,48 +179,43 @@ export default {
     };
 
     const deleteEtchPacketFromDocumentDb = async (etchPacketEid) => {
-      const client = generateClient();
       // Delete the etch packet from the store
       store.commit("deleteEtchPacket", { etchPacketEid });
 
-      // Delete the etch packet from the API
+      // Delete the etch packet from Supabase
       try {
-        const deleteEtchPacketInput = {
-          input: {
-            eid: etchPacketEid,
-          },
-        };
-        await client.graphql({
-          query: deleteEtchPacket,
-          variables: deleteEtchPacketInput,
-        });
+        const etchPacket = await EtchAPI.getByEtchPacketId(etchPacketEid);
+        if (etchPacket) {
+          // In Supabase, we don't delete records, we mark them as inactive or use soft delete
+          await EtchAPI.update(etchPacket.id, {
+            status: 'deleted',
+            deleted_at: new Date().toISOString()
+          });
+        }
         console.log(
-          `Deleted etch packet from documentDB with eid: ${etchPacketEid}`,
+          `Deleted etch packet from Supabase with eid: ${etchPacketEid}`,
         );
       } catch (err) {
         console.error(
-          `Error deleting etch packet from documentDB with eid: ${etchPacketEid}`,
+          `Error deleting etch packet from Supabase with eid: ${etchPacketEid}`,
           err,
         );
       }
     };
 
     const deleteContract = async (etchPacketEid) => {
-      // Delete all contracts matching this etchPacketEid from AWS
+      // Delete all contracts matching this etchPacketEid from Supabase Storage
       const accountId = store.state.accountId;
       const contractId = store.state.contractId;
-      const prefix = `accounts/${accountId}/contracts/${contractId}/etch-packets/${etchPacketEid}/`;
+      const folderPath = `accounts/${accountId}/contracts/${contractId}/etch-packets/${etchPacketEid}/`;
 
       try {
-        const listInput = { prefix };
-        const listOutput = await list(listInput);
-
-        await Promise.all(
-          listOutput.items.map(async (item) => {
-            const deleteInput = { key: item.key };
-            await remove(deleteInput);
-          }),
-        );
+        const files = await StorageAPI.list(folderPath);
+        
+        if (files.length > 0) {
+          const filePaths = files.map(file => `${folderPath}${file.name}`);
+          await StorageAPI.delete(filePaths, 'contracts');
+        }
 
         console.log(
           `Deleted all contracts for etchPacketEid: ${etchPacketEid}`,

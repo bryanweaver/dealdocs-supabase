@@ -14,10 +14,10 @@
 
 <script setup lang="ts">
 import { useStore } from "vuex";
-import { post } from "aws-amplify/api";
 import { computed, ref } from "vue";
 import { mapAll2017Fields } from "../utils/dataMapUtils";
-import { uploadData } from "aws-amplify/storage";
+import { StorageAPI } from "@/services/api.js";
+import { AuthService } from "@/services/auth.js";
 import Button from "primevue/button";
 
 const store = useStore();
@@ -41,48 +41,31 @@ const fillPDFForm = async () => {
       textColor: "#ff0000",
       data: dataToWrite,
     };
-    const command = post({
-      apiName: "api0ca09615",
-      path: "/anvil/fill",
-      options: {
-        body: input,
-        headers: {
-          "Content-Type": "application/json",
-        },
+    // Call Supabase Edge Function for PDF filling
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/anvil-fill`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${(await AuthService.getSession())?.access_token}`
       },
+      body: JSON.stringify(input)
     });
-
-    const response = await command.response;
-    const responseBody = await response.body.json();
+    
+    const responseBody = await response.json();
     const { statusCode, data, errors } = responseBody;
 
     if (statusCode === 200) {
       const pdfArrayBuffer = new Uint8Array(data.data).buffer;
       const pdfBlob = new Blob([pdfArrayBuffer], { type: "application/pdf" });
       const now = new Date().getTime();
-      // Save the PDF to S3
-      const result = await uploadData({
-        key: `contracts/${accountId.value}/${contractId.value}/etch-packets/${now}.pdf`,
-        data: pdfBlob,
-        options: {
-          contentType: "application/pdf",
-          // accessLevel: "protected",
-          metadata: {
-            templateId,
-            templateTitle,
-          },
-          onProgress: ({ transferredBytes, totalBytes }) => {
-            if (totalBytes) {
-              console.log(
-                `Upload progress ${Math.round(
-                  (transferredBytes / totalBytes) * 100,
-                )} %`,
-              );
-            }
-          },
-        },
-      }).result;
-      console.log("Successfully saved PDF to S3:", result);
+      // Save the PDF to Supabase Storage
+      const key = `contracts/${accountId.value}/${contractId.value}/etch-packets/${now}.pdf`;
+      const result = await StorageAPI.upload(
+        pdfBlob,
+        key,
+        'contracts'
+      );
+      console.log("Successfully saved PDF to Supabase Storage:", result);
       const pdfUrl = URL.createObjectURL(pdfBlob);
       window.open(pdfUrl, "_blank");
       emit("contract-uploaded");

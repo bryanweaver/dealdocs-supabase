@@ -2,26 +2,18 @@
 // Component name for linting
 defineOptions({ name: "ContractsPage" });
 
-import { useAuthenticator } from "@aws-amplify/ui-vue";
-import {
-  accountsByOwner,
-  listContracts,
-  listEtchPackets,
-} from "../graphql/queries";
 import { ref, onMounted, computed } from "vue";
-import { generateClient } from "aws-amplify/api";
-import { createAccount, deleteContract } from "../graphql/mutations";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
 import ProgressSpinner from "primevue/progressspinner";
 import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
 import { useToast } from "primevue/usetoast";
+import { ContractAPI, EtchAPI } from "@/services/api.js";
+import { AuthService } from "@/services/auth.js";
 
-const client = generateClient();
 const store = useStore();
-const auth = useAuthenticator();
-const user = auth.user;
+const user = ref(null);
 const contracts = computed(() => {
   return store.state.contracts || [];
 });
@@ -32,60 +24,35 @@ const toast = useToast();
 
 const callCreateAccount = async (user) => {
   try {
-    const accountDetails = {
-      isPaid: false,
-      email: user.signInDetails?.loginId,
-      owner: user.userId,
-      // Add more fields as needed
-    };
-
-    const response = await client.graphql({
-      query: createAccount,
-      variables: { input: accountDetails },
-    });
-    store.commit("setAccountId", response.data.createAccount.id);
-    console.log("Account created:", response.data.createAccount);
+    // Account creation is now handled by user creation in Supabase
+    // Set the user ID as account ID for compatibility
+    store.commit("setAccountId", user.id);
+    console.log("Account ID set from user:", user.id);
   } catch (error) {
-    console.error("Error creating account:", error);
+    console.error("Error setting account:", error);
   }
 };
 
 const fetchAccountId = async (userId) => {
   try {
-    const response = await client.graphql({
-      query: accountsByOwner,
-      variables: {
-        owner: userId,
-      },
-    });
-
-    if (response.data.accountsByOwner.items.length > 0) {
-      const accountId = response.data.accountsByOwner.items[0].id;
-      store.commit("setAccountId", accountId);
-      console.log("Account ID fetched:", accountId);
-      return accountId;
-    } else {
-      console.log("Account not found for user:", userId);
-    }
+    // In Supabase version, account ID is the same as user ID
+    store.commit("setAccountId", userId);
+    console.log("Account ID set:", userId);
+    return userId;
   } catch (error) {
-    console.error("Error fetching account ID:", error);
+    console.error("Error setting account ID:", error);
   }
 };
 
-const fetchContracts = async (accountId) => {
+const fetchContracts = async () => {
   try {
-    const response = await client.graphql({
-      query: listContracts,
-      variables: {
-        filter: {
-          accountContractId: {
-            eq: accountId,
-          },
-        },
-      },
+    // Use Supabase ContractAPI instead of GraphQL
+    const contractsList = await ContractAPI.list({
+      limit: 50,
+      // Supabase handles user filtering via RLS
     });
 
-    store.commit("setContracts", response.data.listContracts.items);
+    store.commit("setContracts", contractsList);
     isLoading.value = false;
   } catch (error) {
     console.error("Error fetching contracts:", error);
@@ -95,17 +62,9 @@ const fetchContracts = async (accountId) => {
 
 const fetchEtchPackets = async (contractId) => {
   try {
-    const response = await client.graphql({
-      query: listEtchPackets,
-      variables: {
-        filter: {
-          contractId: {
-            eq: contractId,
-          },
-        },
-      },
-    });
-    store.commit("setEtchPackets", response.data.listEtchPackets);
+    // Use Supabase EtchAPI instead of GraphQL
+    const etchPackets = await EtchAPI.list(contractId);
+    store.commit("setEtchPackets", { items: etchPackets });
   } catch (error) {
     console.error("Error fetching etch packets:", error);
   }
@@ -143,14 +102,8 @@ const deleteSelectedContract = async (contractId) => {
     acceptClass: "p-button-danger",
     accept: async () => {
       try {
-        await client.graphql({
-          query: deleteContract,
-          variables: {
-            input: {
-              id: contractId,
-            },
-          },
-        });
+        // Use Supabase ContractAPI to delete contract
+        await ContractAPI.delete(contractId);
         store.commit("removeContract", contractId);
         toast.add({
           severity: "success",
@@ -172,19 +125,27 @@ const deleteSelectedContract = async (contractId) => {
 };
 
 onMounted(async () => {
-  if (user.userId) {
-    store.commit("resetStore");
-    const accountId = await fetchAccountId(user.userId);
-    if (accountId) {
-      await fetchContracts(accountId);
+  try {
+    // Get current user from Supabase
+    const currentUser = await AuthService.getUser();
+    if (currentUser) {
+      user.value = currentUser;
+      store.commit("resetStore");
+      const accountId = await fetchAccountId(currentUser.id);
+      if (accountId) {
+        await fetchContracts();
+      } else {
+        // Create account for new user
+        await callCreateAccount(currentUser);
+        // Set loading to false since new users won't have contracts yet
+        isLoading.value = false;
+      }
     } else {
-      // Create account for new user
-      await callCreateAccount(user);
-      // Set loading to false since new users won't have contracts yet
-      isLoading.value = false;
+      isLoading.value = false; // Ensure loading stops if there's no user
     }
-  } else {
-    isLoading.value = false; // Ensure loading stops if there's no user
+  } catch (error) {
+    console.error("Error in component mount:", error);
+    isLoading.value = false;
   }
 });
 </script>

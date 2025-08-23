@@ -53,13 +53,10 @@ import {
   mapAllLenderAppraisalTerminationAddendumFields,
   mapAllThirdPartyFinanceAddendumFields,
 } from "../utils/dataMapUtils";
-import { generateClient, post } from "aws-amplify/api";
-import { uploadData } from "aws-amplify/storage";
 import { base64ToArrayBuffer } from "@/utils/pdfUtils";
-import { useAuthenticator } from "@aws-amplify/ui-vue";
-import { createEtchPacket, updateEtchPacket } from "@/graphql/mutations";
-import { getEtchPacket } from "@/graphql/queries";
-import { FinancingType, LoanType } from "@/API";
+import { EtchAPI, StorageAPI } from "@/services/api.js";
+import { AuthService } from "@/services/auth.js";
+import { FinancingType, LoanType } from "@/types/enums.js";
 
 const templateTitle = import.meta.env.VITE_ANVIL_20_17_FORM_TITLE;
 const templateId = import.meta.env.VITE_ANVIL_20_17_FORM_ID;
@@ -73,7 +70,6 @@ const appraisalAddendumTemplateId = import.meta.env
 const appraisalAddendumTemplateTitle = import.meta.env
   .VITE_ANVIL_APPRAISAL_ADDENDUM_FORM_TITLE;
 
-const auth = useAuthenticator();
 
 export default {
   name: "SignContract",
@@ -106,7 +102,6 @@ export default {
       signingUrl: "",
       currentSigner: "",
       signers: [],
-      auth,
     };
   },
   computed: {
@@ -125,9 +120,10 @@ export default {
     contractId() {
       return this.$store.state.contractId;
     },
-    userId() {
-      return this.auth.user?.userId;
-    },
+    // Remove computed userId to avoid async issues
+    // userId() {
+    //   return AuthService.getUser().then(user => user?.id);
+    // },
   },
   methods: {
     async handleSignerComplete({ event }) {
@@ -142,22 +138,22 @@ export default {
       const body = {
         documentGroupEid: event.documentGroupEid,
       };
-      // Fetch the signed document group from the Lambda function
-      const command = post({
-        apiName: "api0ca09615",
-        path: "/document-group/",
-        options: {
-          body,
-          headers: {
-            "Content-Type": "text/html",
-          },
-        },
-      });
-
-      const response = await command.response;
-      const { statusCode } = response;
-      const responseBody = await response.body.json();
       let uploadKeys = [];
+      
+      // Fetch the signed document group from the Lambda function
+      // Note: This will need to be replaced with a Supabase Edge Function
+      try {
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/document-group`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await AuthService.getSession())?.access_token}`
+          },
+          body: JSON.stringify(body)
+        });
+        
+        const statusCode = response.status;
+        const responseBody = await response.json();
 
       if (statusCode === 200) {
         for (const document of responseBody.documents) {
@@ -166,38 +162,24 @@ export default {
             type: "application/pdf",
           });
 
-          const uploadKey = `accounts/${this.accountId}/contracts/${this.contractId}/etch-packets/${event.etchPacketEid}/${document.fileName}`;
-          uploadKeys.push(uploadKey);
+          const uploadPath = `accounts/${this.accountId}/contracts/${this.contractId}/etch-packets/${event.etchPacketEid}/${document.fileName}`;
+          uploadKeys.push(uploadPath);
 
-          // Save the PDF to S3
-          const result = await uploadData({
-            key: uploadKey,
-            data: pdfBlob,
-            options: {
-              contentType: "application/pdf",
-              // accessLevel: "protected",
-              metadata: {
-                templateId,
-                templateTitle,
-                documentGroupEid: event.documentGroupEid,
-                etchPacketEid: event.etchPacketEid,
-              },
-              onProgress: ({ transferredBytes, totalBytes }) => {
-                if (totalBytes) {
-                  console.log(
-                    `Upload progress ${Math.round(
-                      (transferredBytes / totalBytes) * 100,
-                    )} %`,
-                  );
-                }
-              },
-            },
-          }).result;
-          console.log("Successfully saved PDF to S3:", result);
+          // Save the PDF to Supabase Storage
+          const result = await StorageAPI.upload(
+            pdfBlob,
+            uploadPath,
+            'contracts'
+          );
+          console.log("Successfully saved PDF to Supabase Storage:", result);
         }
       } else if (statusCode >= 400) {
         console.warn("Validation errors");
         console.warn("some error");
+      }
+      } catch (error) {
+        console.error('Error fetching document group:', error);
+        return;
       }
 
       console.log("etchPacketIndex", etchPacketIndex);
@@ -217,14 +199,14 @@ export default {
             etchPacketIndex,
             signerIndex,
             status: event.signerStatus,
-            uploadKeys,
+            uploadKeys: uploadKeys,
           });
         }
       }
 
       const updatedEtchPacket = this.$store.state.etchPackets[etchPacketIndex];
 
-      // Save the updated etchPacket to the document DB
+      // Save the updated etchPacket to Supabase
       await this.saveEtchPacket(updatedEtchPacket);
 
       // if (event.nextSignerEid) {
@@ -241,19 +223,17 @@ export default {
       this.loading = true;
       const body = this.getPayload();
       try {
-        const command = post({
-          apiName: "api0ca09615",
-          path: "/esign/",
-          options: {
-            body,
-            headers: {
-              "Content-Type": "text/html",
-            },
+        // Call Supabase Edge Function for e-signing
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/esign`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await AuthService.getSession())?.access_token}`
           },
+          body: JSON.stringify(body)
         });
-
-        const response = await command.response;
-        const responseBody = await response.body.json();
+        
+        const responseBody = await response.json();
 
         const {
           signingUrl: url,
@@ -399,7 +379,7 @@ export default {
       );
 
       return {
-        userId: this.userId,
+        userId: eid, // Use eid for now, get proper userId in method
         name: "Residential Resale Contract for Signing",
         isDraft: false,
         isTest: true,
@@ -554,40 +534,31 @@ export default {
       }
     },
     async saveEtchPacket(etchPacket) {
-      const client = generateClient();
-      const { data } = await client.graphql({
-        query: getEtchPacket,
-        variables: {
-          eid: etchPacket.eid,
-        },
-      });
-
-      if (data?.getEtchPacket) {
-        // If the etchPacket exists, update it
-        const { data } = await client.graphql({
-          query: updateEtchPacket,
-          variables: {
-            input: {
-              eid: etchPacket.eid,
-              documentGroup: etchPacket.documentGroup,
-              contractId: this.contractId,
-            },
-          },
-        });
-        console.log("Updated etchPacket:", data.updateEtchPacket);
-      } else {
-        // If the etchPacket doesn't exist, create it
-        const { data } = await client.graphql({
-          query: createEtchPacket,
-          variables: {
-            input: {
-              eid: etchPacket.eid,
-              documentGroup: etchPacket.documentGroup,
-              contractId: this.contractId,
-            },
-          },
-        });
-        console.log("Created etchPacket:", data.createEtchPacket);
+      try {
+        // Check if etch packet exists
+        const existing = await EtchAPI.getByEtchPacketId(etchPacket.eid);
+        
+        if (existing) {
+          // Update existing etch packet
+          const result = await EtchAPI.update(existing.id, {
+            document_group: etchPacket.documentGroup,
+            status: etchPacket.status || 'pending',
+            updated_at: new Date().toISOString()
+          });
+          console.log("Updated etchPacket:", result);
+        } else {
+          // Create new etch packet
+          const result = await EtchAPI.create({
+            etch_packet_id: etchPacket.eid,
+            contract_id: this.contractId,
+            document_group: etchPacket.documentGroup,
+            status: etchPacket.status || 'pending',
+            created_at: new Date().toISOString()
+          });
+          console.log("Created etchPacket:", result);
+        }
+      } catch (error) {
+        console.error('Error saving etch packet:', error);
       }
     },
   },

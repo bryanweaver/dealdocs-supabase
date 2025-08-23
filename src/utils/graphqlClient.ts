@@ -1,6 +1,7 @@
-import { generateClient } from "aws-amplify/api";
+// This file is deprecated - GraphQL functionality has been migrated to Supabase
+// Legacy GraphQL client functionality is now handled by the API service layer
 
-const client = generateClient();
+import { supabase } from '@/lib/supabase';
 
 function removeTypename(obj) {
   if (Array.isArray(obj)) {
@@ -17,11 +18,14 @@ function removeTypename(obj) {
   return obj;
 }
 
+// Legacy compatibility function - redirects to Supabase
 export async function graphqlRequest(query, variables) {
+  console.warn('graphqlRequest is deprecated. Please use the API service layer instead.');
+  
+  // This is a basic compatibility layer - actual implementation should use appropriate API service
   const cleanedVariables = removeTypename(variables);
-  const response = await client.graphql({
-    query,
-    variables: cleanedVariables,
-  });
-  return response;
+  
+  // You would need to map GraphQL queries to Supabase operations here
+  // For now, we'll throw an error to encourage migration
+  throw new Error('GraphQL operations have been migrated to Supabase. Please use the API service layer.');
 }

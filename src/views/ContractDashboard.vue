@@ -102,7 +102,7 @@ import GoToQuestionsCard from "@/components/GoToQuestionsCard.vue";
 import { computed, defineComponent, onMounted } from "vue";
 import { useStore } from "vuex";
 import { useRoute, useRouter } from "vue-router";
-import { list } from "aws-amplify/storage";
+import { StorageAPI } from "@/services/api.js";
 import ContractProgressCard from "@/components/ContractProgressCard.vue";
 import DocumentStatusGrid from "./DocumentStatusGrid.vue";
 import ReferralButton from "@/components/ReferralButton.vue";
@@ -167,27 +167,25 @@ export default defineComponent({
     const fetchUploads = async () => {
       const accountId = store.state.accountId;
       const contractId = store.state.contractId;
-      const input = {
-        prefix: `accounts/${accountId}/contracts/${contractId}/`,
-      };
-      const result = await list(input);
+      const folderPrefix = `accounts/${accountId}/contracts/${contractId}/`;
+      const result = await StorageAPI.list(folderPrefix, 'contracts');
 
       // Group documents by type based on path
-      const documentsByType = result.items.reduce((acc, item) => {
-        const pathParts = item.key.split("/");
-        const documentType = pathParts[4]; // accounts/accountId/contracts/contractId/documentType/filename
+      const documentsByType = result.reduce((acc, item) => {
+        const pathParts = item.name.split("/");
+        const documentType = pathParts[pathParts.length - 2]; // Get the parent folder name as document type
 
         const document = {
-          key: item.key,
-          filetype: item.key.split(".").pop().toLowerCase(),
-          date: new Date(item.lastModified).toLocaleString([], {
+          key: `${folderPrefix}${item.name}`,
+          filetype: item.name.split(".").pop().toLowerCase(),
+          date: new Date(item.updated_at || item.created_at).toLocaleString([], {
             year: "numeric",
             month: "numeric",
             day: "numeric",
             hour: "numeric",
             minute: "numeric",
           }),
-          name: item.key.split("/").pop().split("-").slice(1).join("-"),
+          name: item.name.split("/").pop().split("-").slice(1).join("-"),
         };
 
         if (!acc[documentType]) {

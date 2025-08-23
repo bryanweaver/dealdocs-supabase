@@ -4,7 +4,8 @@ import {
   getQuestionsForSection,
   QuestionConfig,
 } from "@/config/TX/questionConfig";
-import { EtchPacket } from "@/API";
+// EtchPacket type is now handled by Supabase types
+// import { EtchPacket } from "@/API"; // Deprecated
 import { isQuestionRequired } from "@/utils/questionUtils";
 import { a } from "vitest/dist/suite-ghspeorC";
 
@@ -360,6 +361,7 @@ const initialState = {
 const store = createStore({
   state() {
     return {
+      userId: null, // Supabase user ID
       accountId: null,
       contractId: null,
       verifiedAddress: {
@@ -381,7 +383,12 @@ const store = createStore({
     };
   },
   mutations: {
+    setUserId(state, userId) {
+      state.userId = userId;
+      console.log("User ID updated:", state.userId);
+    },
     resetStore(state) {
+      state.userId = null;
       state.contractId = null;
       state.formData = initialState.formData;
       state.requiredFields = initialState.requiredFields;
@@ -850,16 +857,17 @@ const store = createStore({
         isUploaded,
       });
     },
-    async fetchAgentContactCounts({ commit }, { client, sources }) {
+    async fetchAgentContactCounts({ commit }, { sources }) {
+      const { AgentAPI } = await import("@/services/api.js");
       const counts = {};
+      
       for (const src of sources) {
         try {
-          const resp = await client.graphql({
-            query: `query CountAgentsBySource($source: String!) { countAgentsBySource(source: $source) { count } }`,
-            variables: { source: src },
-          });
-          counts[src] = resp.data?.countAgentsBySource?.count ?? 0;
+          // Use the agent list API with source filter
+          const agents = await AgentAPI.list({ source: src });
+          counts[src] = agents.length;
         } catch (e) {
+          console.error(`Error counting agents for source ${src}:`, e);
           counts[src] = 0;
         }
       }

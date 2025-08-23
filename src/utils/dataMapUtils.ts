@@ -1,12 +1,14 @@
-// Import enums from API.ts instead of DataStore models
-import { FinancingType, PartyType } from "../API";
+// Import enums from types instead of deprecated API.ts
+import { FinancingType, PartyType, LoanType, SurveyType, TerminationOnAppraisalType } from "../types/enums.js";
 import {
   all2017Fields,
   allHOAAddendumFields,
   allThirdPartyFinanceAddendumFields,
   allLenderApprovalTerminationAddendumFields,
 } from "../config/allFields30-17";
-import { LoanType, SurveyType, TerminationOnAppraisalType } from "../API";
+
+// Re-export all enums for convenience
+export { FinancingType, PartyType, LoanType, SurveyType, TerminationOnAppraisalType } from "../types/enums.js";
 import { getMonthName, formatDate } from "./dateUtils";
 
 function joinAddress(address: any) {

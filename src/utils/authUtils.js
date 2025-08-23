@@ -1,9 +1,10 @@
 /**
- * Utilities for authentication and authorization
+ * Utilities for authentication and authorization - Supabase version
  */
-import { fetchAuthSession } from "aws-amplify/auth";
+// AuthService import removed - not used in this file
+import { getUser } from "@/lib/supabase.js";
 
-// Hardcoded admin user ID
+// Hardcoded admin user ID (update this to match Supabase user ID)
 const ADMIN_USER_ID = "79ff44e1-9e1b-47cd-9bbd-f848415a4883";
 
 /**
@@ -12,17 +13,16 @@ const ADMIN_USER_ID = "79ff44e1-9e1b-47cd-9bbd-f848415a4883";
  */
 export const isUserInAdminGroup = async () => {
   try {
-    // Get the current auth session
-    const session = await fetchAuthSession();
+    // Get the current user from Supabase
+    const user = await getUser();
 
-    if (!session || !session.tokens || !session.tokens.accessToken) {
-      console.warn("No valid auth session available");
+    if (!user) {
+      console.warn("No valid user session available");
       return false;
     }
 
-    // Check if user's sub matches the admin ID by looking at the sub claim in the token payload
-    const userSub = session.tokens.accessToken.payload["sub"];
-    return userSub === ADMIN_USER_ID;
+    // Check if user's ID matches the admin ID
+    return user.id === ADMIN_USER_ID;
   } catch (error) {
     console.error("Error checking admin status:", error);
     return false;
@@ -30,35 +30,64 @@ export const isUserInAdminGroup = async () => {
 };
 
 /**
- * Get user sub (ID) of current user from JWT token
- * @returns {Promise<string|null>} User sub or null if not available
+ * Get user ID of current user
+ * @returns {Promise<string|null>} User ID or null if not available
  */
 export const getUserSub = async () => {
   try {
-    const session = await fetchAuthSession();
-    return session?.tokens?.accessToken?.payload["sub"] || null;
+    const user = await getUser();
+    return user?.id || null;
   } catch (error) {
-    console.error("Error fetching user sub:", error);
+    console.error("Error fetching user ID:", error);
     return null;
   }
 };
 
 /**
- * Get all Cognito groups for the current user
- * @returns {Promise<string[]>} Array of group names
+ * Get user role from user metadata
+ * @returns {Promise<string>} User role (admin, manager, user, readonly)
+ */
+export const getUserRole = async () => {
+  try {
+    const user = await getUser();
+    return user?.user_metadata?.role || 'user';
+  } catch (error) {
+    console.error("Error fetching user role:", error);
+    return 'user';
+  }
+};
+
+/**
+ * Check if user has specific permission based on role
+ * @returns {Promise<boolean>} True if user has permission
+ */
+export const hasPermission = async (permission) => {
+  try {
+    const role = await getUserRole();
+    
+    // Define role permissions
+    const permissions = {
+      admin: ['read', 'write', 'delete', 'manage_users', 'view_analytics'],
+      manager: ['read', 'write', 'delete', 'view_analytics'],
+      user: ['read', 'write'],
+      readonly: ['read']
+    };
+    
+    return permissions[role]?.includes(permission) || false;
+  } catch (error) {
+    console.error("Error checking user permission:", error);
+    return false;
+  }
+};
+
+/**
+ * Get user groups/roles (compatibility function)
+ * @returns {Promise<string[]>} Array of role names
  */
 export const getUserGroups = async () => {
   try {
-    // Get the current auth session
-    const session = await fetchAuthSession();
-
-    if (!session || !session.tokens || !session.tokens.accessToken) {
-      console.warn("No valid auth session available");
-      return [];
-    }
-
-    // Return the groups from the accessToken payload
-    return session.tokens.accessToken.payload["cognito:groups"] || [];
+    const role = await getUserRole();
+    return role === 'admin' ? ['admin'] : ['user'];
   } catch (error) {
     console.error("Error fetching user groups:", error);
     return [];

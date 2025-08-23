@@ -2,6 +2,7 @@ import AppLayout from "@/layout/AppLayout.vue";
 import { createRouter, createWebHashHistory } from "vue-router";
 import Auth from "@/components/Auth.vue";
 import { useStore } from "vuex";
+import { AuthService } from "@/services/auth.js";
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -155,12 +156,17 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (to.meta.requiresAuth) {
-    // Add your auth check logic here if needed
+    // Check if user is authenticated with Supabase
+    const isAuthenticated = await AuthService.isAuthenticated();
+    if (!isAuthenticated) {
+      console.log("User not authenticated, redirecting to auth");
+      return next("/auth");
+    }
 
     // Only check for contractId on routes that need it
     // Exclude the contract list page and new contract page from this check
     if (!["ContractList", "BeginContract"].includes(to.name)) {
-      const contractId = localStorage.getItem("contractId"); // or however you store the contractId
+      const contractId = localStorage.getItem("contractId");
       if (!contractId) {
         return next("/contracts");
       }
@@ -170,7 +176,7 @@ router.beforeEach(async (to, from, next) => {
   // Check for admin group membership
   if (to.meta.requiresAdminGroup) {
     try {
-      // Import and use our isUserInAdminGroup utility
+      // Import and use our updated isUserInAdminGroup utility
       const { isUserInAdminGroup } = await import("@/utils/authUtils");
 
       // Check if the user is in the admin group
