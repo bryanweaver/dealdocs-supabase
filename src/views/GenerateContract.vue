@@ -162,15 +162,21 @@ export default {
     };
 
     const openContract = async (data) => {
-      // Open contract files using Supabase Storage public URLs
-      data.uploadKeys.forEach((uploadKey) => {
-        const publicUrl = StorageAPI.getPublicUrl(uploadKey, 'contracts');
-        window.open(
-          publicUrl,
-          publicUrl,
-          "_blank",
-        );
-      });
+      // Open contract files using Supabase Storage signed URLs
+      try {
+        for (const uploadKey of data.uploadKeys) {
+          const signedUrl = await StorageAPI.getSignedUrl(uploadKey, 'contracts', 3600);
+          window.open(signedUrl, "_blank");
+        }
+      } catch (error) {
+        console.error('Error getting signed URLs:', error);
+        toast.add({
+          severity: 'error',
+          summary: 'Access Error',
+          detail: 'Unable to access the contract files. Please try again.',
+          life: 3000
+        });
+      }
     };
 
     const confirmDelete = (etchPacketEid) => {

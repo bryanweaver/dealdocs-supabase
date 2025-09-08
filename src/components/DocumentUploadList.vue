@@ -321,13 +321,19 @@ export default defineComponent({
       this.showDeleteDialog = false;
     },
     async openUpload(uploadKey) {
-      // Get public URL for the file
-      const publicUrl = StorageAPI.getPublicUrl(uploadKey, 'contracts');
-      window.open(
-        publicUrl,
-        publicUrl,
-        "_blank",
-      );
+      try {
+        // Get signed URL for private bucket access
+        const signedUrl = await StorageAPI.getSignedUrl(uploadKey, 'contracts', 3600);
+        window.open(signedUrl, "_blank");
+      } catch (error) {
+        console.error('Error getting signed URL:', error);
+        this.$toast.add({
+          severity: 'error',
+          summary: 'Access Error',
+          detail: 'Unable to access the file. Please try again.',
+          life: 3000
+        });
+      }
     },
     async deleteUpload(uploadKey) {
       // Delete from Supabase Storage

@@ -361,11 +361,23 @@ export const StorageAPI = {
   },
 
   getPublicUrl(path, bucket = 'contracts') {
+    // For private buckets like 'contracts', we should use signed URLs
+    // This method is kept for compatibility but should be replaced with getSignedUrl
     const { data } = supabase.storage
       .from(bucket)
       .getPublicUrl(path)
     
     return data.publicUrl
+  },
+
+  async getSignedUrl(path, bucket = 'contracts', expiresIn = 3600) {
+    // Use signed URLs for private bucket access
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, expiresIn)
+    
+    if (error) throw error
+    return data.signedUrl
   }
 }
 
