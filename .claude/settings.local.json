@@ -60,7 +60,8 @@
       "Bash(npx playwright test:*)",
       "WebFetch(domain:docs.datafiniti.co)",
       "Bash(git log:*)",
-      "Bash(npm ls:*)"
+      "Bash(npm ls:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": [],
