@@ -16,78 +16,60 @@
 
           <div v-else>
             <div v-if="propertyData" class="space-y-6">
-              <!-- Address and Image side by side container -->
-              <div
-                class="flex flex-col md:flex-row md:items-start md:space-x-6 space-y-4 md:space-y-0"
-              >
-                <div class="md:flex-1">
-                  <div
-                    class="address-container bg-white p-4 rounded-lg border border-gray-200 shadow-sm"
-                  >
-                    <div class="flex items-start">
-                      <div class="flex-shrink-0 mt-1 mr-3 text-primary">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1113.314 0z"
-                          />
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
-                      </div>
-                      <div>
-                        <h2
-                          class="text-xl sm:text-2xl font-bold text-gray-900 leading-tight"
-                        >
-                          {{ propertyData.streetAddress }}
-                        </h2>
-                        <p class="text-gray-600 text-lg mt-1">
-                          {{ propertyData.city }}, {{ propertyData.state }}
-                          {{ propertyData.postalCode }}
-                        </p>
-                        <!-- Price displayed prominently -->
-                        <div class="mt-2 mb-2">
-                          <span class="text-2xl font-bold text-primary"
-                            >${{
-                              propertyData.mostRecentPriceAmount ||
-                              propertyData.price
-                            }}</span
-                          >
-                        </div>
-                        <div class="flex mt-3 items-center space-x-2">
-                          <span
-                            v-if="propertyData.mlsNumber"
-                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800"
-                          >
-                            MLS# {{ propertyData.mlsNumber }}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <!-- Property Images Gallery at the top (like PropertyData.vue) -->
+              <div v-if="propertyData.imageUrl || propertyData.imageUrls?.length > 0 || propertyData.imageURLs?.length > 0" class="mb-8">
+                <PropertyImageGallery 
+                  :images="propertyData.imageUrls || propertyData.imageURLs || (propertyData.imageUrl ? [propertyData.imageUrl] : [])"
+                />
+              </div>
 
-                <div v-if="propertyData.imageUrl" class="md:flex-1">
-                  <div
-                    class="overflow-hidden rounded-lg shadow-sm border border-gray-200 transition-all duration-200 hover:shadow-md"
-                  >
-                    <img
-                      :src="propertyData.imageUrl"
-                      class="w-full h-auto object-cover rounded-lg transform transition-transform duration-300 hover:scale-105"
-                      alt="Property"
-                    />
+              <!-- Address section below images -->
+              <div class="address-container bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <div class="flex items-start">
+                  <div class="flex-shrink-0 mt-1 mr-3 text-primary">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1113.314 0z"
+                      />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
+                      {{ propertyData.streetAddress }}
+                    </h2>
+                    <p class="text-gray-600 text-lg mt-1">
+                      {{ propertyData.city }}, {{ propertyData.state }}
+                      {{ propertyData.postalCode }}
+                    </p>
+                    <!-- Price displayed prominently -->
+                    <div class="mt-2 mb-2">
+                      <span class="text-2xl font-bold text-primary">
+                        ${{ propertyData.mostRecentPriceAmount || propertyData.price }}
+                      </span>
+                    </div>
+                    <div class="flex mt-3 items-center space-x-2">
+                      <span
+                        v-if="propertyData.mlsNumber"
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800"
+                      >
+                        MLS# {{ propertyData.mlsNumber }}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -308,12 +290,14 @@
 <script lang="ts">
 import ProgressSpinner from "primevue/progressspinner";
 import Card from "primevue/card";
+import PropertyImageGallery from "@/components/PropertyImageGallery.vue";
 
 export default {
   name: "PropertyView",
   components: {
     ProgressSpinner,
     Card,
+    PropertyImageGallery,
   },
   data() {
     return {
@@ -347,6 +331,13 @@ export default {
           console.log("Agent data loaded:", this.listingAgentData);
         } else {
           console.error("No property data found in store");
+          console.error("Available form data sections:", Object.keys(formData || {}));
+          
+          // If no property data in formData, the contract wasn't properly loaded
+          // This indicates the selectContract transformation didn't work properly
+          if (this.contractId) {
+            console.error("Contract ID exists but no property data. This suggests a data mapping issue.");
+          }
         }
       } catch (error) {
         console.error("Error loading property data:", error);

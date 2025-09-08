@@ -32,7 +32,7 @@ const handleSignOut = async () => {
   localStorage.removeItem("loginTimestamp");
   await AuthService.signOut();
   isAuthenticated.value = false;
-  router.push("/auth");
+  window.location.href = "/#/auth"; // Force reload to auth page
 };
 
 onMounted(async () => {

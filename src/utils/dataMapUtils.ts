@@ -1066,16 +1066,56 @@ export function mapAllLenderAppraisalTerminationAddendumFields(formData: any) {
 }
 
 export function mapDatafinityResponseToPropertyData(propertyData: any) {
+  // Try to extract lot, block, and legal description from various sources
+  let lot = "";
+  let block = "";
+  let legalDescription = "";
+  
+  // First try: Check features array (if it exists)
+  if (propertyData?.features) {
+    lot = propertyData.features.find?.(
+      (feature) => feature.key === "legalLotNumber1",
+    )?.value?.[0] || "";
+    block = propertyData.features.find?.((feature) => feature.key === "legalBlock1")
+      ?.value?.[0] || "";
+  }
+  
+  // Second try: Check if legalDescription exists at root level
+  if (propertyData?.legalDescription) {
+    legalDescription = propertyData.legalDescription;
+  }
+  
+  // Third try: Look for legal description in descriptions array
+  // Look for description that matches pattern like "LT 5 BLK 4 PARKVIEW WEST SEC 1"
+  if (propertyData?.descriptions) {
+    const legalDesc = propertyData.descriptions.find((desc) => {
+      const value = desc.value || "";
+      // Look for patterns like "LT X BLK Y" which indicates a legal description
+      return value.match(/^(LT|LOT)\s+\d+\s+(BLK|BLOCK)\s+\d+/i);
+    });
+    
+    if (legalDesc) {
+      // Always use the legal description if found
+      legalDescription = legalDesc.value;
+      
+      // Try to extract lot and block from the legal description
+      const lotMatch = legalDescription.match(/(LT|LOT)\s+(\d+)/i);
+      const blockMatch = legalDescription.match(/(BLK|BLOCK)\s+(\d+)/i);
+      
+      if (lotMatch) {
+        lot = lotMatch[2];
+      }
+      if (blockMatch) {
+        block = blockMatch[2];
+      }
+    }
+  }
+  
   return {
-    lot:
-      propertyData?.features?.find?.(
-        (feature) => feature.key === "legalLotNumber1",
-      )?.value?.[0] || "",
-    block:
-      propertyData?.features?.find?.((feature) => feature.key === "legalBlock1")
-        ?.value?.[0] || "",
+    lot: lot,
+    block: block,
     county: propertyData?.county || "",
-    legalDescription: propertyData?.legalDescription || "",
+    legalDescription: legalDescription,
     mlsNumber: propertyData?.mlsNumber || "",
     streetAddress: propertyData?.address || "",
     city: propertyData?.city || "",
@@ -1106,6 +1146,7 @@ export function mapDatafinityResponseToPropertyData(propertyData: any) {
           new Date(b.dateSeen).getTime() - new Date(a.dateSeen).getTime(),
       )?.[0]?.value || "",
     imageUrl: propertyData.imageURLs?.[0] ?? "",
+    imageUrls: propertyData.imageURLs ?? [],
   };
 }
 

@@ -49,12 +49,84 @@
       "mcp__supabase__list_migrations",
       "mcp__supabase__list_tables",
       "Bash(claude agents list:*)",
-      "Read(C:\\Users/**)"
+      "Read(C:\\Users/**)",
+      "Bash(nslookup:*)",
+      "Read(C:\\Users\\weave\\OneDrive\\Desktop/**)",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__apply_migration",
+      "Bash(where python)",
+      "Bash(where python3)",
+      "Bash(npm run bdd:*)",
+      "Bash(npx playwright test:*)",
+      "WebFetch(domain:docs.datafiniti.co)",
+      "Bash(git log:*)",
+      "Bash(npm ls:*)"
     ],
     "deny": [],
     "ask": [],
     "additionalDirectories": [
       "C:\\"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \".claude/hooks/audit_logger.js\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \".claude/hooks/audit_logger.js\""
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \".claude/hooks/audit_logger.js\""
+          },
+          {
+            "type": "command",
+            "command": "node \".claude/hooks/session_manager.js\""
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \".claude/hooks/audit_logger.js\""
+          },
+          {
+            "type": "command",
+            "command": "node \".claude/hooks/session_manager.js\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": []
+      }
     ]
   }
 }

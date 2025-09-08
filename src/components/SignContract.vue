@@ -379,7 +379,7 @@ export default {
       );
 
       return {
-        userId: eid, // Use eid for now, get proper userId in method
+        userId: this.contractId, // Use contract ID instead of user ID
         name: "Residential Resale Contract for Signing",
         isDraft: false,
         isTest: true,

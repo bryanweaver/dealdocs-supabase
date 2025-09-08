@@ -163,92 +163,51 @@
                 </div>
               </div>
 
-              <!-- Address and Image side by side container -->
-              <div
-                class="flex flex-col md:flex-row md:items-start md:space-x-6 space-y-4 md:space-y-0"
-              >
-                <div class="md:flex-1">
-                  <div
-                    class="address-container bg-white p-4 rounded-lg border border-gray-200 shadow-sm"
-                  >
-                    <div class="flex items-start">
-                      <div class="flex-shrink-0 mt-1 mr-3 text-primary">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1113.314 0z"
-                          />
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
-                      </div>
-                      <div>
-                        <h2
-                          class="text-xl sm:text-2xl font-bold text-gray-900 leading-tight"
-                        >
-                          {{ propertyData.address }}
-                        </h2>
-                        <p class="text-gray-600 text-lg mt-1">
-                          {{ propertyData.city }}, {{ propertyData.province }}
-                          {{ propertyData.postalCode }}
-                        </p>
-                        <!-- Price displayed prominently -->
-                        <div class="mt-2 mb-2">
-                          <span
-                            v-if="propertyData.mostRecentPriceAmount"
-                            class="text-2xl font-bold text-primary"
-                            >${{ propertyData.mostRecentPriceAmount }}</span
-                          >
-                          <span v-else class="text-2xl font-bold text-gray-500"
-                            >Price not available</span
-                          >
-                        </div>
-                        <div class="flex mt-3 items-center space-x-2">
-                          <span
-                            v-if="isPropertyForSale(propertyData)"
-                            class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800"
-                          >
-                            For Sale
-                          </span>
-                          <span
-                            v-else
-                            class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-red-100 text-red-800"
-                          >
-                            Sold
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <!-- Property Images Gallery at the top -->
+              <div class="mb-8">
+                <PropertyImageGallery 
+                  :images="propertyData.imageUrls || propertyData.imageURLs || (propertyData.imageUrl ? [propertyData.imageUrl] : [])"
+                />
+              </div>
 
-                <div
-                  v-if="
-                    propertyData.imageURLs && propertyData.imageURLs.length > 0
-                  "
-                  class="md:flex-1"
-                >
-                  <div
-                    class="overflow-hidden rounded-lg shadow-sm border border-gray-200 transition-all duration-200 hover:shadow-md"
-                  >
-                    <LazyImage
-                      :src="propertyData.imageURLs[0]"
-                      class="w-full h-auto object-cover rounded-lg transform transition-transform duration-300 hover:scale-105"
-                      alt="Property image"
-                      :height="300"
-                    />
+              <!-- Property Info Bar -->
+              <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">
+                      {{ propertyData.address }}
+                    </h2>
+                    <p class="text-gray-600 text-lg mt-1">
+                      {{ propertyData.city }}, {{ propertyData.province }}
+                      {{ propertyData.postalCode }}
+                    </p>
+                  </div>
+                  <div class="flex flex-col md:items-end gap-2">
+                    <div>
+                      <span
+                        v-if="propertyData.mostRecentPriceAmount"
+                        class="text-3xl font-bold text-primary"
+                      >${{ propertyData.mostRecentPriceAmount.toLocaleString() }}</span>
+                      <span v-else class="text-2xl font-bold text-gray-500">
+                        Price not available
+                      </span>
+                    </div>
+                    <div>
+                      <span
+                        v-if="isPropertyForSale(propertyData)"
+                        class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800"
+                      >
+                        <i class="pi pi-tag mr-1"></i>
+                        For Sale
+                      </span>
+                      <span
+                        v-else
+                        class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-800"
+                      >
+                        <i class="pi pi-check mr-1"></i>
+                        Sold
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -336,17 +295,6 @@
               </div>
 
               <div class="space-y-8 sm:space-y-12">
-                <div
-                  v-if="propertyData.imageUrl"
-                  class="aspect-w-16 aspect-h-9"
-                >
-                  <img
-                    :src="propertyData.imageUrl"
-                    class="w-full h-full object-cover rounded-lg"
-                    alt="Property"
-                  />
-                </div>
-
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
                   <!-- Property Details Card -->
                   <div
@@ -786,7 +734,7 @@
 
 <script lang="ts">
 import axios from "axios";
-import { ContractAPI } from "@/services/api.js";
+import { ContractAPI, ListingAgentAPI, AgentAPI } from "@/services/api.js";
 import Button from "primevue/button";
 import ProgressSpinner from "primevue/progressspinner";
 import Card from "primevue/card";
@@ -802,6 +750,7 @@ import {
   getDataSourceMessage,
 } from "@/utils/propertyAPIFallback.js";
 import LazyImage from "@/components/LazyImage.vue";
+import PropertyImageGallery from "@/components/PropertyImageGallery.vue";
 
 const apikey = import.meta.env.VITE_DATAFINITY_API_KEY;
 const propertyEndpoint = import.meta.env.VITE_DATAFINITY_API_URL;
@@ -815,6 +764,7 @@ export default {
     ProgressSpinner,
     Card,
     LazyImage,
+    PropertyImageGallery,
   },
   emits: ["prev-step"],
   data() {
@@ -1030,11 +980,22 @@ export default {
           );
           console.log("Listing agent:", this.listingAgent);
 
+          // AGENT LOOKUP: Enhance listing agent with data from agents table
+          if (this.listingAgent?.listingAssociateName) {
+            await this.enhanceListingAgentFromDatabase(this.listingAgent);
+          }
+
+          // Clean listing agent data before saving to store (remove internal properties)
+          const { _enhancedAgentData, ...cleanListingAgentForStore } = this.listingAgent;
+          
+          // Merge the mapped property data (which includes imageUrls) back into propertyData
+          this.propertyData = { ...this.propertyData, ...property };
+          
           // also save in vuex store
           this.$store.commit("setFormDataFromContract", {
             property,
             sellers,
-            listingAgent: this.listingAgent,
+            listingAgent: cleanListingAgentForStore,
           });
         } catch (error) {
           console.error("Error fetching property data:", error);
@@ -1171,7 +1132,7 @@ export default {
     },
 
     async createContractAndNavigate() {
-      let property, sellers;
+      let property, sellers, listingAgentId = null;
       try {
         property = mapDatafinityResponseToPropertyData(this.propertyData);
         sellers = mapDatafinityResponseToSellerData(this.propertyData);
@@ -1182,32 +1143,57 @@ export default {
         );
         console.log("Listing agent for contract:", this.listingAgent);
 
-        const contractData = {
+        // AGENT LOOKUP: Enhance listing agent with data from agents table
+        if (this.listingAgent?.listingAssociateName) {
+          await this.enhanceListingAgentFromDatabase(this.listingAgent);
+        }
+
+        // Create listing agent record if we have listing agent data
+        if (this.listingAgent && this.listingAgent.listingAssociateName) {
+          // Create a clean copy without internal properties for database insertion
+          const { _enhancedAgentData, ...cleanListingAgent } = this.listingAgent;
+          const listingAgentRecord = await ListingAgentAPI.create(cleanListingAgent);
+          listingAgentId = listingAgentRecord.id;
+          console.log("Created listing agent record:", listingAgentRecord);
+          console.log("Enhanced agent data available for future use:", _enhancedAgentData);
+        }
+
+        // Use the field mapping utilities for consistent data structure
+        const { createContractPayload } = await import('@/utils/fieldMapUtils');
+        
+        const vuexFormData = {
+          property: property,
+          sellers: sellers,
+          listingAgent: this.listingAgent
+        };
+        
+        const contractData = createContractPayload(vuexFormData, {
           user_id: this.$store.state.userId,
-          property_info: property,
-          parties: { sellers },
-          listing_agent: this.listingAgent,
+          listing_agent_id: listingAgentId,
           status: 'draft',
           created_at: new Date().toISOString()
-        };
+        });
 
         const response = await ContractAPI.create(contractData);
 
         // Save the created contract ID in the Vuex store
         this.$store.commit("setContractId", response.id);
 
-        // also save in vuex store
+        // Clean listing agent data before saving to store (remove internal properties)
+        const { _enhancedAgentData, ...cleanListingAgentForStore } = this.listingAgent;
+        
+        // Save in vuex store using the proper contract structure
         this.$store.commit("setFormDataFromContract", {
           property,
           sellers,
-          listingAgent: this.listingAgent,
+          listingAgent: cleanListingAgentForStore,
         });
 
         // Navigate to the "/QuestionFlow" route
         this.$router.replace({
           name: "FormPage",
           params: {
-            id: response.data.createContract.id,
+            id: response.id,
             sectionId: "buyers",
           },
         });
@@ -1237,13 +1223,17 @@ export default {
 
     async createContractAndNavigateWithoutData() {
       try {
-        const contractData = {
+        // Use the field mapping utilities even for minimal contract creation
+        const { createContractPayload } = await import('@/utils/fieldMapUtils');
+        
+        const contractData = createContractPayload({}, {
           user_id: this.$store.state.userId,
           status: 'draft',
           created_at: new Date().toISOString()
-        };
+        });
 
         const response = await ContractAPI.create(contractData);
+        console.log("Contract created without data:", response);
 
         // Save the created contract ID in the Vuex store
         this.$store.commit("setContractId", response.id);
@@ -1252,13 +1242,66 @@ export default {
         this.$router.replace({
           name: "FormPage",
           params: {
-            id: response.data.createContract.id,
+            id: response.id,  // Fixed: use response.id directly
             sectionId: "buyers",
           },
         });
       } catch (error) {
         console.error("Error creating contract without data:", error);
         // Handle error scenario
+      }
+    },
+
+    // AGENT ENHANCEMENT: Search agents table and enhance listing agent data
+    async enhanceListingAgentFromDatabase(listingAgent) {
+      try {
+        console.log("🔍 Looking up agent in database:", listingAgent.listingAssociateName);
+
+        // Search for agents by name, also try searching by firm name as fallback
+        const searchResults = await AgentAPI.search(listingAgent.listingAssociateName, 5);
+        console.log("🔍 Agent search results:", searchResults);
+
+        if (searchResults && searchResults.length > 0) {
+          // Find best match - exact name match preferred
+          const exactMatch = searchResults.find(agent => 
+            agent.name?.toLowerCase() === listingAgent.listingAssociateName?.toLowerCase()
+          );
+          
+          const bestMatch = exactMatch || searchResults[0];
+          console.log("✅ Found agent match:", bestMatch);
+
+          // ENHANCE the listing agent with database information
+          if (bestMatch.phone && !listingAgent.listingAssociatePhone) {
+            listingAgent.listingAssociatePhone = bestMatch.phone;
+            console.log("📞 Added phone:", bestMatch.phone);
+          }
+
+          if (bestMatch.email && !listingAgent.listingAssociateEmail) {
+            listingAgent.listingAssociateEmail = bestMatch.email;
+            console.log("📧 Added email:", bestMatch.email);
+          }
+
+          if (bestMatch.license_number && !listingAgent.listingAssociateLicenseNumber) {
+            listingAgent.listingAssociateLicenseNumber = bestMatch.license_number;
+            console.log("📋 Added license:", bestMatch.license_number);
+          }
+
+          if (bestMatch.mls_id && !listingAgent.mlsId) {
+            listingAgent.mlsId = bestMatch.mls_id;
+            console.log("🏠 Added MLS ID:", bestMatch.mls_id);
+          }
+
+          // Store the agent database record for later use when creating listing_agents table record
+          listingAgent._enhancedAgentData = bestMatch;
+          console.log("💾 Stored enhanced agent data for later use");
+
+        } else {
+          console.log("ℹ️ No agent matches found in database");
+        }
+
+      } catch (error) {
+        // Fail silently as requested - don't break the flow if agent lookup fails
+        console.log("⚠️ Agent lookup failed (continuing silently):", error.message);
       }
     },
   },

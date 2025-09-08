@@ -11,6 +11,7 @@ import { useConfirm } from "primevue/useconfirm";
 import { useToast } from "primevue/usetoast";
 import { ContractAPI, EtchAPI } from "@/services/api.js";
 import { AuthService } from "@/services/auth.js";
+import { useLayout } from "@/layout/composables/layout";
 
 const store = useStore();
 const user = ref(null);
@@ -21,6 +22,7 @@ const router = useRouter();
 const isLoading = ref(true);
 const confirm = useConfirm();
 const toast = useToast();
+const { resetMenu } = useLayout();
 
 const callCreateAccount = async (user) => {
   try {
@@ -76,6 +78,8 @@ const selectContract = async (contract) => {
   try {
     loadingContractId.value = contract.id;
     console.log("Selected contract:", contract);
+    console.log("Contract property_info:", contract.property_info);
+    console.log("Contract property:", contract.property);
     store.dispatch("selectContract", contract);
 
     await fetchEtchPackets(contract.id);
@@ -92,6 +96,11 @@ const selectContract = async (contract) => {
   } finally {
     loadingContractId.value = null;
   }
+};
+
+// Helper function to get property data from contract (handles both property and property_info fields)
+const getProperty = (contract) => {
+  return contract.property || contract.property_info || null;
 };
 
 const deleteSelectedContract = async (contractId) => {
@@ -126,6 +135,9 @@ const deleteSelectedContract = async (contractId) => {
 
 onMounted(async () => {
   try {
+    // Ensure sidebar is closed when reaching contracts page (especially on mobile)
+    resetMenu();
+    
     // Get current user from Supabase
     const currentUser = await AuthService.getUser();
     if (currentUser) {
@@ -151,31 +163,39 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="text-center text-xl">Contracts:</div>
-  <div v-if="isLoading" class="flex justify-center items-center min-h-screen">
-    <ProgressSpinner />
-  </div>
-  <div v-else-if="contracts.length > 0" class="flex flex-wrap">
-    <div
-      v-for="contract in contracts"
-      :key="contract.id"
-      class="w-full md:w-1/2 lg:w-1/3 p-4"
-    >
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-center text-3xl font-bold mb-8">My Contracts</h1>
+    <div v-if="isLoading" class="flex justify-center items-center min-h-[400px]">
+      <ProgressSpinner />
+    </div>
+    <div v-else-if="contracts.length > 0" class="flex flex-wrap -mx-4">
       <div
-        class="contract-card overflow-hidden h-full border border-gray-200 hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-        :class="{ loading: loadingContractId === contract.id }"
-        @click="selectContract(contract)"
+        v-for="contract in contracts"
+        :key="contract.id"
+        class="w-full md:w-1/2 lg:w-1/3 p-4"
       >
+        <div
+          class="contract-card overflow-hidden h-full border border-gray-200 hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
+          :class="{ loading: loadingContractId === contract.id }"
+          @click="selectContract(contract)"
+        >
         <!-- Property Image -->
-        <div class="aspect-w-16 aspect-h-9 bg-gray-100">
+        <div class="aspect-w-16 aspect-h-9 bg-gray-100 relative">
           <img
-            v-if="contract.property && contract.property.imageUrl"
-            :src="contract.property.imageUrl"
+            v-if="(contract.property_info || contract.property) && ((contract.property_info || contract.property).imageUrl || (contract.property_info || contract.property).imageUrls?.length > 0 || (contract.property_info || contract.property).imageURLs?.length > 0)"
+            :src="(contract.property_info || contract.property)?.imageUrls?.[0] || (contract.property_info || contract.property)?.imageURLs?.[0] || (contract.property_info || contract.property)?.imageUrl"
             alt="Property"
             class="w-full h-48 object-cover"
           />
           <div
-            v-else
+            v-if="((contract.property_info || contract.property)?.imageUrls?.length > 1) || ((contract.property_info || contract.property)?.imageURLs?.length > 1)"
+            class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white px-2 py-1 rounded text-xs font-medium"
+          >
+            <i class="pi pi-images mr-1"></i>
+            {{ (contract.property_info || contract.property)?.imageUrls?.length || (contract.property_info || contract.property)?.imageURLs?.length }} photos
+          </div>
+          <div
+            v-else-if="!(contract.property_info || contract.property)?.imageUrl && !(contract.property_info || contract.property)?.imageUrls?.length && !(contract.property_info || contract.property)?.imageURLs?.length"
             class="w-full h-48 bg-gray-200 flex items-center justify-center"
           >
             <svg
@@ -203,16 +223,16 @@ onMounted(async () => {
         <!-- Property Details -->
         <div class="p-5">
           <h3 class="text-xl font-semibold mb-2">
-            {{ contract.property?.streetAddress || "No Address Available" }}
+            {{ getProperty(contract)?.streetAddress || "No Address Available" }}
           </h3>
           <p class="mb-4">
-            {{ contract.property?.city || ""
+            {{ getProperty(contract)?.city || ""
             }}{{
-              contract.property?.city && contract.property?.province
+              getProperty(contract)?.city && (getProperty(contract)?.province || getProperty(contract)?.state)
                 ? ", "
                 : ""
-            }}{{ contract.property?.province || "" }}
-            {{ contract.property?.postalCode || "" }}
+            }}{{ getProperty(contract)?.province || getProperty(contract)?.state || "" }}
+            {{ getProperty(contract)?.postalCode || "" }}
           </p>
           <div class="flex justify-between items-center">
             <div class="flex items-center">
@@ -228,17 +248,24 @@ onMounted(async () => {
             />
           </div>
         </div>
+        </div>
       </div>
     </div>
-  </div>
-  <p v-else class="text-l mb-6">No contracts found.</p>
-  <div class="flex justify-center mb-12">
-    <Button
-      v-if="!isLoading"
-      label="Start New Contract"
-      class="p-button-primary text-lg p-3 px-6"
-      @click="$router.push('/contracts/new')"
-    />
+    <div v-else class="text-center py-12">
+      <p class="text-xl text-gray-600 mb-8">No contracts found.</p>
+      <Button
+        label="Start New Contract"
+        class="p-button-primary text-lg p-3 px-6"
+        @click="$router.push('/contracts/new')"
+      />
+    </div>
+    <div v-if="!isLoading && contracts.length > 0" class="flex justify-center mt-8 mb-12">
+      <Button
+        label="Start New Contract"
+        class="p-button-primary text-lg p-3 px-6"
+        @click="$router.push('/contracts/new')"
+      />
+    </div>
   </div>
   <ConfirmDialog></ConfirmDialog>
   <Toast />

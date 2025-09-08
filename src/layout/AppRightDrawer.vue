@@ -110,8 +110,9 @@ const visible = computed({
 });
 
 const handleLogout = async () => {
-  router.push("/contracts");
   await AuthService.signOut();
+  visible.value = false; // Close the drawer
+  router.push("/auth"); // Navigate to auth page
 };
 </script>
 

@@ -39,6 +39,7 @@ declare module 'vue' {
     Popover: typeof import('primevue/popover')['default']
     ProgressBar: typeof import('primevue/progressbar')['default']
     ProgressSpinner: typeof import('primevue/progressspinner')['default']
+    PropertyImageGallery: typeof import('./src/components/PropertyImageGallery.vue')['default']
     QuestionFlow: typeof import('./src/components/QuestionFlow.vue')['default']
     QuestionInput: typeof import('./src/components/QuestionInput.vue')['default']
     ReferralButton: typeof import('./src/components/ReferralButton.vue')['default']

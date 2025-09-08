@@ -77,12 +77,10 @@
 </template>
 
 <script lang="ts">
-// import { CreateEmailPacketInput } from "@/API";
-import { graphqlRequest } from "../utils/graphqlClient";
 import { defineComponent, ref, onMounted } from "vue";
 import { useStore } from "vuex";
-import { createEmailPacket } from "../graphql/mutations";
-import { emailPacketsByContractId } from "../graphql/queries";
+import { EmailAPI } from "@/services/api.js";
+import { AuthService } from "@/services/auth.js";
 import { formatDate } from "@/utils/dateUtils";
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
@@ -113,23 +111,15 @@ export default defineComponent({
     // Function to fetch the email records for the current contract
     const fetchEmailRecords = async () => {
       try {
-        const response = await graphqlRequest(emailPacketsByContractId, {
-          contractId,
-          limit: 100,
-        });
-        if (
-          response.data &&
-          response.data.emailPacketsByContractId &&
-          response.data.emailPacketsByContractId.items
-        ) {
-          // manually sort by createdAt descending, if needed
-          emailRecords.value =
-            response.data.emailPacketsByContractId.items.sort(
-              (a, b) =>
-                new Date(b.createdAt).getTime() -
-                new Date(a.createdAt).getTime(),
-            );
-        }
+        const records = await EmailAPI.list(contractId);
+        emailRecords.value = records.map(record => ({
+          id: record.id,
+          agentName: record.agent_name,
+          agentEmail: record.agent_email,
+          comments: record.comments,
+          status: record.status,
+          createdAt: record.sent_at
+        }));
       } catch (error) {
         console.error("Error fetching email records", error);
       }
@@ -171,27 +161,38 @@ export default defineComponent({
           return map;
         }, {});
 
-        const payloadForEmailRecord = {
-          accountId,
+        const emailPayload = {
           contractId,
-          streetAddress,
           agentEmail: toEmail.value,
-          agentName: "Bryan Weaver",
+          agentName: toEmail.value.split('@')[0], // Extract name from email for now
           comments: comments.value,
           contractFiles,
           preApprovalFile: otherFiles["preapproval"] || "",
           earnestFile: otherFiles["earnest"] || "",
           optionFile: otherFiles["optionfee"] || "",
-          status: "SENT",
           subject: `Contract Package for ${streetAddress}`,
-          body: "",
+          body: `Please find attached the contract package for ${streetAddress}. ${comments.value}`,
         };
 
-        console.log("Payload for email record:", payloadForEmailRecord);
-        const payload = { input: payloadForEmailRecord };
+        console.log("Email payload:", emailPayload);
 
-        const response = await graphqlRequest(createEmailPacket, payload);
-        console.log("Email record created:", response.data.createEmailPacket);
+        // Call Supabase Edge Function for email sending
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await AuthService.getSession())?.access_token}`
+          },
+          body: JSON.stringify(emailPayload)
+        });
+
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to send email');
+        }
+
+        console.log("Email sent:", result);
 
         // Reset form fields after sending
         toEmail.value = "";

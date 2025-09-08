@@ -203,10 +203,17 @@ router.beforeEach(async (to, from, next) => {
       params: to.params,
     },
   });
+  
   // Clear contract ID when navigating to contracts list or starting new contract
   if (to.name === "ContractList" || to.name === "BeginContract") {
     store.commit("setContractId", null);
   }
+  // Set contract ID from route params if navigating to a contract-specific page
+  else if (to.params.id && to.params.id !== store.state.contractId) {
+    console.log("Setting contract ID from route:", to.params.id);
+    store.commit("setContractId", to.params.id);
+  }
+  
   next();
 });
 

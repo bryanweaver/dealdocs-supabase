@@ -8,7 +8,7 @@ import "file-icon-vectors/dist/file-icon-vivid.min.css";
 
 import App from "./App.vue";
 import router from "@/router/index.js";
-import store from "./store/store";
+import store from "@/store/store";
 import FloatingVue from "floating-vue";
 import { FloatingVueConfig } from "floating-vue/dist/config";
 import Aura from "@primevue/themes/aura";

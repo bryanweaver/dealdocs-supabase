@@ -30,7 +30,7 @@ export default defineConfig({
           "vendor-supabase": [
             "@supabase/supabase-js",
           ],
-          "vendor-utils": ["axios", "uuid"],
+          "vendor-utils": ["axios"],
 
           // Application chunks
           "app-services": [

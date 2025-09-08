@@ -1,5 +1,12 @@
 // API Service Layer - Compatibility layer to minimize changes from Amplify
 import { supabase, getUser, dbQuery } from '@/lib/supabase'
+import { 
+  transformVuexDataForSupabase, 
+  transformSupabaseDataForVuex,
+  normalizeContractData,
+  createContractPayload,
+  extractSearchableFields 
+} from '@/utils/fieldMapUtils'
 
 // Contract Operations (replacing GraphQL)
 export const ContractAPI = {
@@ -7,17 +14,24 @@ export const ContractAPI = {
     const user = await getUser()
     if (!user) throw new Error('User not authenticated')
     
+    // Check if data is already transformed (has property_info instead of property)
+    const isAlreadyTransformed = 'property_info' in contractData || 'parties' in contractData
+    
+    // Only transform if not already transformed
+    const dataToInsert = isAlreadyTransformed 
+      ? contractData 
+      : transformVuexDataForSupabase(contractData)
+    
+    const searchableFields = extractSearchableFields(contractData)
+    
     const { data, error } = await supabase
       .from('contracts')
       .insert({
-        ...contractData,
-        user_id: user.id,
+        ...dataToInsert,
+        user_id: contractData.user_id || user.id, // Use provided user_id or fallback to current user
         legacy_id: contractData.id, // Keep old ID for reference
-        // Extract searchable fields from nested data
-        mls_number: contractData.property_info?.mlsNumber || contractData.propertyInfo?.mlsNumber,
-        property_address: contractData.property_info?.address || contractData.propertyInfo?.address,
-        buyer_name: contractData.parties?.buyer?.name || contractData.parties?.primaryBuyer?.name,
-        seller_name: contractData.parties?.seller?.name || contractData.parties?.primarySeller?.name,
+        // Extract searchable fields using the mapping utility
+        ...searchableFields,
         contract_date: contractData.contract_date || new Date().toISOString().split('T')[0]
       })
       .select()
@@ -28,20 +42,17 @@ export const ContractAPI = {
   },
 
   async update(id, updates) {
+    // Transform the updates using the comprehensive mapping utilities
+    const transformedUpdates = transformVuexDataForSupabase(updates)
+    const searchableFields = extractSearchableFields(updates)
+    
     const { data, error } = await supabase
       .from('contracts')
       .update({
-        ...updates,
+        ...transformedUpdates,
         updated_at: new Date().toISOString(),
-        // Update extracted searchable fields if main data changed
-        ...(updates.property_info && {
-          mls_number: updates.property_info.mlsNumber,
-          property_address: updates.property_info.address
-        }),
-        ...(updates.parties && {
-          buyer_name: updates.parties.buyer?.name || updates.parties.primaryBuyer?.name,
-          seller_name: updates.parties.seller?.name || updates.parties.primarySeller?.name
-        })
+        // Update extracted searchable fields using the mapping utility
+        ...searchableFields
       })
       .eq('id', id)
       .select()
@@ -64,12 +75,20 @@ export const ContractAPI = {
       .single()
     
     if (error) throw error
-    return data
+    
+    // Log the raw data structure for debugging
+    console.log('Raw contract data from Supabase:', data)
+    
+    // Normalize the contract data for consistent field mapping
+    const normalizedData = normalizeContractData(data)
+    console.log('Normalized contract data:', normalizedData)
+    
+    return normalizedData
   },
 
   async list(filters = {}) {
     let query = supabase
-      .from('contract_summaries') // Use the optimized view
+      .from('contracts') // Use main table instead of view to get full property_info
       .select('*')
       .order('created_at', { ascending: false })
     
@@ -122,6 +141,77 @@ export const ContractAPI = {
       })
       .eq('id', id)
       .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  }
+}
+
+// Listing Agent Operations  
+export const ListingAgentAPI = {
+  async create(listingAgentData) {
+    const { data, error } = await supabase
+      .from('listing_agents')
+      .insert({
+        has_listing_agent_info: true,
+        
+        // Map camelCase to snake_case for database
+        listing_associate_name: listingAgentData.listingAssociateName,
+        listing_associate_email: listingAgentData.listingAssociateEmail,
+        listing_associate_phone: listingAgentData.listingAssociatePhone,
+        listing_associate_license_number: listingAgentData.listingAssociateLicenseNumber,
+        listing_associate_team_name: listingAgentData.listingAssociateTeamName,
+        listing_associate_supervisor_name: listingAgentData.listingAssociateSupervisorName,
+        listing_associate_supervisor_license_number: listingAgentData.listingAssociateSupervisorLicenseNumber,
+        
+        firm_name: listingAgentData.firmName,
+        firm_license_number: listingAgentData.firmLicenseNumber,
+        firm_street_address: listingAgentData.firmStreetAddress,
+        firm_city: listingAgentData.firmCity,
+        firm_state: listingAgentData.firmState,
+        firm_postal_code: listingAgentData.firmPostalCode,
+        firm_phone: listingAgentData.firmPhone,
+        
+        selling_associate_name: listingAgentData.sellingAssociateName,
+        selling_associate_license_number: listingAgentData.sellingAssociateLicenseNumber,
+        selling_associate_team_name: listingAgentData.sellingAssociateTeamName,
+        selling_associate_email: listingAgentData.sellingAssociateEmail,
+        selling_associate_phone: listingAgentData.sellingAssociatePhone,
+        selling_associate_supervisor_name: listingAgentData.sellingAssociateSupervisorName,
+        selling_associate_supervisor_license_number: listingAgentData.sellingAssociateSupervisorLicenseNumber,
+        selling_associate_street_address: listingAgentData.sellingAssociateStreetAddress,
+        selling_associate_city: listingAgentData.sellingAssociateCity,
+        selling_associate_state: listingAgentData.sellingAssociateState,
+        selling_associate_postal_code: listingAgentData.sellingAssociatePostalCode
+      })
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async update(id, updates) {
+    const { data, error } = await supabase
+      .from('listing_agents')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async get(id) {
+    const { data, error } = await supabase
+      .from('listing_agents')
+      .select('*')
+      .eq('id', id)
       .single()
     
     if (error) throw error
@@ -525,6 +615,7 @@ export const BatchAPI = {
 // Export all APIs
 export default {
   ContractAPI,
+  ListingAgentAPI,
   AgentAPI,
   StorageAPI,
   DocumentAPI,

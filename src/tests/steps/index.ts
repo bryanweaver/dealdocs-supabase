@@ -1,3 +1,3 @@
-import "./hooks.js";
-import "./login.steps.js";
-import "./property-search.steps.js";
+import "./hooks";
+import "./login.steps";
+import "./property-search.steps";

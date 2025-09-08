@@ -13,7 +13,7 @@ const layoutState = reactive({
   overlayMenuActive: false,
   profileSidebarVisible: false,
   configSidebarVisible: false,
-  staticMenuMobileActive: false,
+  staticMenuMobileActive: false, // Ensure sidebar is closed by default
   menuHoverActive: false,
   activeMenuItem: null,
 });

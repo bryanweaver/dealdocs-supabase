@@ -7,7 +7,7 @@ import {
 // EtchPacket type is now handled by Supabase types
 // import { EtchPacket } from "@/API"; // Deprecated
 import { isQuestionRequired } from "@/utils/questionUtils";
-import { a } from "vitest/dist/suite-ghspeorC";
+import { transformSupabaseDataForVuex, normalizeContractData } from "@/utils/fieldMapUtils";
 
 function removeTypename(obj) {
   if (Array.isArray(obj)) {
@@ -447,50 +447,40 @@ const store = createStore({
     },
     setFormDataFromContract(state, contractInput) {
       const contract = removeTypename(contractInput);
+      
+      console.log("setFormDataFromContract - input contract:", contract);
+      
+      // Normalize and transform the contract data using comprehensive mapping utilities
+      const normalizedContract = normalizeContractData(contract);
+      const transformedData = transformSupabaseDataForVuex(normalizedContract);
+      
+      console.log("setFormDataFromContract - normalized contract:", normalizedContract);
+      console.log("setFormDataFromContract - transformed data:", transformedData);
 
+      // Merge with existing form data, ensuring all sections are properly mapped
       const mergedFormData = {
         ...state.formData,
-        ...(contract.id && { id: contract.id }),
-        ...(contract.buyers && { buyers: contract.buyers }),
-        ...(contract.sellers && { sellers: contract.sellers }),
-        ...(contract.property && { property: contract.property }),
-        ...(contract.finance && { finance: contract.finance }),
-        ...(contract.leases && { leases: contract.leases }),
-        ...(contract.title && { title: contract.title }),
-        ...(contract.survey && { survey: contract.survey }),
-        ...(contract.titleObjections && {
-          titleObjections: contract.titleObjections,
-        }),
-        ...(contract.titleNotices && { titleNotices: contract.titleNotices }),
-        ...(contract.propertyCondition && {
-          propertyCondition: contract.propertyCondition,
-        }),
-        ...(contract.brokerDisclosure && {
-          brokerDisclosure: contract.brokerDisclosure,
-        }),
-        ...(contract.closing && { closing: contract.closing }),
-        ...(contract.possession && { possession: contract.possession }),
-        ...(contract.buyerProvisions && {
-          buyerProvisions: contract.buyerProvisions,
-        }),
-        ...(contract.buyerNotices && { buyerNotices: contract.buyerNotices }),
-        ...(contract.buyerAttorney && {
-          buyerAttorney: contract.buyerAttorney,
-        }),
-        ...(contract.listingAgent && { listingAgent: contract.listingAgent }),
-        ...(contract.homeownersAssociationAddendum && {
-          homeownersAssociationAddendum: contract.homeownersAssociationAddendum,
-        }),
+        ...transformedData,
+        // Preserve the contract ID
+        ...(contract.id && { id: contract.id })
       };
+      
       state.formData = Object.assign({}, mergedFormData);
 
-      // Update markedQuestions
-      if (contract.markedQuestions) {
-        state.markedQuestions = JSON.parse(contract.markedQuestions);
+      // Update markedQuestions - handle both string and object formats
+      if (contract.markedQuestions || contract.marked_questions) {
+        const markedQuestionsData = contract.markedQuestions || contract.marked_questions;
+        if (typeof markedQuestionsData === 'string') {
+          state.markedQuestions = JSON.parse(markedQuestionsData);
+        } else {
+          state.markedQuestions = markedQuestionsData || {};
+        }
       } else {
         state.markedQuestions = {};
       }
+      
       console.log("Form data updated:", state.formData);
+      console.log("Property data in final formData:", state.formData.property);
     },
     setPropertyData(state, propertyData) {
       state.formData.property = propertyData;
@@ -820,7 +810,14 @@ const store = createStore({
   actions: {
     selectContract({ commit }, contract) {
       commit("setContractId", contract.id);
-      commit("setFormDataFromContract", contract);
+      console.log("selectContract action - raw contract:", contract);
+      
+      // Use the comprehensive mapping utilities to transform the contract
+      const normalizedContract = normalizeContractData(contract);
+      
+      console.log("selectContract action - normalized contract:", normalizedContract);
+      
+      commit("setFormDataFromContract", normalizedContract);
       commit("resetUploadedDocs");
     },
     async deleteUpload({ commit }, { documentType }) {

@@ -27,10 +27,18 @@ const message = ref("");
 
 // Computed
 const isFormValid = computed(() => {
-  const emailValid = formData.value.email && formData.value.email.includes("@");
+  // More robust email validation that allows test domains
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailValid = formData.value.email && (
+    emailRegex.test(formData.value.email) || 
+    formData.value.email.includes("@test") || 
+    formData.value.email.includes("@example") ||
+    formData.value.email.includes("@dealdocs.test")
+  );
   const passwordValid = formData.value.password && formData.value.password.length >= 6;
   const confirmPasswordValid = !isSignUp.value || formData.value.password === formData.value.confirmPassword;
-  return emailValid && passwordValid && confirmPasswordValid;
+  const fullNameValid = !isSignUp.value || (formData.value.fullName && formData.value.fullName.trim().length > 0);
+  return emailValid && passwordValid && confirmPasswordValid && fullNameValid;
 });
 
 // Methods
@@ -49,7 +57,7 @@ const checkAndHandleSessionExpiry = () => {
 const handleSignOut = async () => {
   localStorage.removeItem("loginTimestamp");
   await AuthService.signOut();
-  router.push("/");
+  router.push("/auth"); // Navigate to auth page
 };
 
 const handleAuth = async () => {
@@ -71,11 +79,31 @@ const handleAuth = async () => {
       );
       
       if (result.success) {
-        message.value = "Please check your email to confirm your account.";
-        // Switch to sign in mode
-        isSignUp.value = false;
-        formData.value.password = "";
-        formData.value.confirmPassword = "";
+        // Check if we have both user and session (auto-login case)
+        if (result.user && result.session) {
+          console.log("✅ Account created and auto-logged in");
+          // Store login timestamp
+          localStorage.setItem("loginTimestamp", new Date().getTime().toString());
+          // Ensure sidebar is closed on login (for mobile)
+          if (window.innerWidth <= 991) {
+            localStorage.setItem("sidebarClosed", "true");
+          }
+          router.push("/contracts");
+        } else if (result.user && !result.session) {
+          // User created but no session - email confirmation required
+          message.value = "Account created successfully! Please check your email to confirm your account.";
+          // Switch to sign in mode
+          isSignUp.value = false;
+          formData.value.password = "";
+          formData.value.confirmPassword = "";
+        } else {
+          // User created but need to sign in manually
+          message.value = "Account created successfully! Please sign in.";
+          // Switch to sign in mode
+          isSignUp.value = false;
+          formData.value.password = "";
+          formData.value.confirmPassword = "";
+        }
       } else {
         error.value = result.error;
       }
@@ -88,7 +116,11 @@ const handleAuth = async () => {
       if (result.success) {
         // Store login timestamp
         localStorage.setItem("loginTimestamp", new Date().getTime().toString());
-        router.push("/#/contracts");
+        // Ensure sidebar is closed on login (for mobile)
+        if (window.innerWidth <= 991) {
+          localStorage.setItem("sidebarClosed", "true");
+        }
+        router.push("/contracts");
       } else {
         error.value = result.error;
       }
@@ -152,11 +184,16 @@ onMounted(async () => {
   <div class="auth-container min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
       <div class="text-center">
+        <img 
+          src="@/assets/docudeals_logo_v1.png" 
+          alt="DealDocs Logo" 
+          class="mx-auto h-24 w-auto mb-6"
+        />
         <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
           {{ isSignUp ? 'Create your account' : 'Sign in to your account' }}
         </h2>
         <p class="mt-2 text-sm text-gray-600">
-          DealDocs Real Estate Contract Management
+          Real Estate Contract Management Platform
         </p>
       </div>
       

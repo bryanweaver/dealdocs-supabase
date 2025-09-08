@@ -55,3 +55,20 @@ amplifytools.xcconfig
 
 # Supabase
 supabase/.temp
+
+# Large data files - never commit these
+*.csv
+import-*.sql
+import-*.js
+
+# Temporary test files
+test-*.js
+**/testFieldMapping.js
+
+# Visual regression snapshots (auto-generated)
+**/*.spec.ts-snapshots/
+
+# Temporary migration docs (but keep helpful ones like FIELD_MAPPING_SOLUTION.md)
+MIGRATION_*.md
+IMPLEMENTATION_*.md
+*_IMPORT_README.md

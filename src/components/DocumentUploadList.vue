@@ -107,6 +107,7 @@
         />
       </template>
     </PrimeDialog>
+    <Toast />
   </div>
 </template>
 
@@ -118,6 +119,7 @@ import Column from "primevue/column";
 import PrimeButton from "primevue/button";
 import PrimeDialog from "primevue/dialog";
 import ProgressBar from "primevue/progressbar";
+import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
 
 export default defineComponent({
@@ -128,6 +130,7 @@ export default defineComponent({
     PrimeButton,
     PrimeDialog,
     ProgressBar,
+    Toast,
   },
   props: {
     title: {
@@ -226,58 +229,83 @@ export default defineComponent({
       const now = new Date().getTime();
       const key = `accounts/${this.accountId}/contracts/${this.contractId}/${this.documentType}/${now}-${file.name}`;
 
-      this.uploadProgress = 0;
+      this.uploadProgress = 10;
       
-      // Upload file to Supabase Storage
-      const result = await StorageAPI.upload(
-        file,
-        key,
-        'contracts'
-      );
-      
-      // Simulate progress for now - Supabase doesn't have built-in progress tracking
-      // You could implement this with chunked uploads if needed
-      this.uploadProgress = 100;
+      try {
+        // Upload file to Supabase Storage
+        const result = await StorageAPI.upload(
+          file,
+          key,
+          'contracts'
+        );
+        
+        this.uploadProgress = 70;
+        console.log("Successfully saved document to storage", result);
+        
+        // Save document metadata to database
+        const documentRecord = {
+          contract_id: this.contractId,
+          storage_path: result.path,  // Required field in database
+          file_path: result.path,      // Also include for compatibility
+          file_name: file.name,
+          file_type: file.type,
+          file_size: file.size,
+          document_type: this.documentType,
+          storage_url: result.publicUrl,
+          is_current_version: true
+        };
+        
+        const savedDoc = await DocumentAPI.create(documentRecord);
+        this.uploadProgress = 90;
+        
+        const document = {
+          key: result.path,
+          filetype: result.path.split(".").pop().toLowerCase(),
+          date: new Date(now).toLocaleString([], {
+            year: "numeric",
+            month: "numeric",
+            day: "numeric",
+            hour: "numeric",
+            minute: "numeric",
+          }),
+          name: result.path.split("/").pop().split("-").slice(1).join("-"),
+          documentType: this.documentType,
+          id: savedDoc.id
+        };
 
-      console.log("successfully saved document", result);
-      
-      // Save document metadata to database
-      const documentRecord = {
-        contract_id: this.contractId,
-        file_path: result.path,
-        file_name: file.name,
-        file_type: file.type,
-        file_size: file.size,
-        document_type: this.documentType,
-        storage_url: result.publicUrl,
-        is_current_version: true
-      };
-      
-      const savedDoc = await DocumentAPI.create(documentRecord);
-      
-      const document = {
-        key: result.path,
-        filetype: result.path.split(".").pop().toLowerCase(),
-        date: new Date(now).toLocaleString([], {
-          year: "numeric",
-          month: "numeric",
-          day: "numeric",
-          hour: "numeric",
-          minute: "numeric",
-        }),
-        name: result.path.split("/").pop().split("-").slice(1).join("-"),
-        documentType: this.documentType,
-        id: savedDoc.id
-      };
+        this.$store.dispatch("uploadDocument", {
+          documentType: this.documentType,
+          document: document,
+          isUploaded: true,
+        });
 
-      this.$store.dispatch("uploadDocument", {
-        documentType: this.documentType,
-        document: document,
-        isUploaded: true,
-      });
+        this.uploadProgress = 100;
+        
+        // Show success message
+        this.toast.add({
+          severity: "success",
+          summary: "Upload Complete",
+          detail: `${file.name} has been uploaded successfully.`,
+          life: 3000,
+        });
+        
+        // Reset after brief delay to show completion
+        setTimeout(() => {
+          this.uploadProgress = 0;
+        }, 2000);
 
-      this.file = null;
-      this.uploadProgress = 0;
+      } catch (error) {
+        console.error("Error uploading file:", error);
+        this.toast.add({
+          severity: "error",
+          summary: "Upload Failed",
+          detail: "Failed to upload the file. Please try again.",
+          life: 5000,
+        });
+        this.uploadProgress = 0;
+      } finally {
+        this.file = null;
+      }
     },
 
     confirmDelete(key) {

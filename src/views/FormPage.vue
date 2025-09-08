@@ -432,8 +432,8 @@
 
 <script>
 import { getQuestionsForSection } from "../config/TX";
-import { graphqlRequest } from "../utils/graphqlClient";
-import { updateContract } from "../graphql/mutations";
+import { ContractAPI } from "@/services/api.js";
+import { createContractPayload } from "@/utils/fieldMapUtils";
 
 import SectionProgressBar from "@/components/SectionProgressBar.vue";
 
@@ -717,63 +717,21 @@ export default {
         data: { ...this.inputValues },
       });
 
-      const sectionDataCopy = JSON.parse(JSON.stringify(this.inputValues));
-      // Create the properly typed payload based on section
-      let payload = {
-        input: {
-          id: this.$store.state.contractId,
-          markedQuestions: JSON.stringify(this.$store.state.markedQuestions),
-        },
-      };
-
-      if (this.sectionId === "property") {
-        // Transform the data to match PropertyInput type
-        const propertyInput = {
-          lot: sectionDataCopy.lot,
-          block: sectionDataCopy.block,
-          county: sectionDataCopy.county,
-          legalDescription: sectionDataCopy.legalDescription,
-          mlsNumber: sectionDataCopy.mlsNumber,
-          streetAddress: sectionDataCopy.streetAddress,
-          city: sectionDataCopy.city,
-          state: sectionDataCopy.state,
-          postalCode: sectionDataCopy.postalCode,
-          subdivision: sectionDataCopy.subdivision,
-          yearBuilt: parseInt(sectionDataCopy.yearBuilt) || null,
-          numBedroom: parseInt(sectionDataCopy.numBedroom) || null,
-          numBathroom: parseInt(sectionDataCopy.numBathroom) || null,
-          numFloor: parseInt(sectionDataCopy.numFloor) || null,
-          floorSizeValue: parseFloat(sectionDataCopy.floorSizeValue) || null,
-          floorSizeUnit: sectionDataCopy.floorSizeUnit,
-          lotSizeValue: parseFloat(sectionDataCopy.lotSizeValue) || null,
-          lotSizeUnit: sectionDataCopy.lotSizeUnit,
-          mostRecentPriceAmount:
-            parseInt(sectionDataCopy.mostRecentPriceAmount) || null,
-          mostRecentPriceDate: sectionDataCopy.mostRecentPriceDate,
-          dateAdded: sectionDataCopy.dateAdded,
-          dateUpdated: sectionDataCopy.dateUpdated,
-          description: sectionDataCopy.description,
-          imageUrl: sectionDataCopy.imageUrl,
-        };
-
-        // Remove any undefined or null values
-        Object.keys(propertyInput).forEach((key) =>
-          propertyInput[key] === undefined || propertyInput[key] === null
-            ? delete propertyInput[key]
-            : {},
-        );
-
-        payload.input.property = propertyInput;
-      } else {
-        // Handle other sections as before
-        payload.input[this.sectionId] = sectionDataCopy;
-      }
-
       try {
-        payload.input.markedQuestions = JSON.stringify(
-          this.$store.state.markedQuestions,
-        );
-        const response = await graphqlRequest(updateContract, payload);
+        // Create update payload with the current section's data
+        const sectionUpdate = {
+          [this.sectionId]: { ...this.inputValues }
+        };
+        
+        // Use the field mapping utilities to create the proper payload
+        const updatePayload = createContractPayload(sectionUpdate, {
+          markedQuestions: this.$store.state.markedQuestions
+        });
+        
+        console.log('Updating contract with payload:', updatePayload);
+        
+        // Update the contract using Supabase API
+        const response = await ContractAPI.update(this.$store.state.contractId, updatePayload);
         console.log("Contract updated:", response);
 
         // Navigate to the next section if it exists

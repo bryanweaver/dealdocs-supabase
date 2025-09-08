@@ -264,7 +264,8 @@ watch(
       }
     }
     // If items become visible and the menu is currently collapsed, expand it
-    else if (isVisible && !oldVisible) {
+    // BUT only if we have a contract selected
+    else if (isVisible && !oldVisible && contractId.value) {
       // Only toggle if the menu is currently collapsed
       if (
         !layoutState.staticMenuMobileActive &&
