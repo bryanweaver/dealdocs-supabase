@@ -8,6 +8,7 @@ import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 import Password from "primevue/password";
 import Message from "primevue/message";
+import TooltipPopover from "@/components/TooltipPopover.vue";
 // import ProgressSpinner from "primevue/progressspinner"; // Not currently used
 
 const router = useRouter();
@@ -212,12 +213,20 @@ onMounted(async () => {
             
             <!-- Full Name (Sign Up only) -->
             <div v-if="isSignUp" class="flex flex-col gap-2">
-              <label for="fullName" class="text-sm font-medium text-gray-700">Full Name</label>
+              <div class="flex items-center gap-2">
+                <label for="fullName" class="text-sm font-medium text-gray-700">Full Name</label>
+                <TooltipPopover id="signup-fullname">
+                  <div class="p-2 max-w-xs">
+                    <p class="font-semibold mb-1">Important Notice</p>
+                    <p class="text-sm">This name will be used on all contracts you create and cannot be changed after account creation. This ensures contract integrity and prevents unauthorized use of the platform.</p>
+                  </div>
+                </TooltipPopover>
+              </div>
               <InputText
                 id="fullName"
                 v-model="formData.fullName"
                 type="text"
-                placeholder="Enter your full name"
+                placeholder="Enter your full legal name"
                 :required="isSignUp"
               />
             </div>

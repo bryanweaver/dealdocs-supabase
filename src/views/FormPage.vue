@@ -49,7 +49,7 @@
                 <InputGroup>
                   <InputText
                     v-model="inputValues[question.fieldId]"
-                    :disabled="isContractStarted && sectionId === 'property'"
+                    :disabled="(isContractStarted && sectionId === 'property') || question.readOnly"
                     :class="{
                       'p-invalid': validationErrors[question.fieldId]?.length,
                       'marked-input': isMarked(
@@ -60,7 +60,7 @@
                     class="w-full"
                     @blur="setInputValue(question, $event.target.value)"
                   />
-                  <div class="flex justify-center items-center ml-4">
+                  <div v-if="sectionId !== 'property' && !question.readOnly" class="flex justify-center items-center ml-4">
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -108,7 +108,7 @@
                     :max-fraction-digits="2"
                     @input="setInputValue(question, $event.value)"
                   />
-                  <div class="flex justify-center items-center ml-4">
+                  <div v-if="sectionId !== 'property'" class="flex justify-center items-center ml-4">
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -159,7 +159,7 @@
                     locale="en-US"
                     @input="setInputValue(question, $event.value)"
                   />
-                  <div class="flex justify-center items-center ml-4">
+                  <div v-if="sectionId !== 'property'" class="flex justify-center items-center ml-4">
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -206,7 +206,7 @@
                     class="w-full"
                     @update:model-value="setInputValue(question, $event)"
                   />
-                  <div class="flex justify-center items-center ml-4">
+                  <div v-if="sectionId !== 'property'" class="flex justify-center items-center ml-4">
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -238,7 +238,7 @@
               <!-- Select Input -->
               <div v-else-if="question.type === 'select'" class="flex flex-col">
                 <InputGroup>
-                  <Listbox
+                  <Dropdown
                     v-model="inputValues[question.fieldId]"
                     :disabled="isContractStarted && sectionId === 'property'"
                     :class="{
@@ -253,9 +253,9 @@
                     option-value="value"
                     placeholder="Select an option"
                     class="w-full"
-                    @change="setInputValue(question, $event.value)"
+                    @update:model-value="setInputValue(question, $event)"
                   />
-                  <div class="flex justify-center items-center ml-4">
+                  <div v-if="sectionId !== 'property'" class="flex justify-center items-center ml-4">
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -309,7 +309,7 @@
                     class="mr-2"
                     @update:model-value="setInputValue(question, $event)"
                   />
-                  <div class="flex justify-center items-center ml-4">
+                  <div v-if="sectionId !== 'property'" class="flex justify-center items-center ml-4">
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -355,7 +355,7 @@
                     class="w-full"
                     @blur="setInputValue(question, $event.target.value)"
                   />
-                  <div class="flex justify-center items-center ml-4">
+                  <div v-if="sectionId !== 'property'" class="flex justify-center items-center ml-4">
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -431,9 +431,10 @@
 </template>
 
 <script>
-import { getQuestionsForSection } from "../config/TX";
+import { getQuestionsForSection, sections } from "../config/TX";
 import { ContractAPI } from "@/services/api.js";
 import { createContractPayload } from "@/utils/fieldMapUtils";
+import { AuthService } from "@/services/auth.js";
 
 import SectionProgressBar from "@/components/SectionProgressBar.vue";
 
@@ -441,7 +442,7 @@ import SectionProgressBar from "@/components/SectionProgressBar.vue";
 import Panel from "primevue/panel";
 import InputText from "primevue/inputtext";
 import InputNumber from "primevue/inputnumber";
-import Listbox from "primevue/listbox";
+import Dropdown from "primevue/dropdown";
 import Button from "primevue/button";
 import InputMask from "primevue/inputmask";
 import DatePicker from "primevue/datepicker";
@@ -458,7 +459,7 @@ export default {
     InputText,
     InputNumber,
     DatePicker,
-    Listbox,
+    Dropdown,
     PrimeButton: Button,
     InputMask,
     SectionProgressBar,
@@ -481,7 +482,9 @@ export default {
       return !!this.$store.state.contractId; // Assuming contractId is set when a contract is started
     },
     formDataKeys() {
-      return Object.keys(this.$store.state.formData);
+      // Use the fixed list of navigable sections from the config
+      // instead of all keys from formData
+      return sections;
     },
     invisibleQuestions() {
       console.log("checking invisible questions...");
@@ -572,9 +575,12 @@ export default {
   },
   watch: {
     "$route.params.sectionId"(newVal) {
-      this.sectionId = newVal;
-      this.sectionIndex = this.formDataKeys.indexOf(this.sectionId);
-      this.updateFormData();
+      // Only update if we have a valid section ID (not navigating away)
+      if (newVal && this.formDataKeys.includes(newVal)) {
+        this.sectionId = newVal;
+        this.sectionIndex = this.formDataKeys.indexOf(this.sectionId);
+        this.updateFormData();
+      }
     },
     "$store.state.formData": {
       handler() {
@@ -583,9 +589,37 @@ export default {
       deep: true,
     },
   },
-  created() {
+  async created() {
     this.sectionIndex = this.formDataKeys.indexOf(this.sectionId);
     this.updateFormData();
+    
+    // If we're on the buyers section, populate the primaryName and email from user profile
+    if (this.sectionId === 'buyers') {
+      const user = await AuthService.getUser();
+      if (user) {
+        // Set the primaryName field with the user's full name
+        if (user.user_metadata?.full_name) {
+          this.inputValues.primaryName = user.user_metadata.full_name;
+          // Also update the store
+          this.$store.commit("updateFormData", {
+            sectionId: 'buyers',
+            fieldId: 'primaryName',
+            value: user.user_metadata.full_name,
+          });
+        }
+        
+        // Always populate the email field from the user profile (immutable)
+        if (user.email) {
+          this.inputValues.email = user.email;
+          this.$store.commit("updateFormData", {
+            sectionId: 'buyers',
+            fieldId: 'email',
+            value: user.email,
+          });
+        }
+      }
+    }
+    
     window.scrollTo(0, 0);
   },
   methods: {
@@ -711,17 +745,35 @@ export default {
       //   return;
       // }
 
-      // No validation errors, update the store's formData
+      // Filter out marked questions from inputValues before saving
+      // This ensures marked "I don't know" fields aren't overwritten with empty values
+      const markedFields = this.$store.state.markedQuestions[this.sectionId] || [];
+      const dataToSave = {};
+      
+      Object.keys(this.inputValues).forEach(fieldId => {
+        // Only include fields that are NOT marked as "I don't know"
+        if (!markedFields.includes(fieldId)) {
+          dataToSave[fieldId] = this.inputValues[fieldId];
+        }
+      });
+      
+      console.log('Marked fields for section:', this.sectionId, markedFields);
+      console.log('Data to save (excluding marked fields):', dataToSave);
+
+      // Update the store's formData with non-marked fields only
       this.$store.commit("updateSectionFormData", {
         sectionId: this.sectionId,
-        data: { ...this.inputValues },
+        data: dataToSave,
       });
 
       try {
-        // Create update payload with the current section's data
+        // Create update payload with the current section's data (excluding marked fields)
         const sectionUpdate = {
-          [this.sectionId]: { ...this.inputValues }
+          [this.sectionId]: dataToSave
         };
+        
+        console.log('Current markedQuestions from store:', JSON.stringify(this.$store.state.markedQuestions));
+        console.log('Passing markedQuestions to createContractPayload:', this.$store.state.markedQuestions);
         
         // Use the field mapping utilities to create the proper payload
         const updatePayload = createContractPayload(sectionUpdate, {
@@ -741,8 +793,12 @@ export default {
             params: { sectionId: this.formDataKeys[this.sectionIndex + 1] },
           });
         } else {
-          // Handle end of form (e.g., navigate to a summary page)
-          console.log("Form completed.");
+          // All form sections completed - navigate to the contract dashboard
+          console.log("All form sections completed. Navigating to dashboard.");
+          this.$router.push({
+            name: "ContractDashboard",
+            params: { id: this.$store.state.contractId },
+          });
         }
       } catch (error) {
         console.error("Error updating contract:", error);

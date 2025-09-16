@@ -104,14 +104,14 @@ export default defineComponent({
       },
       {
         name: "Proof of Earnest Money Check",
-        bucket: "earnest",
+        bucket: "earnest_check",
         exists: false,
         filename: null,
         filekey: null,
       },
       {
         name: "Proof of Option Fee Check",
-        bucket: "optionfee",
+        bucket: "option_check",
         exists: false,
         filename: null,
         filekey: null,

@@ -58,16 +58,16 @@ export default {
           store.getters.getUploadedDocument("preapproval")?.isUploaded,
       },
       {
-        type: "earnest",
+        type: "earnest_check",
         label: "Earnest Money",
         icon: "pi pi-dollar",
-        isUploaded: store.getters.getUploadedDocument("earnest")?.isUploaded,
+        isUploaded: store.getters.getUploadedDocument("earnest_check")?.isUploaded,
       },
       {
-        type: "optionfee",
+        type: "option_check",
         label: "Option Fee",
         icon: "pi pi-money-bill",
-        isUploaded: store.getters.getUploadedDocument("optionfee")?.isUploaded,
+        isUploaded: store.getters.getUploadedDocument("option_check")?.isUploaded,
       },
     ]);
 

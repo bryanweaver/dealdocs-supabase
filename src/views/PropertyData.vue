@@ -895,14 +895,15 @@ export default {
             const query = buildDatafinityQuery(this.verifiedAddress);
             console.log("formattedAddress", query);
 
+            // Use our new complete view that includes all fields including features
             const response = await axios.post(
               propertyEndpoint,
               {
                 query,
-                format: "JSON",
+                format: "JSON", 
                 num_records: 1,
                 download: false,
-                view: "dealdocs_property_view",
+                view: "dealdocs_property_complete"  // New view that includes features field for legal description
               },
               {
                 headers: {

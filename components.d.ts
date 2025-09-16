@@ -24,6 +24,7 @@ declare module 'vue' {
     Dialog: typeof import('primevue/dialog')['default']
     DocumentChecklist: typeof import('./src/components/DocumentChecklist.vue')['default']
     DocumentUploadList: typeof import('./src/components/DocumentUploadList.vue')['default']
+    Dropdown: typeof import('primevue/dropdown')['default']
     EtchSignIFrame: typeof import('./src/components/EtchSignIFrame.vue')['default']
     FillContract: typeof import('./src/components/FillContract.vue')['default']
     GoToFormsCard: typeof import('./src/components/GoToFormsCard.vue')['default']

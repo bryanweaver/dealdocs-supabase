@@ -246,11 +246,27 @@ const anyMenuItemVisible = computed(() => {
 // Add a ref to track previous visibility state
 const previousMenuVisibility = ref(false);
 
+// Track if this is the initial load to prevent auto-opening sidebar
+const isInitialLoad = ref(true);
+
+// After component mounts, set initial load to false
+onMounted(() => {
+  setTimeout(() => {
+    isInitialLoad.value = false;
+  }, 500); // Small delay to ensure everything is loaded
+});
+
 // Watch for changes to the anyMenuItemVisible property
 watch(
   anyMenuItemVisible,
   (isVisible, oldVisible) => {
     console.log("Menu visibility changed:", isVisible);
+
+    // Skip auto-toggle on initial load to prevent sidebar opening on login
+    if (isInitialLoad.value) {
+      console.log("Skipping menu toggle on initial load");
+      return;
+    }
 
     // If no items are visible and the menu is currently active, collapse it
     if (!isVisible) {

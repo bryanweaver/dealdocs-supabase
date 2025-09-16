@@ -1072,43 +1072,93 @@ export function mapDatafinityResponseToPropertyData(propertyData: any) {
   let legalDescription = "";
   
   // First try: Check features array (if it exists)
-  if (propertyData?.features) {
-    lot = propertyData.features.find?.(
-      (feature) => feature.key === "legalLotNumber1",
-    )?.value?.[0] || "";
-    block = propertyData.features.find?.((feature) => feature.key === "legalBlock1")
-      ?.value?.[0] || "";
+  if (propertyData?.features && Array.isArray(propertyData.features)) {
+    // Look for lot number in features
+    const lotFeature = propertyData.features.find?.(
+      (feature) => feature.key === "legalLotNumber1" || 
+                   feature.key === "lotNumber" || 
+                   feature.key === "lot"
+    );
+    if (lotFeature?.value?.[0]) {
+      lot = String(lotFeature.value[0]);
+    }
+    
+    // Look for block in features  
+    const blockFeature = propertyData.features.find?.(
+      (feature) => feature.key === "legalBlock1" || 
+                   feature.key === "block" ||
+                   feature.key === "legalBlock"
+    );
+    if (blockFeature?.value?.[0]) {
+      block = String(blockFeature.value[0]);
+    }
+    
+    // Look for legal description in features
+    const legalFeature = propertyData.features.find?.(
+      (feature) => feature.key === "legalDescription" || 
+                   feature.key === "legal" ||
+                   feature.key === "legalSubdivision"
+    );
+    if (legalFeature?.value?.[0]) {
+      legalDescription = String(legalFeature.value[0]);
+    }
+    
+    // Also check for additional legal fields
+    const sectionFeature = propertyData.features.find?.(f => f.key === "legalSection");
+    const townshipFeature = propertyData.features.find?.(f => f.key === "legalTownship");
+    const rangeFeature = propertyData.features.find?.(f => f.key === "legalRange");
+    
+    // If we have section/township/range but no full legal description, build one
+    if (!legalDescription && (sectionFeature || townshipFeature || rangeFeature)) {
+      const parts = [];
+      if (sectionFeature?.value?.[0]) parts.push(`Section ${sectionFeature.value[0]}`);
+      if (townshipFeature?.value?.[0]) parts.push(`Township ${townshipFeature.value[0]}`);
+      if (rangeFeature?.value?.[0]) parts.push(`Range ${rangeFeature.value[0]}`);
+      if (parts.length > 0) {
+        legalDescription = parts.join(", ");
+      }
+    }
   }
   
   // Second try: Check if legalDescription exists at root level
-  if (propertyData?.legalDescription) {
+  if (!legalDescription && propertyData?.legalDescription) {
     legalDescription = propertyData.legalDescription;
   }
   
   // Third try: Look for legal description in descriptions array
-  // Look for description that matches pattern like "LT 5 BLK 4 PARKVIEW WEST SEC 1"
-  if (propertyData?.descriptions) {
+  // Look for descriptions that contain "BLOCK" and "Lot" patterns or subdivision info
+  if (propertyData?.descriptions && !legalDescription) {
     const legalDesc = propertyData.descriptions.find((desc) => {
       const value = desc.value || "";
-      // Look for patterns like "LT X BLK Y" which indicates a legal description
-      return value.match(/^(LT|LOT)\s+\d+\s+(BLK|BLOCK)\s+\d+/i);
+      // Look for patterns like "BLOCK 1, Lot 16" or "LT 5 BLK 4" in descriptions
+      return value.match(/(BLOCK|BLK)\s+\d+.*?(Lot|LT)\s+\d+/i) || 
+             value.match(/(Lot|LT)\s+\d+.*?(BLOCK|BLK)\s+\d+/i) ||
+             value.match(/^[A-Z0-9]+-.*BLOCK.*LOT/i); // Pattern like "S835100 - Riverwood At Oakhurst 01, BLOCK 1, Lot 16"
     });
     
     if (legalDesc) {
-      // Always use the legal description if found
+      // Use the legal description if found
       legalDescription = legalDesc.value;
       
-      // Try to extract lot and block from the legal description
-      const lotMatch = legalDescription.match(/(LT|LOT)\s+(\d+)/i);
-      const blockMatch = legalDescription.match(/(BLK|BLOCK)\s+(\d+)/i);
-      
-      if (lotMatch) {
-        lot = lotMatch[2];
-      }
-      if (blockMatch) {
-        block = blockMatch[2];
+      // Try to extract lot and block from the legal description if not already set
+      if (!lot || !block) {
+        // Handle both "BLOCK 1, Lot 16" and "LT 5 BLK 4" patterns
+        const lotMatch = legalDescription.match(/(Lot|LT)\s+(\d+)/i);
+        const blockMatch = legalDescription.match(/(BLOCK|BLK)\s+(\d+)/i);
+        
+        if (lotMatch && !lot) {
+          lot = lotMatch[2];
+        }
+        if (blockMatch && !block) {
+          block = blockMatch[2];
+        }
       }
     }
+  }
+  
+  // Fourth try: If still no legal description but we have subdivision, use that
+  if (!legalDescription && propertyData?.subdivision) {
+    legalDescription = propertyData.subdivision;
   }
   
   return {

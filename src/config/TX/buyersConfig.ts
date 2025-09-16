@@ -12,8 +12,9 @@ export const BuyersConfig = [
     question: "What is your full name?",
     type: "text",
     fieldId: "primaryName",
+    readOnly: true,
     description:
-      "The buyer's first name is part of the buyer's identity, which is required in Paragraph 1 of the TREC 20-17 form to specify the party purchasing the property.",
+      "The buyer's first name is part of the buyer's identity, which is required in Paragraph 1 of the TREC 20-17 form to specify the party purchasing the property. This name is automatically populated from your account profile and cannot be changed to ensure contract integrity.",
   },
   {
     section: "Buyers",
@@ -30,8 +31,9 @@ export const BuyersConfig = [
     question: "What is your email address?",
     type: "text",
     fieldId: "email",
+    readOnly: true,
     description:
-      "The buyer's email address is used for communication purposes and is typically included in Paragraph 21 of the TREC 20-17 form.",
+      "The buyer's email address is used for communication purposes and is typically included in Paragraph 21 of the TREC 20-17 form. This email is automatically populated from your account and cannot be changed to ensure contract integrity.",
   },
   {
     section: "Buyers",

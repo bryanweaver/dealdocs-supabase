@@ -42,18 +42,94 @@ export const ContractAPI = {
   },
 
   async update(id, updates) {
+    console.log('ContractAPI.update - input updates:', updates);
+    console.log('ContractAPI.update - marked_questions in updates:', updates.marked_questions);
+    console.log('ContractAPI.update - marked_questions type:', typeof updates.marked_questions, Array.isArray(updates.marked_questions));
+    
+    // CRITICAL FIX: Fetch existing contract data first to merge with updates
+    // This prevents data loss when updating individual sections
+    const { data: existingContract, error: fetchError } = await supabase
+      .from('contracts')
+      .select('*')
+      .eq('id', id)
+      .single()
+    
+    if (fetchError) throw fetchError
+    
+    console.log('ContractAPI.update - existing JSONB columns:', {
+      property_info: existingContract.property_info,
+      parties: existingContract.parties,
+      financial_details: existingContract.financial_details,
+      title_closing: existingContract.title_closing,
+      legal_sections: existingContract.legal_sections,
+      additional_info: existingContract.additional_info
+    });
+    
     // Transform the updates using the comprehensive mapping utilities
     const transformedUpdates = transformVuexDataForSupabase(updates)
     const searchableFields = extractSearchableFields(updates)
     
+    // Deep merge function for nested JSONB data
+    const deepMerge = (existing, updates) => {
+      if (!updates) return existing;
+      if (!existing) return updates;
+      
+      const merged = { ...existing };
+      Object.keys(updates).forEach(key => {
+        if (typeof updates[key] === 'object' && updates[key] !== null && !Array.isArray(updates[key])) {
+          // For nested objects, merge recursively
+          merged[key] = deepMerge(existing[key], updates[key]);
+        } else {
+          // For primitives and arrays, replace
+          merged[key] = updates[key];
+        }
+      });
+      return merged;
+    };
+    
+    // Merge JSONB columns instead of replacing them
+    const mergedUpdate = {
+      ...transformedUpdates,
+      // Deep merge each JSONB column with existing data
+      property_info: transformedUpdates.property_info ? 
+        deepMerge(existingContract.property_info, transformedUpdates.property_info) : 
+        existingContract.property_info,
+      parties: transformedUpdates.parties ? 
+        deepMerge(existingContract.parties, transformedUpdates.parties) : 
+        existingContract.parties,
+      financial_details: transformedUpdates.financial_details ? 
+        deepMerge(existingContract.financial_details, transformedUpdates.financial_details) : 
+        existingContract.financial_details,
+      title_closing: transformedUpdates.title_closing ? 
+        deepMerge(existingContract.title_closing, transformedUpdates.title_closing) : 
+        existingContract.title_closing,
+      legal_sections: transformedUpdates.legal_sections ? 
+        deepMerge(existingContract.legal_sections, transformedUpdates.legal_sections) : 
+        existingContract.legal_sections,
+      additional_info: transformedUpdates.additional_info ? 
+        deepMerge(existingContract.additional_info, transformedUpdates.additional_info) : 
+        existingContract.additional_info,
+    }
+    
+    // If marked_questions is already present in updates (from createContractPayload),
+    // preserve it as-is instead of letting transformVuexDataForSupabase handle it
+    if (updates.marked_questions !== undefined) {
+      mergedUpdate.marked_questions = updates.marked_questions;
+    }
+    
+    const finalUpdate = {
+      ...mergedUpdate,
+      updated_at: new Date().toISOString(),
+      // Update extracted searchable fields using the mapping utility
+      ...searchableFields
+    };
+    
+    console.log('ContractAPI.update - final merged update:', finalUpdate);
+    console.log('ContractAPI.update - marked_questions in final:', finalUpdate.marked_questions);
+    
     const { data, error } = await supabase
       .from('contracts')
-      .update({
-        ...transformedUpdates,
-        updated_at: new Date().toISOString(),
-        // Update extracted searchable fields using the mapping utility
-        ...searchableFields
-      })
+      .update(finalUpdate)
       .eq('id', id)
       .select()
       .single()
@@ -89,7 +165,10 @@ export const ContractAPI = {
   async list(filters = {}) {
     let query = supabase
       .from('contracts') // Use main table instead of view to get full property_info
-      .select('*')
+      .select(`
+        *,
+        contract_documents(*)
+      `)
       .order('created_at', { ascending: false })
     
     if (filters.status) {
@@ -108,7 +187,12 @@ export const ContractAPI = {
       query = query.or(`property_address.ilike.%${filters.search}%,buyer_name.ilike.%${filters.search}%,seller_name.ilike.%${filters.search}%,mls_number.ilike.%${filters.search}%`)
     }
     
-    return dbQuery(query)
+    const result = await dbQuery(query);
+    console.log('ContractAPI.list - raw contracts from database:', result);
+    if (result && result.length > 0) {
+      console.log('First contract marked_questions:', result[0].marked_questions);
+    }
+    return result
   },
 
   async delete(id) {
@@ -377,6 +461,19 @@ export const StorageAPI = {
       .createSignedUrl(path, expiresIn)
     
     if (error) throw error
+    
+    // Fix internal Docker hostname if present
+    if (data.signedUrl && data.signedUrl.includes('://kong:8000')) {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      // Handle both http and https
+      const publicUrl = data.signedUrl.replace(/https?:\/\/kong:8000/g, supabaseUrl)
+      console.log('Fixed kong:8000 URL in StorageAPI.getSignedUrl:', {
+        original: data.signedUrl.substring(0, 60) + '...',
+        fixed: publicUrl.substring(0, 60) + '...'
+      })
+      return publicUrl
+    }
+    
     return data.signedUrl
   }
 }
@@ -456,10 +553,10 @@ export const EtchAPI = {
       .from('etch_packets')
       .select('*')
       .eq('etch_packet_id', etchPacketId)
-      .single()
+      .maybeSingle() // Use maybeSingle() instead of single() to handle 0 rows
     
     if (error) throw error
-    return data
+    return data // Will be null if no record found
   },
 
   async list(contractId) {
@@ -471,6 +568,32 @@ export const EtchAPI = {
     
     if (error) throw error
     return data
+  },
+
+  async delete(id) {
+    console.log('EtchAPI.delete - Attempting to delete etch packet with ID:', id);
+    
+    const { data, error } = await supabase
+      .from('etch_packets')
+      .delete()
+      .eq('id', id)
+      .select() // Add select to see what was deleted
+    
+    console.log('EtchAPI.delete - Delete result:', { data, error });
+    
+    if (error) {
+      console.error('EtchAPI.delete - Error:', error);
+      throw error;
+    }
+    
+    // Check if anything was actually deleted
+    if (!data || data.length === 0) {
+      console.warn('EtchAPI.delete - No rows were deleted. Possible RLS policy issue.');
+      throw new Error('No rows were deleted. You may not have permission to delete this etch packet.');
+    }
+    
+    console.log('EtchAPI.delete - Successfully deleted:', data);
+    return true
   }
 }
 

@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import { useStore } from "vuex";
 import { AuthService } from "@/services/auth.js";
+import { ContractAPI } from "@/services/api.js";
 
 const router = useRouter();
+const store = useStore();
 const isAuthenticated = ref(false);
 
 // Check authentication status
@@ -35,12 +38,43 @@ const handleSignOut = async () => {
   window.location.href = "/#/auth"; // Force reload to auth page
 };
 
+// Load contract if contractId exists in localStorage
+const loadStoredContract = async () => {
+  const contractId = localStorage.getItem("contractId");
+  if (contractId && isAuthenticated.value) {
+    try {
+      console.log("Loading stored contract:", contractId);
+      const contract = await ContractAPI.get(contractId);
+      if (contract) {
+        console.log("Raw contract data from database:", JSON.stringify(contract, null, 2));
+        store.dispatch("selectContract", contract);
+        console.log("Contract loaded and dispatched to store");
+        console.log("Store formData after loading:", JSON.stringify(store.state.formData, null, 2));
+      }
+    } catch (error) {
+      console.error("Error loading stored contract:", error);
+      // Clear invalid contractId
+      localStorage.removeItem("contractId");
+    }
+  }
+};
+
 onMounted(async () => {
   await checkAuthStatus();
   
+  // Load stored contract after authentication check
+  if (isAuthenticated.value) {
+    await loadStoredContract();
+  }
+  
   // Listen for auth state changes
-  AuthService.onAuthStateChange((event, session) => {
+  AuthService.onAuthStateChange(async (event, session) => {
     isAuthenticated.value = !!session?.user;
+    
+    // Load contract when user logs in
+    if (event === 'SIGNED_IN' && session?.user) {
+      await loadStoredContract();
+    }
   });
   
   const intervalId = setInterval(checkAndHandleSessionExpiry, 60000);

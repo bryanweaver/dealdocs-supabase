@@ -352,16 +352,9 @@ export default defineComponent({
       });
       
       // Reset the state for this document type in the store
-      this.$store.dispatch("uploadDocument", {
-        documentType: this.documentType,
-        document: {
-          isUploaded: false,
-          eTag: null,
-          key: null,
-          date: null,
-          size: null,
-        },
-        isUploaded: false,
+      this.$store.commit("deleteUpload", {
+        contractId: this.contractId,
+        documentType: this.documentType
       });
     },
   },

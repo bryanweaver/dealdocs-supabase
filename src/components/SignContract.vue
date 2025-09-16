@@ -92,7 +92,7 @@ export default {
       default: "",
     },
   },
-  emits: ["contract-uploaded"],
+  emits: ["contract-uploaded", "etch-packet-created", "etch-packet-updated"],
 
   data() {
     return {
@@ -134,20 +134,22 @@ export default {
         (packet) => packet.eid === event.etchPacketEid,
       );
 
-      //TODO: need to update the etchPacket in store
       const body = {
         documentGroupEid: event.documentGroupEid,
+        etchPacketEid: event.etchPacketEid,
+        accountId: this.$store.state.accountId,
+        contractId: this.$store.state.contractId
       };
       let uploadKeys = [];
       
-      // Fetch the signed document group from the Lambda function
-      // Note: This will need to be replaced with a Supabase Edge Function
+      // Fetch the signed document group from the edge function
       try {
+        const session = await AuthService.getSession();
         const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/document-group`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${(await AuthService.getSession())?.access_token}`
+            'Authorization': `Bearer ${session?.access_token}`
           },
           body: JSON.stringify(body)
         });
@@ -155,31 +157,32 @@ export default {
         const statusCode = response.status;
         const responseBody = await response.json();
 
-      if (statusCode === 200) {
-        for (const document of responseBody.documents) {
-          const pdfArrayBuffer = base64ToArrayBuffer(document.fileData);
-          const pdfBlob = new Blob([pdfArrayBuffer], {
-            type: "application/pdf",
-          });
-
-          const uploadPath = `accounts/${this.accountId}/contracts/${this.contractId}/etch-packets/${event.etchPacketEid}/${document.fileName}`;
-          uploadKeys.push(uploadPath);
-
-          // Save the PDF to Supabase Storage
-          const result = await StorageAPI.upload(
-            pdfBlob,
-            uploadPath,
-            'contracts'
-          );
-          console.log("Successfully saved PDF to Supabase Storage:", result);
+        if (statusCode === 200) {
+          // Documents are now stored in Supabase storage by the edge function
+          // We just need to track the storage paths
+          if (responseBody.documents && responseBody.documents.length > 0) {
+            for (const document of responseBody.documents) {
+              if (document.storagePath) {
+                uploadKeys.push(document.storagePath);
+                console.log("Document stored at:", document.storagePath);
+              }
+            }
+          }
+          
+          // Update document group info if we have it
+          if (responseBody.documentGroup && etchPacketIndex !== -1) {
+            // Update the etch packet in store with latest document group info
+            this.$store.commit("updateEtchPacketDocumentGroup", {
+              etchPacketIndex,
+              documentGroup: responseBody.documentGroup
+            });
+          }
+        } else if (statusCode >= 400) {
+          console.warn("Error fetching documents:", responseBody.error);
         }
-      } else if (statusCode >= 400) {
-        console.warn("Validation errors");
-        console.warn("some error");
-      }
       } catch (error) {
         console.error('Error fetching document group:', error);
-        return;
+        // Don't return - continue to update status even if document fetch fails
       }
 
       console.log("etchPacketIndex", etchPacketIndex);
@@ -208,18 +211,20 @@ export default {
 
       // Save the updated etchPacket to Supabase
       await this.saveEtchPacket(updatedEtchPacket);
+      
+      // Emit event to refresh the list
+      this.$emit('etch-packet-updated');
 
-      // if (event.nextSignerEid) {
-      //   // There is a next signer, fetch their signing URL
-      //   this.currentSigner = event.nextSignerEid;
-      //   // this.fetchEsignUrl();
-      // } else {
-      //   // All signers have completed
-      //   this.showIframeDialog = false;
-      //   // Handle final completion (e.g., save the fully signed PDF to S3, update contract status)
-      // }
+      // Close the dialog since signing is complete for this signer
+      this.showIframeDialog = false;
     },
     async fetchEsignUrl() {
+      // Prevent double-clicks
+      if (this.loading) {
+        console.log('Already loading, skipping duplicate call');
+        return;
+      }
+      
       this.loading = true;
       const body = this.getPayload();
       try {
@@ -541,21 +546,27 @@ export default {
         if (existing) {
           // Update existing etch packet
           const result = await EtchAPI.update(existing.id, {
-            document_group: etchPacket.documentGroup,
+            signer_info: etchPacket.documentGroup, // Changed from document_group to signer_info
             status: etchPacket.status || 'pending',
             updated_at: new Date().toISOString()
           });
           console.log("Updated etchPacket:", result);
         } else {
+          // Extract signer emails for database
+          const signerEmails = etchPacket.documentGroup?.signers?.map(s => s.email) || [];
+          const primarySignerEmail = signerEmails[0] || null;
+          
           // Create new etch packet
           const result = await EtchAPI.create({
             etch_packet_id: etchPacket.eid,
             contract_id: this.contractId,
-            document_group: etchPacket.documentGroup,
+            signer_info: etchPacket.documentGroup, // Changed from document_group to signer_info
+            signer_email: primarySignerEmail, // Add primary signer email for indexing
             status: etchPacket.status || 'pending',
             created_at: new Date().toISOString()
           });
           console.log("Created etchPacket:", result);
+          this.$emit('etch-packet-created', result);
         }
       } catch (error) {
         console.error('Error saving etch packet:', error);

@@ -61,7 +61,10 @@
       "WebFetch(domain:docs.datafiniti.co)",
       "Bash(git log:*)",
       "Bash(npm ls:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npx eslint:*)",
+      "WebFetch(domain:www.useanvil.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ],
     "deny": [],
     "ask": [],

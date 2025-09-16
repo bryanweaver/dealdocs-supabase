@@ -400,18 +400,28 @@ const store = createStore({
       state.contracts = initialState.contracts;
     },
     toggleMarkedQuestion(state, { sectionId, fieldId }) {
+      // Ensure we're working with a reactive object
+      if (!state.markedQuestions) {
+        state.markedQuestions = {};
+      }
+      
       if (!state.markedQuestions[sectionId]) {
-        // If the sectionId doesn't exist in markedQuestions, create a new array for it
-        state.markedQuestions[sectionId] = [];
+        // Use object spread to ensure reactivity when adding new section
+        state.markedQuestions = {
+          ...state.markedQuestions,
+          [sectionId]: []
+        };
       }
 
-      const index = state.markedQuestions[sectionId].indexOf(fieldId);
+      const currentArray = [...(state.markedQuestions[sectionId] || [])];
+      const index = currentArray.indexOf(fieldId);
+      
       if (index !== -1) {
         // If the fieldId is already in the array, remove it
-        state.markedQuestions[sectionId].splice(index, 1);
+        currentArray.splice(index, 1);
       } else {
         // Otherwise, add it to the array
-        state.markedQuestions[sectionId].push(fieldId);
+        currentArray.push(fieldId);
 
         // and set the field in state to null
         state.formData[sectionId] = {
@@ -419,7 +429,15 @@ const store = createStore({
           [fieldId]: null,
         };
       }
-      console.log("Marked question updated:", state.markedQuestions);
+      
+      // Replace the entire markedQuestions object to ensure reactivity
+      state.markedQuestions = {
+        ...state.markedQuestions,
+        [sectionId]: currentArray
+      };
+      
+      console.log("Marked question updated:", JSON.stringify(state.markedQuestions));
+      console.log(`Section ${sectionId} marked fields:`, state.markedQuestions[sectionId]);
     },
     setVerifiedAddress(state, address) {
       state.verifiedAddress = address;
@@ -468,14 +486,22 @@ const store = createStore({
       state.formData = Object.assign({}, mergedFormData);
 
       // Update markedQuestions - handle both string and object formats
+      console.log("setFormDataFromContract - checking for marked questions:", {
+        markedQuestions: contract.markedQuestions,
+        marked_questions: contract.marked_questions
+      });
+      
       if (contract.markedQuestions || contract.marked_questions) {
         const markedQuestionsData = contract.markedQuestions || contract.marked_questions;
+        console.log("Found marked questions data:", markedQuestionsData);
         if (typeof markedQuestionsData === 'string') {
           state.markedQuestions = JSON.parse(markedQuestionsData);
         } else {
           state.markedQuestions = markedQuestionsData || {};
         }
+        console.log("Set state.markedQuestions to:", state.markedQuestions);
       } else {
+        console.log("No marked questions found, setting to empty object");
         state.markedQuestions = {};
       }
       
@@ -517,18 +543,28 @@ const store = createStore({
     updateSectionFormData(state, { sectionId, data }) {
       state.formData[sectionId] = { ...state.formData[sectionId], ...data };
 
-      // Remove the field from markedQuestions if it exists
+      // Only remove fields from markedQuestions if they have actual values
+      // (not empty, null, or undefined) - this preserves "I don't know" marks
       Object.keys(data).forEach((fieldId) => {
-        if (state.markedQuestions[sectionId]) {
+        const value = data[fieldId];
+        const hasActualValue = value !== null && value !== undefined && value !== '';
+        
+        if (hasActualValue && state.markedQuestions[sectionId]) {
           const index = state.markedQuestions[sectionId].indexOf(fieldId);
           if (index !== -1) {
+            console.log(`Removing ${fieldId} from marked questions - has value: ${value}`);
             state.markedQuestions[sectionId].splice(index, 1);
           }
         }
       });
+      
       console.log(
         `Section ${sectionId} form data updated:`,
         state.formData[sectionId],
+      );
+      console.log(
+        `Section ${sectionId} marked questions after update:`,
+        state.markedQuestions[sectionId] || []
       );
     },
     setUploadedDocument(
@@ -543,18 +579,24 @@ const store = createStore({
         isUploaded,
       };
     },
-    deleteUpload(state, documentType: string) {
-      state.uploadedDocuments[documentType] = {
-        isUploaded: false,
-        eTag: null,
-        key: null,
-        lastModified: null,
-        size: null,
-        name: null,
-      };
-      console.log(
-        `Upload for document type '${documentType}' has been deleted from state.`,
-      );
+    deleteUpload(state, { contractId, documentType }) {
+      if (!contractId) {
+        contractId = state.contractId; // Use current contractId if not provided
+      }
+      
+      if (state.uploadedDocuments[contractId]) {
+        state.uploadedDocuments[contractId][documentType] = {
+          isUploaded: false,
+          eTag: null,
+          key: null,
+          lastModified: null,
+          size: null,
+          name: null,
+        };
+        console.log(
+          `Upload for document type '${documentType}' has been deleted from state for contract ${contractId}.`,
+        );
+      }
     },
     updateSignerStatus(
       state,
@@ -565,6 +607,12 @@ const store = createStore({
       const signer = etchPacket.documentGroup.signers[signerIndex];
       signer.status = status;
       signer.uploadKeys = uploadKeys;
+    },
+    updateEtchPacketDocumentGroup(state, { etchPacketIndex, documentGroup }) {
+      // Update the document group for an etch packet
+      if (state.etchPackets[etchPacketIndex]) {
+        state.etchPackets[etchPacketIndex].documentGroup = documentGroup;
+      }
     },
     deleteEtchPacket(state, { etchPacketEid }) {
       const index = state.etchPackets.findIndex(
@@ -609,7 +657,7 @@ const store = createStore({
           size: null,
           name: null,
         },
-        earnest: {
+        earnest_check: {
           isUploaded: false,
           eTag: null,
           key: null,
@@ -617,7 +665,7 @@ const store = createStore({
           size: null,
           name: null,
         },
-        optionfee: {
+        option_check: {
           isUploaded: false,
           eTag: null,
           key: null,
@@ -642,7 +690,7 @@ const store = createStore({
   getters: {
     // Returns the complete uploadedDocuments object
     getUploadedDocuments: (state) => state.uploadedDocuments,
-    // Returns the document for a specific documentType, e.g., "preapproval", "earnest"
+    // Returns the document for a specific documentType, e.g., "preapproval", "earnest_check"
     getUploadedDocument: (state) => (documentType) => {
       const contractId = state.contractId;
       return (
@@ -785,7 +833,7 @@ const store = createStore({
       const contractId = state.contractId;
       if (!state.uploadedDocuments[contractId]) return false;
 
-      const requiredDocs = ["preapproval", "earnest", "optionfee"];
+      const requiredDocs = ["preapproval", "earnest_check", "option_check"];
       return requiredDocs.every(
         (docType) =>
           state.uploadedDocuments[contractId][docType]?.isUploaded === true,
@@ -798,11 +846,19 @@ const store = createStore({
         );
       });
 
-      return (
-        sortedEtchPackets.length > 0 &&
-        sortedEtchPackets[0].documentGroup.signers.every(
-          (signer) => signer.status === "completed",
-        )
+      if (sortedEtchPackets.length === 0) {
+        return false;
+      }
+
+      const latestPacket = sortedEtchPackets[0];
+      
+      // Check if documentGroup exists and has signers
+      if (!latestPacket.documentGroup || !latestPacket.documentGroup.signers) {
+        return false;
+      }
+
+      return latestPacket.documentGroup.signers.every(
+        (signer) => signer.status === "completed",
       );
     },
     getAgentContactCounts: (state) => state.agentContactCounts,
@@ -819,11 +875,47 @@ const store = createStore({
       
       commit("setFormDataFromContract", normalizedContract);
       commit("resetUploadedDocs");
+      
+      // Populate uploaded documents from contract_documents
+      if (contract.contract_documents && Array.isArray(contract.contract_documents)) {
+        console.log("Loading contract documents:", contract.contract_documents);
+        contract.contract_documents.forEach(doc => {
+          // Only load current version documents
+          if (!doc.is_current_version) return;
+          
+          // Use document_type directly without mapping since we fixed DocumentChecklist
+          const documentType = doc.document_type;
+          
+          commit("setUploadedDocument", {
+            contractId: contract.id,
+            documentType: documentType,
+            document: {
+              id: doc.id,
+              name: doc.file_name,
+              key: doc.storage_path,
+              filetype: doc.file_type ? doc.file_type.split('/').pop() : 'unknown',
+              size: doc.file_size,
+              date: new Date(doc.uploaded_at).toLocaleString([], {
+                year: "numeric",
+                month: "numeric",
+                day: "numeric",
+                hour: "numeric",
+                minute: "numeric",
+              }),
+              documentType: documentType
+            },
+            isUploaded: true
+          });
+        });
+      }
     },
-    async deleteUpload({ commit }, { documentType }) {
+    async deleteUpload({ commit, state }, { documentType, uploadKey }) {
       try {
         // You might include any additional backend deletion logic here.
-        commit("deleteUpload", documentType);
+        commit("deleteUpload", { 
+          contractId: state.contractId, 
+          documentType 
+        });
       } catch (error) {
         console.error("Error deleting upload:", error);
       }

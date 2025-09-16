@@ -13,36 +13,35 @@
 
 /**
  * Maps Vuex store section names to Supabase database field names
+ * Based on the actual database schema with JSONB columns:
+ * - property_info, parties, financial_details, title_closing, legal_sections, additional_info
  */
 export const VUEX_TO_SUPABASE_FIELD_MAP: Record<string, string> = {
-  // Core form sections
+  // These map directly to database columns
   property: 'property_info',
   buyers: 'parties', // Special case: buyers/sellers are combined into parties
   sellers: 'parties', // Special case: buyers/sellers are combined into parties  
-  finance: 'finance_info',
-  title: 'title_info',
-  leases: 'leases_info',
-  survey: 'survey_info',
   
-  // Additional form sections
-  homeownersAssociationAddendum: 'hoa_addendum',
-  titleObjections: 'title_objections',
-  titleNotices: 'title_notices',
-  propertyCondition: 'property_condition',
-  brokerDisclosure: 'broker_disclosure',
-  closing: 'closing_info',
-  possession: 'possession_info',
-  buyerProvisions: 'buyer_provisions',
-  buyerNotices: 'buyer_notices',
-  buyerAttorney: 'buyer_attorney',
+  // These don't have direct columns - they should go into JSONB fields
+  // We'll handle them separately in transformVuexDataForSupabase
+  // finance: 'financial_details',
+  // title: 'title_closing',
+  // leases: 'legal_sections',
+  // survey: 'legal_sections',
+  // homeownersAssociationAddendum: 'legal_sections',
+  // titleObjections: 'title_closing',
+  // titleNotices: 'title_closing',
+  // propertyCondition: 'additional_info',
+  // brokerDisclosure: 'additional_info',
+  // closing: 'title_closing',
+  // possession: 'additional_info',
+  // buyerProvisions: 'legal_sections',
+  // buyerNotices: 'legal_sections',
+  // buyerAttorney: 'legal_sections',
   // listingAgent is handled specially - goes into additional_info.listing_agent
   
-  // These fields may not need mapping (used as-is)
-  // markedQuestions: 'marked_questions',
-  // progress: 'progress',
-  // status: 'status',
-  // created_at: 'created_at',
-  // updated_at: 'updated_at'
+  // These fields need snake_case conversion
+  markedQuestions: 'marked_questions',
 };
 
 /**
@@ -68,11 +67,19 @@ export const SPECIAL_FIELD_MAPPINGS = {
 
 /**
  * Transform form data from Vuex format to Supabase format for saving
+ * Groups fields into the correct JSONB columns based on the database schema
  * @param vuexFormData - Form data from Vuex store
  * @returns Transformed data ready for Supabase insertion/update
  */
 export function transformVuexDataForSupabase(vuexFormData: any): any {
-  const supabaseData: any = {};
+  const supabaseData: any = {
+    property_info: {},
+    parties: {},
+    financial_details: {},
+    title_closing: {},
+    legal_sections: {},
+    additional_info: {}
+  };
   
   Object.entries(vuexFormData).forEach(([vuexFieldName, fieldData]) => {
     if (!fieldData || (typeof fieldData === 'object' && Object.keys(fieldData).length === 0)) {
@@ -80,41 +87,80 @@ export function transformVuexDataForSupabase(vuexFormData: any): any {
       return;
     }
     
-    // Handle special cases
-    if (vuexFieldName === 'buyers' || vuexFieldName === 'sellers') {
-      // Combine buyers and sellers into parties object
-      if (!supabaseData.parties) {
-        supabaseData.parties = {};
-      }
-      supabaseData.parties[vuexFieldName] = fieldData;
+    // Skip markedQuestions here - it will be handled separately in createContractPayload
+    if (vuexFieldName === 'markedQuestions') {
       return;
     }
     
-    // Handle listingAgent specially - it should go into additional_info, not as a top-level field
-    if (vuexFieldName === 'listingAgent') {
-      if (!supabaseData.additional_info) {
-        supabaseData.additional_info = {};
-      }
-      supabaseData.additional_info.listing_agent = fieldData;
-      return;
+    // Group fields into the correct JSONB columns
+    switch(vuexFieldName) {
+      // Property info column
+      case 'property':
+        supabaseData.property_info = { ...supabaseData.property_info, ...fieldData };
+        break;
+        
+      // Parties column (buyers and sellers)
+      case 'buyers':
+      case 'sellers':
+        supabaseData.parties[vuexFieldName] = fieldData;
+        break;
+        
+      // Financial details column
+      case 'finance':
+        console.log('Saving finance data to financial_details:', fieldData);
+        supabaseData.financial_details = { ...supabaseData.financial_details, finance: fieldData };
+        break;
+        
+      // Title and closing column
+      case 'title':
+      case 'closing':
+      case 'titleObjections':
+      case 'titleNotices':
+        supabaseData.title_closing[vuexFieldName] = fieldData;
+        break;
+        
+      // Legal sections column
+      case 'leases':
+      case 'survey':
+      case 'homeownersAssociationAddendum':
+      case 'buyerProvisions':
+      case 'buyerNotices':
+      case 'buyerAttorney':
+        supabaseData.legal_sections[vuexFieldName] = fieldData;
+        break;
+        
+      // Additional info column
+      case 'listingAgent':
+        supabaseData.additional_info.listing_agent = fieldData;
+        break;
+      case 'propertyCondition':
+      case 'brokerDisclosure':
+      case 'possession':
+        supabaseData.additional_info[vuexFieldName] = fieldData;
+        break;
+        
+      // Any other fields go to additional_info
+      default:
+        if (!['progress', 'status', 'created_at', 'updated_at', 'id'].includes(vuexFieldName)) {
+          supabaseData.additional_info[vuexFieldName] = fieldData;
+        }
+        break;
     }
-    
-    // Handle regular field mappings
-    const supabaseFieldName = VUEX_TO_SUPABASE_FIELD_MAP[vuexFieldName] || vuexFieldName;
-    supabaseData[supabaseFieldName] = fieldData;
   });
   
-  // Ensure we use property_info (the correct column name), not property
-  if (supabaseData.property && !supabaseData.property_info) {
-    supabaseData.property_info = supabaseData.property;
-    delete supabaseData.property; // Remove the incorrect field name
-  }
+  // Clean up empty JSONB objects
+  Object.keys(supabaseData).forEach(key => {
+    if (typeof supabaseData[key] === 'object' && Object.keys(supabaseData[key]).length === 0) {
+      delete supabaseData[key];
+    }
+  });
   
   return supabaseData;
 }
 
 /**
  * Transform data from Supabase format to Vuex format for loading
+ * Extracts fields from JSONB columns back to Vuex structure
  * @param supabaseData - Raw data from Supabase
  * @returns Transformed data ready for Vuex store
  */
@@ -126,34 +172,100 @@ export function transformSupabaseDataForVuex(supabaseData: any): any {
       return;
     }
     
-    // Handle special cases
-    if (supabaseFieldName === 'parties' && typeof fieldData === 'object') {
-      // Split parties back into buyers and sellers
-      if (fieldData.buyers) {
-        vuexData.buyers = fieldData.buyers;
-      }
-      if (fieldData.sellers) {
-        vuexData.sellers = fieldData.sellers;
-      }
-      // Also handle legacy format where parties might contain primaryBuyer/primarySeller
-      if (fieldData.primaryBuyer || fieldData.buyer) {
-        vuexData.buyers = fieldData.primaryBuyer || fieldData.buyer || fieldData.buyers;
-      }
-      if (fieldData.primarySeller || fieldData.seller) {
-        vuexData.sellers = fieldData.primarySeller || fieldData.seller || fieldData.sellers;
-      }
-      return;
+    switch(supabaseFieldName) {
+      // Property info
+      case 'property_info':
+        vuexData.property = fieldData;
+        break;
+        
+      // Parties (buyers and sellers)
+      case 'parties':
+        if (typeof fieldData === 'object') {
+          if (fieldData.buyers) {
+            vuexData.buyers = fieldData.buyers;
+          }
+          if (fieldData.sellers) {
+            vuexData.sellers = fieldData.sellers;
+          }
+          // Handle legacy format
+          if (fieldData.primaryBuyer || fieldData.buyer) {
+            vuexData.buyers = fieldData.primaryBuyer || fieldData.buyer || fieldData.buyers;
+          }
+          if (fieldData.primarySeller || fieldData.seller) {
+            vuexData.sellers = fieldData.primarySeller || fieldData.seller || fieldData.sellers;
+          }
+        }
+        break;
+        
+      // Financial details
+      case 'financial_details':
+        console.log('Loading financial_details from database:', fieldData);
+        if (typeof fieldData === 'object') {
+          // Check if it's stored as nested or flat
+          if (fieldData.finance) {
+            console.log('Found nested finance data:', fieldData.finance);
+            vuexData.finance = fieldData.finance;
+          } else if (Object.keys(fieldData).length > 0) {
+            // It's stored flat, so use it directly
+            console.log('Using flat financial_details as finance:', fieldData);
+            vuexData.finance = fieldData;
+          }
+        }
+        break;
+        
+      // Title and closing
+      case 'title_closing':
+        if (typeof fieldData === 'object') {
+          // Extract individual sections
+          Object.entries(fieldData).forEach(([key, value]) => {
+            vuexData[key] = value;
+          });
+        }
+        break;
+        
+      // Legal sections
+      case 'legal_sections':
+        if (typeof fieldData === 'object') {
+          // Extract individual sections
+          Object.entries(fieldData).forEach(([key, value]) => {
+            vuexData[key] = value;
+          });
+        }
+        break;
+        
+      // Additional info
+      case 'additional_info':
+        if (typeof fieldData === 'object') {
+          // Extract listing agent
+          if (fieldData.listing_agent) {
+            vuexData.listingAgent = fieldData.listing_agent;
+          }
+          // Extract other sections
+          Object.entries(fieldData).forEach(([key, value]) => {
+            if (key !== 'listing_agent') {
+              vuexData[key] = value;
+            }
+          });
+        }
+        break;
+        
+      // Marked questions
+      case 'marked_questions':
+        if (Array.isArray(fieldData)) {
+          vuexData.markedQuestions = formatMarkedQuestionsFromDatabase(fieldData);
+        }
+        break;
+        
+      // Other fields pass through
+      default:
+        if (!['id', 'user_id', 'status', 'created_at', 'updated_at', 'legacy_id', 
+               'mls_number', 'property_address', 'buyer_name', 'seller_name', 
+               'contract_date', 'pdf_url', 'pdf_generated_at', 'signed_pdf_url', 
+               'signed_at', 'progress'].includes(supabaseFieldName)) {
+          vuexData[supabaseFieldName] = fieldData;
+        }
+        break;
     }
-    
-    // Handle backward compatibility for property/property_info
-    if (supabaseFieldName === 'property_info' || supabaseFieldName === 'property') {
-      vuexData.property = fieldData;
-      return;
-    }
-    
-    // Handle regular field mappings
-    const vuexFieldName = SUPABASE_TO_VUEX_FIELD_MAP[supabaseFieldName] || supabaseFieldName;
-    vuexData[vuexFieldName] = fieldData;
   });
   
   return vuexData;
@@ -169,38 +281,18 @@ export function normalizeContractData(contractData: any): any {
   
   const normalized = { ...contractData };
   
-  // Handle property/property_info backward compatibility
-  if (normalized.property_info && !normalized.property) {
-    normalized.property = normalized.property_info;
-  } else if (normalized.property && !normalized.property_info) {
-    normalized.property_info = normalized.property;
-  }
+  // Apply the full transformation to extract all fields from JSONB columns
+  const transformedData = transformSupabaseDataForVuex(normalized);
   
-  // Handle parties structure
-  if (normalized.parties) {
-    if (typeof normalized.parties === 'object') {
-      // Already in the correct structure
-    } else if (normalized.buyers || normalized.sellers) {
-      // Convert individual buyer/seller fields to parties structure
-      normalized.parties = {};
-      if (normalized.buyers) normalized.parties.buyers = normalized.buyers;
-      if (normalized.sellers) normalized.parties.sellers = normalized.sellers;
-    }
-  } else {
-    // Create parties from individual buyer/seller fields
-    if (normalized.buyers || normalized.sellers) {
-      normalized.parties = {};
-      if (normalized.buyers) normalized.parties.buyers = normalized.buyers;
-      if (normalized.sellers) normalized.parties.sellers = normalized.sellers;
-    }
-  }
+  // Merge the transformed data back with the original to preserve any metadata fields
+  Object.assign(normalized, transformedData);
   
-  // Handle listing agent mapping
-  if (normalized.listing_agent && !normalized.listingAgent) {
-    normalized.listingAgent = normalized.listing_agent;
-  } else if (normalized.listing_agent_info && !normalized.listingAgent) {
-    normalized.listingAgent = normalized.listing_agent_info;
-  }
+  // Preserve important metadata fields from the original
+  if (contractData.id) normalized.id = contractData.id;
+  if (contractData.status) normalized.status = contractData.status;
+  if (contractData.created_at) normalized.created_at = contractData.created_at;
+  if (contractData.updated_at) normalized.updated_at = contractData.updated_at;
+  if (contractData.user_id) normalized.user_id = contractData.user_id;
   
   return normalized;
 }
@@ -224,16 +316,83 @@ export function createContractPayload(vuexFormData: any, additionalFields: any =
     ...(listing_agent_info && { listing_agent: listing_agent_info })
   };
   
-  return {
+  const payload = {
     ...transformedData,
     ...cleanAdditionalFields,
     // Store listing agent and other additional data in additional_info JSON field
     ...(Object.keys(additional_info).length > 0 && { additional_info }),
-    // Ensure marked questions are properly serialized
+    // Ensure marked questions are properly formatted as an array
+    // The database expects TEXT[] array type, not JSON string
     marked_questions: additionalFields.markedQuestions ? 
-      JSON.stringify(additionalFields.markedQuestions) : null,
+      formatMarkedQuestionsForDatabase(additionalFields.markedQuestions) : [],
     updated_at: new Date().toISOString()
   };
+  
+  console.log('Final contract payload:', payload);
+  console.log('marked_questions in payload:', payload.marked_questions);
+  console.log('marked_questions type:', typeof payload.marked_questions, Array.isArray(payload.marked_questions));
+  
+  return payload;
+}
+
+/**
+ * Format marked questions for database storage
+ * Converts the markedQuestions object structure into a flat array of strings
+ * @param markedQuestions - Object with section keys containing arrays of field IDs
+ * @returns Array of strings in format "sectionId.fieldId"
+ */
+function formatMarkedQuestionsForDatabase(markedQuestions: any): string[] {
+  const result: string[] = [];
+  
+  if (!markedQuestions || typeof markedQuestions !== 'object') {
+    console.log('formatMarkedQuestionsForDatabase - Invalid input:', markedQuestions);
+    return result;
+  }
+  
+  console.log('formatMarkedQuestionsForDatabase - Input:', JSON.stringify(markedQuestions));
+  console.log('formatMarkedQuestionsForDatabase - Type:', typeof markedQuestions);
+  console.log('formatMarkedQuestionsForDatabase - Keys:', Object.keys(markedQuestions));
+  
+  // markedQuestions is an object like: { buyers: ['primaryName', 'phone'], sellers: ['name'] }
+  Object.entries(markedQuestions).forEach(([sectionId, fieldIds]) => {
+    console.log(`Processing section ${sectionId}:`, fieldIds);
+    if (Array.isArray(fieldIds) && fieldIds.length > 0) {
+      fieldIds.forEach(fieldId => {
+        const formatted = `${sectionId}.${fieldId}`;
+        console.log(`Adding: ${formatted}`);
+        result.push(formatted);
+      });
+    }
+  });
+  
+  console.log('formatMarkedQuestionsForDatabase - Final result:', result);
+  return result;
+}
+
+/**
+ * Format marked questions from database format back to Vuex format
+ * Converts the flat array of strings back to object structure
+ * @param markedQuestions - Array of strings in format "sectionId.fieldId"
+ * @returns Object with section keys containing arrays of field IDs
+ */
+function formatMarkedQuestionsFromDatabase(markedQuestions: string[]): any {
+  const result: any = {};
+  
+  if (!markedQuestions || !Array.isArray(markedQuestions)) {
+    return result;
+  }
+  
+  markedQuestions.forEach(item => {
+    if (typeof item === 'string' && item.includes('.')) {
+      const [sectionId, fieldId] = item.split('.');
+      if (!result[sectionId]) {
+        result[sectionId] = [];
+      }
+      result[sectionId].push(fieldId);
+    }
+  });
+  
+  return result;
 }
 
 /**

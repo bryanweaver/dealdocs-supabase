@@ -41,6 +41,7 @@
     "supabase:status": "supabase status",
     "supabase:db:push": "supabase db push",
     "supabase:db:reset": "supabase db reset",
+    "supabase:functions": "supabase functions serve --env-file .env.local --no-verify-jwt",
     "supabase:functions:deploy": "supabase functions deploy",
     "supabase:deploy": "powershell -ExecutionPolicy Bypass -File deploy-to-supabase.ps1",
     "db:generate-types": "supabase gen types typescript --project-id rimwbejtyzolicucxbec > src/types/supabase.ts"

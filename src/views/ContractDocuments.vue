@@ -8,11 +8,11 @@
         />
         <DocumentUploadList
           title="Proof of Earnest Check"
-          document-type="earnest"
+          document-type="earnest_check"
         />
         <DocumentUploadList
           title="Proof of Option Fee Check"
-          document-type="optionfee"
+          document-type="option_check"
         />
         <!-- <DocumentUploadList
           title="Addendum Attachments"
