@@ -534,7 +534,7 @@ export default {
           : null;
         return {
           signers,
-          currentSigner: currentSigner.id,
+          currentSigner: currentSigner ? currentSigner.id : signers[0].id,
         };
       } else {
         return {
