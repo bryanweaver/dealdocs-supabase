@@ -13,39 +13,89 @@ export const ContractAPI = {
   async create(contractData) {
     const user = await getUser()
     if (!user) throw new Error('User not authenticated')
-    
+
     // Check if data is already transformed (has property_info instead of property)
     const isAlreadyTransformed = 'property_info' in contractData || 'parties' in contractData
-    
+
     // Only transform if not already transformed
-    const dataToInsert = isAlreadyTransformed 
-      ? contractData 
+    const dataToInsert = isAlreadyTransformed
+      ? contractData
       : transformVuexDataForSupabase(contractData)
-    
+
+    // Extract listing agent data to handle separately
+    const { listing_agent_data, ...contractDataToSave } = dataToInsert
+
+    // Create listing agent first if we have data
+    let listing_agent_id = null
+    if (listing_agent_data) {
+      console.log('ContractAPI.create - creating listing agent:', listing_agent_data)
+
+      const { data: agentData, error: agentError } = await supabase
+        .from('listing_agents')
+        .insert({
+          has_listing_agent_info: listing_agent_data.hasListingAgentInfo || false,
+          firm_name: listing_agent_data.firmName || null,
+          firm_license_number: listing_agent_data.firmLicenseNumber || null,
+          firm_street_address: listing_agent_data.firmStreetAddress || null,
+          firm_city: listing_agent_data.firmCity || null,
+          firm_state: listing_agent_data.firmState || null,
+          firm_postal_code: listing_agent_data.firmPostalCode || null,
+          firm_phone: listing_agent_data.firmPhone || null,
+          listing_associate_name: listing_agent_data.listingAssociateName || null,
+          listing_associate_license_number: listing_agent_data.listingAssociateLicenseNumber || null,
+          listing_associate_team_name: listing_agent_data.listingAssociateTeamName || null,
+          listing_associate_email: listing_agent_data.listingAssociateEmail || null,
+          listing_associate_phone: listing_agent_data.listingAssociatePhone || null,
+          listing_associate_supervisor_name: listing_agent_data.listingAssociateSupervisorName || null,
+          listing_associate_supervisor_license_number: listing_agent_data.listingAssociateSupervisorLicenseNumber || null,
+          selling_associate_name: listing_agent_data.sellingAssociateName || null,
+          selling_associate_license_number: listing_agent_data.sellingAssociateLicenseNumber || null,
+          selling_associate_team_name: listing_agent_data.sellingAssociateTeamName || null,
+          selling_associate_email: listing_agent_data.sellingAssociateEmail || null,
+          selling_associate_phone: listing_agent_data.sellingAssociatePhone || null,
+          selling_associate_supervisor_name: listing_agent_data.sellingAssociateSupervisorName || null,
+          selling_associate_supervisor_license_number: listing_agent_data.sellingAssociateSupervisorLicenseNumber || null,
+          selling_associate_street_address: listing_agent_data.sellingAssociateStreetAddress || null,
+          selling_associate_city: listing_agent_data.sellingAssociateCity || null,
+          selling_associate_state: listing_agent_data.sellingAssociateState || null,
+          selling_associate_postal_code: listing_agent_data.sellingAssociatePostalCode || null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+      if (agentError) {
+        console.error('Failed to create listing agent:', agentError)
+      } else {
+        console.log('Created listing agent:', agentData)
+        listing_agent_id = agentData.id
+      }
+    }
+
     const searchableFields = extractSearchableFields(contractData)
-    
+
     const { data, error } = await supabase
       .from('contracts')
       .insert({
-        ...dataToInsert,
+        ...contractDataToSave,
         user_id: contractData.user_id || user.id, // Use provided user_id or fallback to current user
         legacy_id: contractData.id, // Keep old ID for reference
         // Extract searchable fields using the mapping utility
         ...searchableFields,
-        contract_date: contractData.contract_date || new Date().toISOString().split('T')[0]
+        contract_date: contractData.contract_date || new Date().toISOString().split('T')[0],
+        // Add listing_agent_id if we created one
+        ...(listing_agent_id && { listing_agent_id })
       })
       .select()
       .single()
-    
+
     if (error) throw error
     return data
   },
 
   async update(id, updates) {
-    console.log('ContractAPI.update - input updates:', updates);
-    console.log('ContractAPI.update - marked_questions in updates:', updates.marked_questions);
-    console.log('ContractAPI.update - marked_questions type:', typeof updates.marked_questions, Array.isArray(updates.marked_questions));
-    
+
     // CRITICAL FIX: Fetch existing contract data first to merge with updates
     // This prevents data loss when updating individual sections
     const { data: existingContract, error: fetchError } = await supabase
@@ -53,8 +103,98 @@ export const ContractAPI = {
       .select('*')
       .eq('id', id)
       .single()
-    
-    if (fetchError) throw fetchError
+
+    if (fetchError) {
+      // If contract doesn't exist, try to create it instead
+      if (fetchError.code === 'PGRST116') {
+        console.log('Contract not found, creating new contract instead of updating non-existent ID:', id);
+
+        // Extract the user from the session
+        const user = await getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        // Transform the updates for creation
+        const transformedData = transformVuexDataForSupabase(updates);
+        const searchableFields = extractSearchableFields(updates);
+
+        // Extract listing agent data to handle separately
+        const { listing_agent_data, ...contractData } = transformedData;
+
+        // Create listing agent first if we have data
+        let listing_agent_id = null;
+        if (listing_agent_data) {
+          const { data: agentData, error: agentError } = await supabase
+            .from('listing_agents')
+            .insert({
+              has_listing_agent_info: listing_agent_data.hasListingAgentInfo || false,
+              firm_name: listing_agent_data.firmName || null,
+              firm_license_number: listing_agent_data.firmLicenseNumber || null,
+              firm_street_address: listing_agent_data.firmStreetAddress || null,
+              firm_city: listing_agent_data.firmCity || null,
+              firm_state: listing_agent_data.firmState || null,
+              firm_postal_code: listing_agent_data.firmPostalCode || null,
+              firm_phone: listing_agent_data.firmPhone || null,
+              listing_associate_name: listing_agent_data.listingAssociateName || null,
+              listing_associate_license_number: listing_agent_data.listingAssociateLicenseNumber || null,
+              listing_associate_team_name: listing_agent_data.listingAssociateTeamName || null,
+              listing_associate_email: listing_agent_data.listingAssociateEmail || null,
+              listing_associate_phone: listing_agent_data.listingAssociatePhone || null,
+              listing_associate_supervisor_name: listing_agent_data.listingAssociateSupervisorName || null,
+              listing_associate_supervisor_license_number: listing_agent_data.listingAssociateSupervisorLicenseNumber || null,
+              selling_associate_name: listing_agent_data.sellingAssociateName || null,
+              selling_associate_license_number: listing_agent_data.sellingAssociateLicenseNumber || null,
+              selling_associate_team_name: listing_agent_data.sellingAssociateTeamName || null,
+              selling_associate_email: listing_agent_data.sellingAssociateEmail || null,
+              selling_associate_phone: listing_agent_data.sellingAssociatePhone || null,
+              selling_associate_supervisor_name: listing_agent_data.sellingAssociateSupervisorName || null,
+              selling_associate_supervisor_license_number: listing_agent_data.sellingAssociateSupervisorLicenseNumber || null,
+              selling_associate_street_address: listing_agent_data.sellingAssociateStreetAddress || null,
+              selling_associate_city: listing_agent_data.sellingAssociateCity || null,
+              selling_associate_state: listing_agent_data.sellingAssociateState || null,
+              selling_associate_postal_code: listing_agent_data.sellingAssociatePostalCode || null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+          if (agentError) {
+            console.error('Failed to create listing agent during contract creation:', agentError);
+          } else {
+            console.log('Created listing agent during contract creation:', agentData);
+            listing_agent_id = agentData.id;
+          }
+        }
+
+        // Create a new contract with the provided data
+        const { data, error } = await supabase
+          .from('contracts')
+          .insert({
+            ...contractData,
+            ...searchableFields,
+            user_id: user.id,
+            legacy_id: id, // Store the old ID as legacy_id
+            status: 'draft',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            // Preserve marked_questions if provided
+            ...(updates.marked_questions && { marked_questions: updates.marked_questions }),
+            // Add listing_agent_id if we created one
+            ...(listing_agent_id && { listing_agent_id })
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Update localStorage with the new contract ID
+        localStorage.setItem('contractId', data.id);
+
+        // Return the created contract
+        return data;
+      }
+      throw fetchError;
+    }
     
     console.log('ContractAPI.update - existing JSONB columns:', {
       property_info: existingContract.property_info,
@@ -64,10 +204,19 @@ export const ContractAPI = {
       legal_sections: existingContract.legal_sections,
       additional_info: existingContract.additional_info
     });
-    
+
+    // Check if data is already transformed (has property_info or parties instead of property/buyers/sellers)
+    const isAlreadyTransformed = 'property_info' in updates || 'parties' in updates
+
     // Transform the updates using the comprehensive mapping utilities
-    const transformedUpdates = transformVuexDataForSupabase(updates)
+    // Only transform if not already transformed (to prevent double transformation)
+    const transformedUpdates = isAlreadyTransformed
+      ? updates
+      : transformVuexDataForSupabase(updates)
     const searchableFields = extractSearchableFields(updates)
+
+    // Extract listing agent data to handle separately
+    const { listing_agent_data, ...contractUpdates } = transformedUpdates
     
     // Deep merge function for nested JSONB data
     const deepMerge = (existing, updates) => {
@@ -87,52 +236,131 @@ export const ContractAPI = {
       return merged;
     };
     
-    // Merge JSONB columns instead of replacing them
+    // Merge JSONB columns - deep merge to preserve existing data
     const mergedUpdate = {
-      ...transformedUpdates,
+      ...contractUpdates,
       // Deep merge each JSONB column with existing data
-      property_info: transformedUpdates.property_info ? 
-        deepMerge(existingContract.property_info, transformedUpdates.property_info) : 
+      property_info: transformedUpdates.property_info ?
+        deepMerge(existingContract.property_info, transformedUpdates.property_info) :
         existingContract.property_info,
-      parties: transformedUpdates.parties ? 
-        deepMerge(existingContract.parties, transformedUpdates.parties) : 
+      parties: transformedUpdates.parties ?
+        deepMerge(existingContract.parties, transformedUpdates.parties) :
         existingContract.parties,
-      financial_details: transformedUpdates.financial_details ? 
-        deepMerge(existingContract.financial_details, transformedUpdates.financial_details) : 
+      financial_details: transformedUpdates.financial_details ?
+        deepMerge(existingContract.financial_details, transformedUpdates.financial_details) :
         existingContract.financial_details,
-      title_closing: transformedUpdates.title_closing ? 
-        deepMerge(existingContract.title_closing, transformedUpdates.title_closing) : 
+      title_closing: transformedUpdates.title_closing ?
+        deepMerge(existingContract.title_closing, transformedUpdates.title_closing) :
         existingContract.title_closing,
-      legal_sections: transformedUpdates.legal_sections ? 
-        deepMerge(existingContract.legal_sections, transformedUpdates.legal_sections) : 
+      legal_sections: transformedUpdates.legal_sections ?
+        deepMerge(existingContract.legal_sections, transformedUpdates.legal_sections) :
         existingContract.legal_sections,
-      additional_info: transformedUpdates.additional_info ? 
-        deepMerge(existingContract.additional_info, transformedUpdates.additional_info) : 
+      additional_info: transformedUpdates.additional_info ?
+        deepMerge(existingContract.additional_info, transformedUpdates.additional_info) :
         existingContract.additional_info,
     }
-    
+
     // If marked_questions is already present in updates (from createContractPayload),
     // preserve it as-is instead of letting transformVuexDataForSupabase handle it
     if (updates.marked_questions !== undefined) {
       mergedUpdate.marked_questions = updates.marked_questions;
     }
     
+    // Handle listing agent data separately if present
+    let listing_agent_id = existingContract.listing_agent_id;
+    if (listing_agent_data) {
+      console.log('ContractAPI.update - processing listing agent data:', listing_agent_data);
+      console.log('ContractAPI.update - hasListingAgentInfo value:', listing_agent_data.hasListingAgentInfo);
+
+      // Convert camelCase to snake_case for database
+      const agentDataForDb = {
+        has_listing_agent_info: listing_agent_data.hasListingAgentInfo || false,
+        firm_name: listing_agent_data.firmName || null,
+        firm_license_number: listing_agent_data.firmLicenseNumber || null,
+        firm_street_address: listing_agent_data.firmStreetAddress || null,
+        firm_city: listing_agent_data.firmCity || null,
+        firm_state: listing_agent_data.firmState || null,
+        firm_postal_code: listing_agent_data.firmPostalCode || null,
+        firm_phone: listing_agent_data.firmPhone || null,
+        listing_associate_name: listing_agent_data.listingAssociateName || null,
+        listing_associate_license_number: listing_agent_data.listingAssociateLicenseNumber || null,
+        listing_associate_team_name: listing_agent_data.listingAssociateTeamName || null,
+        listing_associate_email: listing_agent_data.listingAssociateEmail || null,
+        listing_associate_phone: listing_agent_data.listingAssociatePhone || null,
+        listing_associate_supervisor_name: listing_agent_data.listingAssociateSupervisorName || null,
+        listing_associate_supervisor_license_number: listing_agent_data.listingAssociateSupervisorLicenseNumber || null,
+        selling_associate_name: listing_agent_data.sellingAssociateName || null,
+        selling_associate_license_number: listing_agent_data.sellingAssociateLicenseNumber || null,
+        selling_associate_team_name: listing_agent_data.sellingAssociateTeamName || null,
+        selling_associate_email: listing_agent_data.sellingAssociateEmail || null,
+        selling_associate_phone: listing_agent_data.sellingAssociatePhone || null,
+        selling_associate_supervisor_name: listing_agent_data.sellingAssociateSupervisorName || null,
+        selling_associate_supervisor_license_number: listing_agent_data.sellingAssociateSupervisorLicenseNumber || null,
+        selling_associate_street_address: listing_agent_data.sellingAssociateStreetAddress || null,
+        selling_associate_city: listing_agent_data.sellingAssociateCity || null,
+        selling_associate_state: listing_agent_data.sellingAssociateState || null,
+        selling_associate_postal_code: listing_agent_data.sellingAssociatePostalCode || null,
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('ContractAPI.update - agent data for database:', agentDataForDb);
+
+      if (listing_agent_id) {
+        // Update existing listing agent
+        const { data: agentData, error: agentError } = await supabase
+          .from('listing_agents')
+          .update(agentDataForDb)
+          .eq('id', listing_agent_id)
+          .select()
+          .single();
+
+        if (agentError) {
+          console.error('Failed to update listing agent:', agentError);
+        } else {
+          console.log('Updated listing agent:', agentData);
+        }
+      } else {
+        // Create new listing agent
+        const { data: agentData, error: agentError } = await supabase
+          .from('listing_agents')
+          .insert({
+            ...agentDataForDb,
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (agentError) {
+          console.error('Failed to create listing agent:', agentError);
+        } else {
+          console.log('Created listing agent:', agentData);
+          listing_agent_id = agentData.id;
+        }
+      }
+    }
+
     const finalUpdate = {
       ...mergedUpdate,
       updated_at: new Date().toISOString(),
       // Update extracted searchable fields using the mapping utility
-      ...searchableFields
+      ...searchableFields,
+      // Update listing_agent_id if we have one
+      ...(listing_agent_id && { listing_agent_id })
     };
-    
+
     console.log('ContractAPI.update - final merged update:', finalUpdate);
     console.log('ContractAPI.update - marked_questions in final:', finalUpdate.marked_questions);
-    
+    console.log('ContractAPI.update - finalUpdate.parties:', JSON.stringify(finalUpdate.parties, null, 2));
+
     const { data, error } = await supabase
       .from('contracts')
       .update(finalUpdate)
       .eq('id', id)
       .select()
-      .single()
+      .single();
+
+    console.log('ContractAPI.update - Supabase response data:', JSON.stringify(data, null, 2));
+    console.log('ContractAPI.update - Supabase response error:', error);
     
     if (error) throw error
     return data
@@ -145,20 +373,28 @@ export const ContractAPI = {
         *,
         etch_packets(*),
         email_packets(*),
-        contract_documents(*)
+        contract_documents(*),
+        listing_agents!listing_agent_id(*)
       `)
       .eq('id', id)
       .single()
-    
+
     if (error) throw error
-    
+
     // Log the raw data structure for debugging
     console.log('Raw contract data from Supabase:', data)
-    
+
+    // Add listing agent data to the contract for transformation
+    if (data.listing_agents) {
+      data.listing_agent_data = data.listing_agents;
+      delete data.listing_agents; // Clean up the joined field name
+    }
+
     // Normalize the contract data for consistent field mapping
     const normalizedData = normalizeContractData(data)
     console.log('Normalized contract data:', normalizedData)
-    
+    console.log('Listing agent data:', normalizedData.listingAgent)
+
     return normalizedData
   },
 
@@ -167,32 +403,48 @@ export const ContractAPI = {
       .from('contracts') // Use main table instead of view to get full property_info
       .select(`
         *,
-        contract_documents(*)
+        contract_documents(*),
+        listing_agents!listing_agent_id(*)
       `)
       .order('created_at', { ascending: false })
-    
+
     if (filters.status) {
       query = query.eq('status', filters.status)
     }
-    
+
     if (filters.limit) {
       query = query.limit(filters.limit)
     }
-    
+
     if (filters.offset) {
       query = query.range(filters.offset, filters.offset + (filters.limit || 25) - 1)
     }
-    
+
     if (filters.search) {
       query = query.or(`property_address.ilike.%${filters.search}%,buyer_name.ilike.%${filters.search}%,seller_name.ilike.%${filters.search}%,mls_number.ilike.%${filters.search}%`)
     }
-    
+
     const result = await dbQuery(query);
     console.log('ContractAPI.list - raw contracts from database:', result);
-    if (result && result.length > 0) {
-      console.log('First contract marked_questions:', result[0].marked_questions);
+
+    // Normalize each contract in the list to ensure proper data transformation
+    const normalizedResult = result.map(contract => {
+      // Add listing agent data to the contract for transformation
+      if (contract.listing_agents) {
+        contract.listing_agent_data = contract.listing_agents;
+        delete contract.listing_agents; // Clean up the joined field name
+      }
+
+      // Normalize the contract data for consistent field mapping
+      return normalizeContractData(contract);
+    });
+
+    console.log('ContractAPI.list - normalized contracts:', normalizedResult);
+    if (normalizedResult && normalizedResult.length > 0) {
+      console.log('First normalized contract:', normalizedResult[0]);
     }
-    return result
+
+    return normalizedResult
   },
 
   async delete(id) {
