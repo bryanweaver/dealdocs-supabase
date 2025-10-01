@@ -77,10 +77,17 @@ const loadingContractId = ref(null);
 const selectContract = async (contract) => {
   try {
     loadingContractId.value = contract.id;
-    console.log("Selected contract:", contract);
-    console.log("Contract property_info:", contract.property_info);
-    console.log("Contract property:", contract.property);
-    store.dispatch("selectContract", contract);
+    console.log("Selected contract from list:", contract);
+
+    // Fetch the complete contract data to ensure we have everything
+    // The list might have partial data or missing relations
+    const fullContract = await ContractAPI.get(contract.id);
+    console.log("Fetched full contract:", fullContract);
+    console.log("Full contract sellers:", fullContract.sellers);
+    console.log("Full contract buyers:", fullContract.buyers);
+    console.log("Full contract listingAgent:", fullContract.listingAgent);
+
+    store.dispatch("selectContract", fullContract);
 
     await fetchEtchPackets(contract.id);
 

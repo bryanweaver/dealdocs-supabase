@@ -15,6 +15,7 @@ const router = useRouter();
 
 // Component state
 const isLoading = ref(false);
+const loadingMessage = ref("");
 const isSignUp = ref(false);
 const formData = ref({
   email: "",
@@ -67,9 +68,10 @@ const handleAuth = async () => {
   isLoading.value = true;
   error.value = "";
   message.value = "";
-  
+
   try {
     if (isSignUp.value) {
+      loadingMessage.value = "Creating your account...";
       const result = await AuthService.signUp(
         formData.value.email,
         formData.value.password,
@@ -83,6 +85,11 @@ const handleAuth = async () => {
         // Check if we have both user and session (auto-login case)
         if (result.user && result.session) {
           console.log("✅ Account created and auto-logged in");
+          loadingMessage.value = "Account created successfully! Logging you in...";
+
+          // Add a small delay to show the success message
+          await new Promise(resolve => setTimeout(resolve, 1500));
+
           // Store login timestamp
           localStorage.setItem("loginTimestamp", new Date().getTime().toString());
           // Ensure sidebar is closed on login (for mobile)
@@ -109,12 +116,18 @@ const handleAuth = async () => {
         error.value = result.error;
       }
     } else {
+      loadingMessage.value = "Signing you in...";
       const result = await AuthService.signIn(
         formData.value.email,
         formData.value.password
       );
-      
+
       if (result.success) {
+        loadingMessage.value = "Welcome back! Redirecting...";
+
+        // Add a small delay to show the success message
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         // Store login timestamp
         localStorage.setItem("loginTimestamp", new Date().getTime().toString());
         // Ensure sidebar is closed on login (for mobile)
@@ -131,6 +144,7 @@ const handleAuth = async () => {
     console.error("Auth error:", err);
   } finally {
     isLoading.value = false;
+    loadingMessage.value = "";
   }
 };
 
@@ -154,6 +168,7 @@ const handleResetPassword = async () => {
     error.value = "Failed to send reset email";
   } finally {
     isLoading.value = false;
+    loadingMessage.value = "";
   }
 };
 
@@ -198,14 +213,23 @@ onMounted(async () => {
         </p>
       </div>
       
-      <Card class="w-full">
+      <Card class="w-full relative">
+        <!-- Loading Overlay -->
+        <div v-if="isLoading && loadingMessage" class="absolute inset-0 bg-white/95 rounded-lg flex items-center justify-center z-50">
+          <div class="text-center px-8 py-12">
+            <i class="pi pi-spin pi-spinner text-4xl mb-4" style="color: var(--primary-color)"></i>
+            <p class="text-lg font-semibold text-gray-800">{{ loadingMessage }}</p>
+          </div>
+        </div>
+
         <template #content>
           <form class="space-y-6" @submit.prevent="handleAuth">
+
             <!-- Error Message -->
             <Message v-if="error" severity="error" :closable="false">
               {{ error }}
             </Message>
-            
+
             <!-- Success Message -->
             <Message v-if="message" severity="success" :closable="false">
               {{ message }}
@@ -318,3 +342,14 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Ensure Password component takes full width */
+:deep(.p-password) {
+  width: 100%;
+}
+
+:deep(.p-password-input) {
+  width: 100%;
+}
+</style>

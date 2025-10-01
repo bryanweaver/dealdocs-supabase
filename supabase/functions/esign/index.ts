@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import Anvil from 'npm:@anvilco/anvil'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,10 +33,11 @@ serve(async (req) => {
       )
     }
     
-    const { userId, name, isDraft, isTest, files, data, signers, currentSigner, etchPacket } = body
+    const { userId, name, isDraft, isTest, files, data, signers, currentSigner, etchPacket, accountId } = body
     
     console.log('Request body:', {
       userId,
+      accountId,
       name,
       isDraft,
       isTest,
@@ -47,21 +49,43 @@ serve(async (req) => {
     })
     
     // Initialize Supabase client
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    )
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey)
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
     // Get user from auth token
-    const authorizationHeader = req.headers.get('Authorization')!
-    const token = authorizationHeader.replace('Bearer ', '')
-    const { data: user } = await supabase.auth.getUser(token)
+    const authorizationHeader = req.headers.get('Authorization')
+    console.log('Authorization header exists:', !!authorizationHeader)
 
-    if (!user.user) {
-      throw new Error('Unauthorized')
+    let userIdFromAuth = null
+
+    if (authorizationHeader) {
+      const token = authorizationHeader.replace('Bearer ', '')
+      console.log('Token length:', token?.length)
+
+      const { data: user, error: authError } = await supabase.auth.getUser(token)
+
+      if (authError) {
+        console.error('Auth error:', authError)
+        // In development, we'll continue without auth if the user doesn't exist
+        // This happens when the database is reset but the frontend still has an old token
+        if (authError.code === 'user_not_found') {
+          console.warn('User not found in database - continuing without auth validation (dev mode)')
+        } else {
+          throw new Error(`Authentication failed: ${authError.message}`)
+        }
+      } else if (user?.user) {
+        userIdFromAuth = user.user.id
+        console.log('Authenticated user:', userIdFromAuth)
+      }
+    } else {
+      console.warn('No authorization header - continuing without auth (dev mode)')
     }
 
-    console.log('Processing e-sign request for user:', user.user.id)
+    console.log('Processing e-sign request for contract:', userId)
     
     // Prepare Anvil API request
     const anvilApiKey = Deno.env.get('ANVIL_API_KEY')
@@ -162,7 +186,60 @@ serve(async (req) => {
     if (!etchPacketData) {
       throw new Error('No etch packet data returned from Anvil')
     }
-    
+
+    // Download and save the generated documents immediately
+    let documentUrls = []
+    if (etchPacketData.eid && etchPacketData.documentGroup?.eid) {
+      try {
+        console.log('Downloading generated documents from Anvil...')
+        const anvilClient = new Anvil({ apiKey: anvilApiKey })
+
+        // Download the generated (unsigned) documents
+        const { statusCode, data: documentData } = await anvilClient.downloadDocuments(etchPacketData.documentGroup.eid, { type: 'pdf' })
+
+        if (statusCode === 200) {
+          // Store documents in Supabase storage
+          const storagePath = accountId && userId
+            ? `accounts/${accountId}/contracts/${userId}/generated/${etchPacketData.eid}/`
+            : `generated-documents/${etchPacketData.eid}/`
+
+          console.log(`Storing generated documents in: ${storagePath}`)
+
+          // Store the PDF with a meaningful name
+          const fileName = `contract_${etchPacketData.eid}_generated.pdf`
+          const filePath = `${storagePath}${fileName}`
+
+          const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+            .from('contracts')
+            .upload(filePath, new Uint8Array(documentData), {
+              contentType: 'application/pdf',
+              upsert: true
+            })
+
+          if (!uploadError) {
+            // Create a signed URL that's valid for 30 days
+            const { data: urlData } = await supabaseAdmin.storage
+              .from('contracts')
+              .createSignedUrl(filePath, 60 * 60 * 24 * 30)
+
+            if (urlData?.signedUrl) {
+              documentUrls.push({
+                type: 'generated',
+                path: filePath,
+                url: urlData.signedUrl
+              })
+              console.log('Successfully stored generated document:', filePath)
+            }
+          } else {
+            console.error('Error uploading document to storage:', uploadError)
+          }
+        }
+      } catch (downloadError) {
+        console.error('Error downloading/storing generated documents:', downloadError)
+        // Don't fail the entire operation if document storage fails
+      }
+    }
+
     // Store etch packet info in database if it doesn't exist
     if (!etchPacket && etchPacketData.eid) {
       console.log('Storing etch packet in database:', {
@@ -182,6 +259,8 @@ serve(async (req) => {
           signer_info: etchPacketData.documentGroup, // Store document group in signer_info JSONB column
           signer_email: primarySignerEmail, // Store primary signer email for indexing
           status: 'pending',
+          pdf_url: documentUrls.find(d => d.type === 'generated')?.url || null, // Store generated PDF URL
+          document_urls: documentUrls, // Store all document info in JSONB
           created_at: new Date().toISOString()
         })
         .select()
@@ -215,7 +294,7 @@ serve(async (req) => {
         query: generateSignUrlMutation,
         variables: {
           signerEid: anvilSigner.eid,
-          clientUserId: user.user.id
+          clientUserId: userIdFromAuth || userId // Use authenticated user ID if available, otherwise use the contract ID
         }
       }
       

@@ -465,24 +465,43 @@ const store = createStore({
     },
     setFormDataFromContract(state, contractInput) {
       const contract = removeTypename(contractInput);
-      
-      console.log("setFormDataFromContract - input contract:", contract);
-      
-      // Normalize and transform the contract data using comprehensive mapping utilities
-      const normalizedContract = normalizeContractData(contract);
-      const transformedData = transformSupabaseDataForVuex(normalizedContract);
-      
-      console.log("setFormDataFromContract - normalized contract:", normalizedContract);
-      console.log("setFormDataFromContract - transformed data:", transformedData);
 
-      // Merge with existing form data, ensuring all sections are properly mapped
+      console.log("setFormDataFromContract - input contract:", contract);
+
+      // The contract from API has been normalized which means:
+      // - JSONB data has been extracted to top-level fields
+      // - Field names have been converted to camelCase
+      // We just need to extract the relevant form data fields
+
+      // Extract only the form data fields, not metadata
+      const formDataFields = [
+        'property', 'buyers', 'sellers', 'finance', 'listingAgent',
+        'title', 'titleObjections', 'titleNotices', 'closing',
+        'leases', 'survey', 'homeownersAssociationAddendum',
+        'buyerProvisions', 'buyerNotices', 'buyerAttorney',
+        'propertyCondition', 'brokerDisclosure', 'possession'
+      ];
+
+      const extractedFormData = {};
+      formDataFields.forEach(field => {
+        if (contract[field] !== undefined) {
+          extractedFormData[field] = contract[field];
+        }
+      });
+
+      console.log("setFormDataFromContract - extracted form data:", extractedFormData);
+      console.log("setFormDataFromContract - listing agent data:", extractedFormData.listingAgent);
+      console.log("setFormDataFromContract - sellers data:", extractedFormData.sellers);
+      console.log("setFormDataFromContract - buyers data:", extractedFormData.buyers);
+
+      // Merge with existing form data
       const mergedFormData = {
         ...state.formData,
-        ...transformedData,
+        ...extractedFormData,
         // Preserve the contract ID
         ...(contract.id && { id: contract.id })
       };
-      
+
       state.formData = Object.assign({}, mergedFormData);
 
       // Update markedQuestions - handle both string and object formats
@@ -490,14 +509,33 @@ const store = createStore({
         markedQuestions: contract.markedQuestions,
         marked_questions: contract.marked_questions
       });
-      
+
       if (contract.markedQuestions || contract.marked_questions) {
         const markedQuestionsData = contract.markedQuestions || contract.marked_questions;
         console.log("Found marked questions data:", markedQuestionsData);
-        if (typeof markedQuestionsData === 'string') {
+
+        // Convert array format from database to object format for Vuex
+        if (Array.isArray(markedQuestionsData)) {
+          // Convert ['section.field', ...] to { section: ['field'], ... }
+          const converted: Record<string, string[]> = {};
+          markedQuestionsData.forEach((item: string) => {
+            if (typeof item === 'string' && item.includes('.')) {
+              const [sectionId, fieldId] = item.split('.');
+              if (!converted[sectionId]) {
+                converted[sectionId] = [];
+              }
+              converted[sectionId].push(fieldId);
+            }
+          });
+          state.markedQuestions = converted;
+          console.log("Converted array format to object:", converted);
+        } else if (typeof markedQuestionsData === 'string') {
           state.markedQuestions = JSON.parse(markedQuestionsData);
+        } else if (typeof markedQuestionsData === 'object') {
+          // Already in the correct format
+          state.markedQuestions = markedQuestionsData;
         } else {
-          state.markedQuestions = markedQuestionsData || {};
+          state.markedQuestions = {};
         }
         console.log("Set state.markedQuestions to:", state.markedQuestions);
       } else {
@@ -866,14 +904,17 @@ const store = createStore({
   actions: {
     selectContract({ commit }, contract) {
       commit("setContractId", contract.id);
-      console.log("selectContract action - raw contract:", contract);
-      
-      // Use the comprehensive mapping utilities to transform the contract
-      const normalizedContract = normalizeContractData(contract);
-      
-      console.log("selectContract action - normalized contract:", normalizedContract);
-      
-      commit("setFormDataFromContract", normalizedContract);
+      console.log("selectContract action - contract from API:", contract);
+
+      // The contract from API is already normalized, but we need to check
+      // if it has the proper structure for the store
+      // If it has listingAgent with snake_case fields, we have a problem
+
+      console.log("selectContract - checking listingAgent structure:", contract.listingAgent);
+      console.log("selectContract - checking sellers structure:", contract.sellers);
+      console.log("selectContract - checking buyers structure:", contract.buyers);
+
+      commit("setFormDataFromContract", contract);
       commit("resetUploadedDocs");
       
       // Populate uploaded documents from contract_documents

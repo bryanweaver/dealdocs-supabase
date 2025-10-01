@@ -80,18 +80,18 @@ export function transformVuexDataForSupabase(vuexFormData: any): any {
     legal_sections: {},
     additional_info: {}
   };
-  
+
   Object.entries(vuexFormData).forEach(([vuexFieldName, fieldData]) => {
     if (!fieldData || (typeof fieldData === 'object' && Object.keys(fieldData).length === 0)) {
       // Skip empty/null sections
       return;
     }
-    
+
     // Skip markedQuestions here - it will be handled separately in createContractPayload
     if (vuexFieldName === 'markedQuestions') {
       return;
     }
-    
+
     // Group fields into the correct JSONB columns
     switch(vuexFieldName) {
       // Property info column
@@ -101,13 +101,56 @@ export function transformVuexDataForSupabase(vuexFormData: any): any {
         
       // Parties column (buyers and sellers)
       case 'buyers':
+        // Transform buyers from form format to database format
+        if (fieldData.primaryName) {
+          supabaseData.parties.buyers = {
+            buyer1: {
+              name: fieldData.primaryName,
+              email: fieldData.email || '',
+              phone: fieldData.phone || '',
+              fax: fieldData.fax || ''
+            }
+          };
+          if (fieldData.hasSecondaryParty && fieldData.secondaryName) {
+            supabaseData.parties.buyers.buyer2 = {
+              name: fieldData.secondaryName,
+              email: fieldData.secondaryEmail || '',
+              phone: fieldData.secondaryPhone || ''
+            };
+          }
+        } else {
+          supabaseData.parties.buyers = fieldData;
+        }
+        break;
+
       case 'sellers':
-        supabaseData.parties[vuexFieldName] = fieldData;
+        // Transform sellers from form format to database format
+        console.log(`[fieldMapUtils] Transforming sellers data:`, fieldData);
+        if (fieldData.primaryName) {
+          supabaseData.parties.sellers = {
+            seller1: {
+              name: fieldData.primaryName,
+              email: fieldData.email || '',
+              phone: fieldData.phone || '',
+              fax: fieldData.fax || ''
+            }
+          };
+          if (fieldData.hasSecondaryParty && fieldData.secondaryName) {
+            supabaseData.parties.sellers.seller2 = {
+              name: fieldData.secondaryName,
+              email: fieldData.secondaryEmail || '',
+              phone: fieldData.secondaryPhone || ''
+            };
+          }
+        } else {
+          console.log(`[fieldMapUtils] No primaryName for sellers, using fieldData as-is:`, fieldData);
+          supabaseData.parties.sellers = fieldData;
+        }
+        console.log(`[fieldMapUtils] Final parties.sellers:`, supabaseData.parties.sellers);
         break;
         
       // Financial details column
       case 'finance':
-        console.log('Saving finance data to financial_details:', fieldData);
         supabaseData.financial_details = { ...supabaseData.financial_details, finance: fieldData };
         break;
         
@@ -129,9 +172,11 @@ export function transformVuexDataForSupabase(vuexFormData: any): any {
         supabaseData.legal_sections[vuexFieldName] = fieldData;
         break;
         
-      // Additional info column
+      // Listing agent data - should be handled separately, not in additional_info
       case 'listingAgent':
-        supabaseData.additional_info.listing_agent = fieldData;
+        // This will be handled as a separate listing_agents record
+        // Store temporarily for processing in API layer
+        supabaseData.listing_agent_data = fieldData;
         break;
       case 'propertyCondition':
       case 'brokerDisclosure':
@@ -141,20 +186,27 @@ export function transformVuexDataForSupabase(vuexFormData: any): any {
         
       // Any other fields go to additional_info
       default:
-        if (!['progress', 'status', 'created_at', 'updated_at', 'id'].includes(vuexFieldName)) {
+        // CRITICAL: Never put these specific data structures in additional_info
+        // They should either be in their designated JSONB columns or be metadata fields
+        const skipFields = [
+          'progress', 'status', 'created_at', 'updated_at', 'id', 'parties', 'buyer', 'seller',
+          // Skip JSONB column names to prevent double-nesting
+          'title_closing', 'legal_sections', 'financial_details', 'additional_info'
+        ];
+        if (!skipFields.includes(vuexFieldName)) {
           supabaseData.additional_info[vuexFieldName] = fieldData;
         }
         break;
     }
   });
-  
+
   // Clean up empty JSONB objects
   Object.keys(supabaseData).forEach(key => {
     if (typeof supabaseData[key] === 'object' && Object.keys(supabaseData[key]).length === 0) {
       delete supabaseData[key];
     }
   });
-  
+
   return supabaseData;
 }
 
@@ -180,13 +232,52 @@ export function transformSupabaseDataForVuex(supabaseData: any): any {
         
       // Parties (buyers and sellers)
       case 'parties':
+        console.log('[fieldMapUtils] Loading parties from database:', fieldData);
         if (typeof fieldData === 'object') {
-          if (fieldData.buyers) {
-            vuexData.buyers = fieldData.buyers;
-          }
+          // Transform sellers data from database format to form format
           if (fieldData.sellers) {
-            vuexData.sellers = fieldData.sellers;
+            console.log('[fieldMapUtils] Loading sellers data:', fieldData.sellers);
+            if (fieldData.sellers.seller1) {
+              // Convert from {seller1: {name, email, phone}} to {primaryName, email, phone}
+              vuexData.sellers = {
+                primaryName: fieldData.sellers.seller1.name || '',
+                email: fieldData.sellers.seller1.email || '',
+                phone: fieldData.sellers.seller1.phone || '',
+                fax: fieldData.sellers.seller1.fax || '',
+                hasSecondaryParty: fieldData.sellers.seller2 ? true : false,
+                secondaryName: fieldData.sellers.seller2?.name || '',
+                secondaryEmail: fieldData.sellers.seller2?.email || '',
+                secondaryPhone: fieldData.sellers.seller2?.phone || ''
+              };
+            } else if (fieldData.sellers.primaryName) {
+              // Already in the correct format
+              vuexData.sellers = fieldData.sellers;
+            } else {
+              vuexData.sellers = fieldData.sellers;
+            }
           }
+
+          // Transform buyers data similarly
+          if (fieldData.buyers) {
+            if (fieldData.buyers.buyer1) {
+              // Convert from {buyer1: {name, email, phone}} to {primaryName, email, phone}
+              vuexData.buyers = {
+                primaryName: fieldData.buyers.buyer1.name || '',
+                email: fieldData.buyers.buyer1.email || '',
+                phone: fieldData.buyers.buyer1.phone || '',
+                fax: fieldData.buyers.buyer1.fax || '',
+                hasSecondaryParty: fieldData.buyers.buyer2 ? true : false,
+                secondaryName: fieldData.buyers.buyer2?.name || '',
+                secondaryEmail: fieldData.buyers.buyer2?.email || ''
+              };
+            } else if (fieldData.buyers.primaryName) {
+              // Already in the correct format
+              vuexData.buyers = fieldData.buyers;
+            } else {
+              vuexData.buyers = fieldData.buyers;
+            }
+          }
+
           // Handle legacy format
           if (fieldData.primaryBuyer || fieldData.buyer) {
             vuexData.buyers = fieldData.primaryBuyer || fieldData.buyer || fieldData.buyers;
@@ -233,19 +324,66 @@ export function transformSupabaseDataForVuex(supabaseData: any): any {
         }
         break;
         
-      // Additional info
+      // Additional info - should NOT contain listing_agent or parties anymore
       case 'additional_info':
         if (typeof fieldData === 'object') {
-          // Extract listing agent
-          if (fieldData.listing_agent) {
-            vuexData.listingAgent = fieldData.listing_agent;
+          // CRITICAL FIX: Never load 'parties' from additional_info
+          // This is legacy data that should not be used
+          if (fieldData.parties) {
+            console.warn('WARNING: Found parties data in additional_info - this is legacy data and will be ignored');
+            console.warn('Legacy parties data:', fieldData.parties);
           }
-          // Extract other sections
+
+          // CRITICAL FIX: Never load 'listing_agent' from additional_info
+          // This should come from the listing_agents table
+          if (fieldData.listing_agent) {
+            console.warn('WARNING: Found listing_agent data in additional_info - this should be in listing_agents table');
+            console.warn('Legacy listing agent data:', fieldData.listing_agent);
+          }
+
+          // Extract other sections (excluding parties and listing_agent)
           Object.entries(fieldData).forEach(([key, value]) => {
-            if (key !== 'listing_agent') {
+            if (key !== 'listing_agent' && key !== 'parties') {
               vuexData[key] = value;
             }
           });
+        }
+        break;
+
+      // Listing agent data from the listing_agent_data field (populated from listing_agents table)
+      case 'listing_agent_data':
+        if (typeof fieldData === 'object') {
+          // Convert snake_case fields from database to camelCase for Vue
+          vuexData.listingAgent = {
+            hasListingAgentInfo: fieldData.has_listing_agent_info,
+            firmName: fieldData.firm_name,
+            firmLicenseNumber: fieldData.firm_license_number,
+            firmStreetAddress: fieldData.firm_street_address,
+            firmCity: fieldData.firm_city,
+            firmState: fieldData.firm_state,
+            firmPostalCode: fieldData.firm_postal_code,
+            firmPhone: fieldData.firm_phone,
+            listingAssociateName: fieldData.listing_associate_name,
+            listingAssociateLicenseNumber: fieldData.listing_associate_license_number,
+            listingAssociateTeamName: fieldData.listing_associate_team_name,
+            listingAssociateEmail: fieldData.listing_associate_email,
+            listingAssociatePhone: fieldData.listing_associate_phone,
+            listingAssociateSupervisorName: fieldData.listing_associate_supervisor_name,
+            listingAssociateSupervisorLicenseNumber: fieldData.listing_associate_supervisor_license_number,
+            sellingAssociateName: fieldData.selling_associate_name,
+            sellingAssociateLicenseNumber: fieldData.selling_associate_license_number,
+            sellingAssociateTeamName: fieldData.selling_associate_team_name,
+            sellingAssociateEmail: fieldData.selling_associate_email,
+            sellingAssociatePhone: fieldData.selling_associate_phone,
+            sellingAssociateSupervisorName: fieldData.selling_associate_supervisor_name,
+            sellingAssociateSupervisorLicenseNumber: fieldData.selling_associate_supervisor_license_number,
+            sellingAssociateStreetAddress: fieldData.selling_associate_street_address,
+            sellingAssociateCity: fieldData.selling_associate_city,
+            sellingAssociateState: fieldData.selling_associate_state,
+            sellingAssociatePostalCode: fieldData.selling_associate_postal_code,
+            // Don't include database metadata fields
+            // Skip: id, created_at, updated_at
+          };
         }
         break;
         
@@ -305,33 +443,37 @@ export function normalizeContractData(contractData: any): any {
  */
 export function createContractPayload(vuexFormData: any, additionalFields: any = {}): any {
   const transformedData = transformVuexDataForSupabase(vuexFormData);
-  
-  // Remove listing_agent_info from additionalFields as it's not a valid column
-  // It should be stored within the additional_info JSON field instead
-  const { listing_agent_info, ...cleanAdditionalFields } = additionalFields;
-  
-  // Build the additional_info object with listing agent data
-  const additional_info = {
-    ...(transformedData.additional_info || {}),
-    ...(listing_agent_info && { listing_agent: listing_agent_info })
-  };
-  
+
+  // Extract listing agent data to be handled separately
+  const { listing_agent_data, ...contractData } = transformedData;
+
+  // Remove listing_agent_info and markedQuestions from additionalFields as they're not valid columns
+  const { listing_agent_info, markedQuestions, ...cleanAdditionalFields } = additionalFields;
+
   const payload = {
-    ...transformedData,
+    ...contractData,
     ...cleanAdditionalFields,
-    // Store listing agent and other additional data in additional_info JSON field
-    ...(Object.keys(additional_info).length > 0 && { additional_info }),
+    // Only include additional_info if it has content
+    ...(transformedData.additional_info && Object.keys(transformedData.additional_info).length > 0 && {
+      additional_info: transformedData.additional_info
+    }),
     // Ensure marked questions are properly formatted as an array
     // The database expects TEXT[] array type, not JSON string
-    marked_questions: additionalFields.markedQuestions ? 
-      formatMarkedQuestionsForDatabase(additionalFields.markedQuestions) : [],
+    marked_questions: markedQuestions ?
+      formatMarkedQuestionsForDatabase(markedQuestions) : [],
     updated_at: new Date().toISOString()
   };
-  
+
+  // Add listing_agent_data back for API layer to handle
+  if (listing_agent_data) {
+    payload.listing_agent_data = listing_agent_data;
+  }
+
   console.log('Final contract payload:', payload);
+  console.log('listing_agent_data in payload:', payload.listing_agent_data);
   console.log('marked_questions in payload:', payload.marked_questions);
   console.log('marked_questions type:', typeof payload.marked_questions, Array.isArray(payload.marked_questions));
-  
+
   return payload;
 }
 

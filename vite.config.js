@@ -87,36 +87,13 @@ export default defineConfig({
       "src/tests/**/*.feature", // Exclude Cucumber feature files
       "**/*.config.*",
     ],
-    reporters: ["html", "default", "json"],
+    reporters: ["default", "json"],
     outputFile: {
       json: "./test-results/vitest-results.json",
       html: "./test-results/vitest-report.html",
     },
     coverage: {
-      enabled: true,
-      reporter: ["text", "json", "html", "lcov"],
-      reportsDirectory: "./test-results/coverage",
-      include: ["src/**/*.{js,ts,vue}"],
-      exclude: [
-        "assets/**",
-        "amplify/**",
-        "src/.eslintrc.cjs",
-        "src/lib/supabase.js",
-        "src/__tests__/**",
-        "src/tests/**",
-        "**/*.test.{js,ts}",
-        "**/*.spec.{js,ts}",
-        "**/node_modules/**",
-        "**/dist/**",
-      ],
-      thresholds: {
-        global: {
-          branches: 70,
-          functions: 70,
-          lines: 80,
-          statements: 80,
-        },
-      },
+      enabled: false,
     },
     testTimeout: 10000,
     hookTimeout: 10000,

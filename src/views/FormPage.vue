@@ -414,7 +414,7 @@
             label="Next Section"
             icon="pi pi-arrow-right"
             icon-pos="right"
-            @click.prevent="submitFormAndLoadNextSection"
+            @click="handleNextButtonClick"
           />
         </div>
       </form>
@@ -471,10 +471,11 @@ export default {
       sectionId: this.$route.params.sectionId,
       sectionIndex: null,
       formData: {},
-      inputValues: {},
+      inputValues: {}, // This will be made reactive via Vue.set in updateFormData
       questions: [],
       section: "",
       validationErrors: {},
+      isSaving: false, // Flag to prevent data clearing during save
     };
   },
   computed: {
@@ -573,9 +574,46 @@ export default {
       });
     },
   },
+  async beforeRouteUpdate(to, from, next) {
+    // Auto-save when navigating between sections (for menu navigation)
+    console.log(`[FormPage beforeRouteUpdate] CALLED - from ${from.params.sectionId} to ${to.params.sectionId}`);
+    const oldSectionId = from.params.sectionId;
+    const newSectionId = to.params.sectionId;
+
+    if (oldSectionId && oldSectionId !== newSectionId && !this.isSaving) {
+      console.log(`[FormPage beforeRouteUpdate] Auto-saving ${oldSectionId} before switching to ${newSectionId}`);
+      this.isSaving = true;
+      try {
+        await this.saveCurrentSection();
+        console.log(`[FormPage beforeRouteUpdate] Save completed for ${oldSectionId}`);
+      } catch (error) {
+        console.error(`[FormPage beforeRouteUpdate] Save failed:`, error);
+      } finally {
+        this.isSaving = false;
+      }
+    }
+    next();
+  },
+  async beforeRouteLeave(to, from, next) {
+    // Auto-save before leaving the page completely
+    console.log(`[FormPage beforeRouteLeave] CALLED - leaving ${from.params.sectionId}`);
+    if (this.sectionId && !this.isSaving) {
+      console.log(`[FormPage beforeRouteLeave] Auto-saving ${this.sectionId} before leaving`);
+      this.isSaving = true;
+      try {
+        await this.saveCurrentSection();
+        console.log(`[FormPage beforeRouteLeave] Save completed for ${this.sectionId}`);
+      } catch (error) {
+        console.error(`[FormPage beforeRouteLeave] Save failed:`, error);
+      } finally {
+        this.isSaving = false;
+      }
+    }
+    next();
+  },
   watch: {
     "$route.params.sectionId"(newVal) {
-      // Only update if we have a valid section ID (not navigating away)
+      // Update section when route changes (save happens in beforeRouteUpdate)
       if (newVal && this.formDataKeys.includes(newVal)) {
         this.sectionId = newVal;
         this.sectionIndex = this.formDataKeys.indexOf(this.sectionId);
@@ -584,12 +622,18 @@ export default {
     },
     "$store.state.formData": {
       handler() {
-        this.updateFormData();
+        // Don't update form data if we're in the middle of saving
+        // This prevents the inputValues from being cleared while we're trying to save them
+        if (!this.isSaving) {
+          this.updateFormData();
+        }
       },
       deep: true,
     },
   },
   async created() {
+    console.log('🟢 FormPage.vue created() - component is loading');
+    console.log('🟢 Methods available:', Object.keys(this.$options.methods || {}));
     this.sectionIndex = this.formDataKeys.indexOf(this.sectionId);
     this.updateFormData();
     
@@ -624,6 +668,9 @@ export default {
   },
   methods: {
     updateFormData() {
+      console.log(`[FormPage] updateFormData called for section: ${this.sectionId}`);
+      console.log(`[FormPage] Store formData for ${this.sectionId}:`, this.$store.state.formData[this.sectionId]);
+
       // Clear formData
       Object.keys(this.formData).forEach((key) => {
         delete this.formData[key];
@@ -638,6 +685,10 @@ export default {
         this.$store.state.formData[this.sectionId] || {},
       );
       Object.assign(this.inputValues, this.formData);
+
+      console.log(`[FormPage] After update - formData:`, this.formData);
+      console.log(`[FormPage] After update - inputValues:`, this.inputValues);
+
       this.questions = getQuestionsForSection(this.sectionId);
       this.section = this.questions[0]?.section || "";
     },
@@ -671,7 +722,19 @@ export default {
         formattedValue = formatDate(value, "YYYY-MM-DD");
       }
 
+      // Debug logging for critical fields
+      if (question.fieldId === 'hasListingAgentInfo' || question.fieldId === 'primaryName' || question.fieldId === 'secondaryName') {
+        console.log(`Setting ${question.fieldId} to:`, value);
+        console.log('Value type:', typeof value);
+        console.log('Current inputValues before update:', {...this.inputValues});
+      }
+
       this.inputValues[question.fieldId] = formattedValue;
+
+      // Log after setting
+      if (question.fieldId === 'primaryName' || question.fieldId === 'secondaryName') {
+        console.log(`After setting ${question.fieldId}, inputValues:`, {...this.inputValues});
+      }
 
       // Update the store's formData
       this.$store.commit("updateFormData", {
@@ -679,6 +742,12 @@ export default {
         fieldId: question.fieldId,
         value: formattedValue,
       });
+
+      // Debug log the store update for boolean fields
+      if (question.fieldId === 'hasListingAgentInfo') {
+        console.log('Store updated with hasListingAgentInfo:', formattedValue);
+        console.log('Current store value:', this.$store.state.formData.listingAgent?.hasListingAgentInfo);
+      }
 
       const isRequired = this.isFieldRequired(question);
 
@@ -724,67 +793,130 @@ export default {
         params: { sectionId: sectionId, questionIndex: questionIndex },
       });
     },
-    async submitFormAndLoadNextSection() {
-      // Validate all visible fields
-      this.visibleQuestions.forEach((question) => {
-        const value = this.inputValues[question.fieldId];
-        const isRequired = this.isFieldRequired(question);
-
-        if (!this.isMarked(question.sectionId, question.fieldId)) {
-          const errors = validateField(question, value, isRequired);
-          this.validationErrors[question.fieldId] = errors;
-        } else {
-          // Clear validation errors for marked questions
-          this.validationErrors[question.fieldId] = [];
-        }
-      });
-
-      // Allow save even if there are validation errors
-      // if (hasErrors) {
-      //   console.log("Validation errors:", this.validationErrors);
-      //   return;
-      // }
-
-      // Filter out marked questions from inputValues before saving
-      // This ensures marked "I don't know" fields aren't overwritten with empty values
-      const markedFields = this.$store.state.markedQuestions[this.sectionId] || [];
-      const dataToSave = {};
-      
-      Object.keys(this.inputValues).forEach(fieldId => {
-        // Only include fields that are NOT marked as "I don't know"
-        if (!markedFields.includes(fieldId)) {
-          dataToSave[fieldId] = this.inputValues[fieldId];
-        }
-      });
-      
-      console.log('Marked fields for section:', this.sectionId, markedFields);
-      console.log('Data to save (excluding marked fields):', dataToSave);
-
-      // Update the store's formData with non-marked fields only
-      this.$store.commit("updateSectionFormData", {
-        sectionId: this.sectionId,
-        data: dataToSave,
-      });
-
+    handleNextButtonClick(event) {
+      console.log('🔴 NEXT BUTTON CLICKED!', event);
+      console.log('🔴 Current section:', this.sectionId);
+      event.preventDefault();
+      this.submitFormAndLoadNextSection();
+    },
+    async saveCurrentSection() {
       try {
+        console.log(`[FormPage SAVE] ========== saveCurrentSection() CALLED for ${this.sectionId} ==========`);
+
+        // Extract save logic into reusable function
+        const markedFields = this.$store.state.markedQuestions[this.sectionId] || [];
+        const storeData = this.$store.state.formData[this.sectionId] || {};
+        const dataToSave = {};
+
+        Object.keys(storeData).forEach(fieldId => {
+          if (!markedFields.includes(fieldId)) {
+            dataToSave[fieldId] = storeData[fieldId];
+          }
+        });
+
+        console.log(`[FormPage SAVE] Saving section: ${this.sectionId}`);
+        console.log(`[FormPage SAVE] Data to save:`, JSON.stringify(dataToSave, null, 2));
+
+        // Update the store's formData with non-marked fields only
+        this.$store.commit("updateSectionFormData", {
+          sectionId: this.sectionId,
+          data: dataToSave,
+        });
+
         // Create update payload with the current section's data (excluding marked fields)
-        const sectionUpdate = {
+        let sectionUpdate = {
           [this.sectionId]: dataToSave
         };
-        
-        console.log('Current markedQuestions from store:', JSON.stringify(this.$store.state.markedQuestions));
-        console.log('Passing markedQuestions to createContractPayload:', this.$store.state.markedQuestions);
-        
+
+        // Special handling for sections that share JSONB columns
+        // When saving sellers, also include buyers data (both go to 'parties' column)
+        if (this.sectionId === 'sellers') {
+          console.log('[FormPage SAVE] Saving sellers section');
+          console.log('[FormPage SAVE] dataToSave for sellers:', dataToSave);
+          sectionUpdate.buyers = this.$store.state.formData.buyers || {};
+        }
+        // When saving buyers, also include sellers data (both go to 'parties' column)
+        else if (this.sectionId === 'buyers') {
+          sectionUpdate.sellers = this.$store.state.formData.sellers || {};
+        }
+        // When saving HOA addendum, include other legal sections
+        else if (this.sectionId === 'homeownersAssociationAddendum') {
+          const legalSections = ['leases', 'survey', 'buyerProvisions', 'buyerNotices', 'buyerAttorney'];
+          legalSections.forEach(section => {
+            if (this.$store.state.formData[section]) {
+              sectionUpdate[section] = this.$store.state.formData[section];
+            }
+          });
+        }
+        // When saving listing agent, include other additional_info sections
+        else if (this.sectionId === 'listingAgent') {
+          console.log('[FormPage SAVE] Saving listingAgent section with data:', dataToSave);
+          const additionalSections = ['propertyCondition', 'brokerDisclosure', 'possession'];
+          additionalSections.forEach(section => {
+            if (this.$store.state.formData[section]) {
+              sectionUpdate[section] = this.$store.state.formData[section];
+            }
+          });
+        }
+        // When saving any legal section, include all other legal sections
+        else if (['leases', 'survey', 'buyerProvisions', 'buyerNotices', 'buyerAttorney'].includes(this.sectionId)) {
+          const legalSections = ['leases', 'survey', 'homeownersAssociationAddendum', 'buyerProvisions', 'buyerNotices', 'buyerAttorney'];
+          legalSections.forEach(section => {
+            if (section !== this.sectionId && this.$store.state.formData[section]) {
+              sectionUpdate[section] = this.$store.state.formData[section];
+            }
+          });
+        }
+        // When saving any additional_info section, include all other additional_info sections
+        else if (['propertyCondition', 'brokerDisclosure', 'possession'].includes(this.sectionId)) {
+          const additionalSections = ['propertyCondition', 'brokerDisclosure', 'possession', 'listingAgent'];
+          additionalSections.forEach(section => {
+            if (section !== this.sectionId && this.$store.state.formData[section]) {
+              sectionUpdate[section] = this.$store.state.formData[section];
+            }
+          });
+        }
+        // When saving any title/closing section, include all other title/closing sections
+        else if (['title', 'titleObjections', 'titleNotices', 'closing'].includes(this.sectionId)) {
+          const titleSections = ['title', 'titleObjections', 'titleNotices', 'closing'];
+          titleSections.forEach(section => {
+            if (section !== this.sectionId && this.$store.state.formData[section]) {
+              sectionUpdate[section] = this.$store.state.formData[section];
+            }
+          });
+        }
+
+        console.log('Section update being sent:', sectionUpdate);
+
         // Use the field mapping utilities to create the proper payload
         const updatePayload = createContractPayload(sectionUpdate, {
           markedQuestions: this.$store.state.markedQuestions
         });
-        
+
         console.log('Updating contract with payload:', updatePayload);
-        
+
         // Update the contract using Supabase API
         const response = await ContractAPI.update(this.$store.state.contractId, updatePayload);
         console.log("Contract updated:", response);
+
+        // If a new contract was created (because the old one didn't exist), update the store
+        if (response.id !== this.$store.state.contractId) {
+          console.log("New contract created with ID:", response.id);
+          this.$store.commit("setContractId", response.id);
+        }
+
+        console.log("Contract update response:", response);
+      } catch (error) {
+        console.error('[FormPage SAVE] ERROR in saveCurrentSection:', error);
+        throw error;
+      }
+    },
+    async submitFormAndLoadNextSection() {
+      console.log(`[FormPage SAVE] ========== SAVE TRIGGERED FOR SECTION: ${this.sectionId} ==========`);
+      this.isSaving = true;
+
+      try {
+        await this.saveCurrentSection();
 
         // Navigate to the next section if it exists
         if (this.formDataKeys[this.sectionIndex + 1]) {
@@ -802,6 +934,8 @@ export default {
         }
       } catch (error) {
         console.error("Error updating contract:", error);
+      } finally {
+        this.isSaving = false;
       }
     },
   },

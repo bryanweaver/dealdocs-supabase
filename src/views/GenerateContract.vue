@@ -1,6 +1,12 @@
 <template>
+  <!-- Loading indicator -->
+  <div v-if="isLoadingContract" class="flex items-center justify-center p-6">
+    <i class="pi pi-spin pi-spinner text-4xl" style="color: var(--primary-color)"></i>
+    <span class="ml-3 text-lg">Loading contract data...</span>
+  </div>
+
   <DataTable
-    v-if="etchPackets.length > 0"
+    v-else-if="etchPackets.length > 0"
     :value="etchPackets"
     row-group-mode="subheader"
     group-rows-by="createdAt"
@@ -27,22 +33,24 @@
         <Tag :status="slotProps.data.signerStatus" />
       </template>
     </Column>
-    <Column header="Actions" class="w-24 !text-end">
+    <Column header="Actions">
       <template #body="slotProps">
-        <div class="flex gap-3">
+        <div class="flex gap-2 items-center">
           <SignContract
             v-if="slotProps.data.signerStatus !== 'completed'"
             :key="slotProps.data.key"
             label="Sign"
-            size="medium"
+            size="small"
             :eid="slotProps.data.etchPacketEid"
             @etch-packet-created="fetchEtchPackets"
             @etch-packet-updated="fetchEtchPackets"
           />
           <PrimeButton
-            class="p-button-secondary"
-            label="View"
-            @click="viewSignedDocument(slotProps.data)"
+            v-if="slotProps.data.signerStatus === 'completed'"
+            class="p-button-success p-button-sm"
+            icon="pi pi-file-pdf"
+            label="View Documents"
+            @click="toggleDocumentList(slotProps.data.etchPacketEid)"
           />
         </div>
       </template>
@@ -76,9 +84,44 @@
       />
     </template>
   </Dialog>
-  <div class="mt-4 flex justify-center">
-    <SignContract 
-      label="Generate New Contract" 
+
+  <!-- Documents Dialog -->
+  <Dialog
+    v-model:visible="showDocumentsDialog"
+    header="Signed Documents"
+    :style="{ width: '600px' }"
+    :modal="true"
+  >
+    <div v-if="selectedPacketDocuments.length > 0" class="space-y-3">
+      <div
+        v-for="doc in selectedPacketDocuments"
+        :key="doc.fileName"
+        class="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+      >
+        <div class="flex items-center gap-3">
+          <i class="pi pi-file-pdf text-2xl text-red-600"></i>
+          <div>
+            <p class="font-semibold">{{ formatDocumentName(doc.fileName) }}</p>
+            <p class="text-sm text-gray-500">{{ doc.type === 'signed' ? 'Signed Document' : 'Generated Document' }}</p>
+          </div>
+        </div>
+        <PrimeButton
+          icon="pi pi-external-link"
+          label="Open"
+          class="p-button-sm"
+          @click="openDocument(doc)"
+        />
+      </div>
+    </div>
+    <div v-else class="text-center py-8">
+      <i class="pi pi-inbox text-4xl text-gray-400 mb-3"></i>
+      <p class="text-gray-500">No documents available yet</p>
+    </div>
+  </Dialog>
+
+  <div v-if="!isLoadingContract" class="mt-4 flex justify-center">
+    <SignContract
+      label="Generate New Contract"
       size="large"
       @etch-packet-created="fetchEtchPackets"
     />
@@ -88,11 +131,12 @@
 <script lang="ts">
 import { ref, onMounted, computed } from "vue";
 import { useStore } from "vuex";
+import { useRoute } from "vue-router";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import Button from "primevue/button";
 import { formatDate } from "@/utils/dateUtils";
-import { EtchAPI, StorageAPI } from "@/services/api.js";
+import { ContractAPI, EtchAPI, StorageAPI } from "@/services/api.js";
 import Tag from "@/components/Tag.vue";
 import SignContract from "@/components/SignContract.vue";
 import { useToast } from "primevue/usetoast";
@@ -108,9 +152,11 @@ export default {
   },
   setup() {
     const store = useStore();
+    const route = useRoute();
     const contracts = ref([]);
     const toast = useToast();
     const dbEtchPackets = ref([]);
+    const isLoadingContract = ref(false);
 
     // Use database etch packets instead of Vuex state
     const etchPackets = computed(() => {
@@ -125,24 +171,26 @@ export default {
             return [{
               key: packet.etch_packet_id,
               name: packet.etch_packet_id,
-              createdAt: formatDate(packet.created_at, "YYYY-MM-DD hh:mm A"),
-              signerName: packet.signer_email || 'Unknown',
+              createdAt: packet.created_at ? formatDate(packet.created_at, "YYYY-MM-DD hh:mm A") : 'Recently',
+              signerName: packet.signer_email || 'Pending',
               signerStatus: packet.status || 'pending',
               etchPacketEid: packet.etch_packet_id,
               pdfUrl: packet.pdf_url,
-              signedPdfUrl: packet.signed_pdf_url
+              signedPdfUrl: packet.signed_pdf_url,
+              documentUrls: packet.document_urls || []
             }];
           }
           
           return signers.map((signer) => ({
             key: `${packet.etch_packet_id}-${signer.email}`,
             name: packet.etch_packet_id,
-            createdAt: formatDate(packet.created_at, "YYYY-MM-DD hh:mm A"),
-            signerName: signer.name || signer.email,
+            createdAt: packet.created_at ? formatDate(packet.created_at, "YYYY-MM-DD hh:mm A") : 'Recently',
+            signerName: signer.name || signer.email || 'Pending',
             signerStatus: signer.status || packet.status || 'pending',
             etchPacketEid: packet.etch_packet_id,
             pdfUrl: packet.pdf_url,
-            signedPdfUrl: packet.signed_pdf_url
+            signedPdfUrl: packet.signed_pdf_url,
+            documentUrls: packet.document_urls || []
           }));
         });
       } else if (store.state.etchPackets && store.state.etchPackets.length > 0) {
@@ -169,6 +217,8 @@ export default {
     console.log(etchPackets.value);
     const displayConfirmation = ref(false);
     const selectedEtchPacketEid = ref("");
+    const showDocumentsDialog = ref(false);
+    const selectedPacketDocuments = ref([]);
 
     const fetchEtchPackets = async () => {
       const contractId = store.state.contractId;
@@ -227,10 +277,35 @@ export default {
       // Fetch and view signed documents
       try {
         console.log('Viewing signed document for:', data);
-        
+
         // First check if we have stored PDF URLs in the database
         const etchPacket = await EtchAPI.getByEtchPacketId(data.etchPacketEid);
         console.log('Etch packet from database:', etchPacket);
+
+        // Check if we have stored document URLs
+        if (etchPacket?.document_urls && etchPacket.document_urls.length > 0) {
+          console.log('Found stored document URLs:', etchPacket.document_urls);
+
+          // Open all stored documents
+          etchPacket.document_urls.forEach((doc, index) => {
+            const delay = index === 0 ? 0 : index * 500;
+            setTimeout(() => {
+              console.log(`Opening stored document ${index + 1}: ${doc.type} - ${doc.path}`);
+              const newWindow = window.open(doc.url, `_blank_${index}`);
+              if (!newWindow) {
+                console.warn(`Failed to open window for document ${index + 1} - popup may be blocked`);
+              }
+            }, delay);
+          });
+
+          toast.add({
+            severity: 'success',
+            summary: 'Documents Found',
+            detail: `Opening ${etchPacket.document_urls.length} document(s)`,
+            life: 3000
+          });
+          return;
+        }
         
         // Check if all signers have completed
         const allSignersCompleted = data.signerStatus === 'completed' || 
@@ -313,25 +388,47 @@ export default {
                   return;
                 }
                 
-                // Open all documents with staggered delays
-                validDocs.forEach((doc, index) => {
-                  // Use immediate timeout for first doc to maintain user interaction context
-                  const delay = index === 0 ? 0 : index * 500;
-                  
-                  setTimeout(() => {
-                    console.log(`Opening document ${index + 1}/${validDocs.length}: ${doc.fileName} - ${doc.signedUrl.substring(0, 100)}...`);
-                    const newWindow = window.open(doc.signedUrl, `_blank_${index}`);
-                    if (!newWindow) {
-                      console.warn(`Failed to open window for document ${index + 1}: ${doc.fileName} - popup may be blocked`);
-                    }
-                  }, delay);
-                });
+                // Open only the main contract document (not the Anvil Certificate)
+                // Filter out the certificate and find the main contract
+                const mainDocs = validDocs.filter(doc =>
+                  !doc.fileName.toLowerCase().includes('anvil certificate') &&
+                  !doc.fileName.toLowerCase().includes('certificate')
+                );
+
+                if (mainDocs.length > 0) {
+                  // Open the main residential contract first
+                  const mainContract = mainDocs.find(doc =>
+                    doc.fileName.toLowerCase().includes('residential_resale_contract')
+                  ) || mainDocs[0];
+
+                  console.log(`Opening main document: ${mainContract.fileName}`);
+                  window.open(mainContract.signedUrl, '_blank');
+
+                  // If there are addendums, show a message about them
+                  const otherDocs = mainDocs.filter(doc => doc !== mainContract);
+                  if (otherDocs.length > 0) {
+                    const docNames = otherDocs.map(d => d.fileName.replace(/_signed_\d+\.pdf$/, '').replace(/_/g, ' ')).join(', ');
+                    toast.add({
+                      severity: 'info',
+                      summary: 'Additional Documents Available',
+                      detail: `Also signed: ${docNames}. Use browser back button to view them individually.`,
+                      life: 8000
+                    });
+
+                    // Store the URLs for potential later use
+                    console.log('Other documents available:', otherDocs);
+                  }
+                } else if (validDocs.length > 0) {
+                  // Fallback: open the first document if no main contract found
+                  console.log(`Opening document: ${validDocs[0].fileName}`);
+                  window.open(validDocs[0].signedUrl, '_blank');
+                }
                 
                 toast.add({
                   severity: 'success',
-                  summary: 'Documents Found',
-                  detail: `Opening ${validDocs.length} document(s) - Please allow popups if blocked`,
-                  life: 5000
+                  summary: 'Document Opened',
+                  detail: 'Your signed contract has been opened in a new tab',
+                  life: 3000
                 });
                 return;
               }
@@ -429,6 +526,56 @@ export default {
     const confirmDelete = (etchPacketEid) => {
       selectedEtchPacketEid.value = etchPacketEid;
       displayConfirmation.value = true;
+    };
+
+    const formatDocumentName = (fileName) => {
+      if (!fileName) return 'Document';
+
+      // Remove timestamp and extension
+      let name = fileName.replace(/_signed_\d+\.pdf$/i, '');
+      name = name.replace(/\.pdf$/i, '');
+
+      // Replace underscores with spaces and capitalize
+      name = name.replace(/_/g, ' ');
+
+      // Special formatting for known document types
+      const formatMap = {
+        'residential resale contract': 'Residential Resale Contract',
+        'third party finance addendum': 'Third Party Finance Addendum',
+        'lender appraisal termination addendum': 'Lender Appraisal Termination Addendum',
+        'homeowners addendum': 'Homeowners Association Addendum',
+        'anvil certificate': 'Anvil Certificate',
+        'contract': 'Main Contract'
+      };
+
+      const lowerName = name.toLowerCase();
+      for (const [key, value] of Object.entries(formatMap)) {
+        if (lowerName.includes(key)) {
+          return value;
+        }
+      }
+
+      // Capitalize first letter of each word
+      return name.replace(/\b\w/g, (l) => l.toUpperCase());
+    };
+
+    const toggleDocumentList = async (etchPacketEid) => {
+      // Fetch documents for this packet
+      const packet = dbEtchPackets.value.find(p => p.etch_packet_id === etchPacketEid);
+
+      if (packet && packet.document_urls && packet.document_urls.length > 0) {
+        // Use stored documents from database
+        selectedPacketDocuments.value = packet.document_urls
+          .filter(doc => !doc.fileName?.toLowerCase().includes('anvil certificate'));
+        showDocumentsDialog.value = true;
+      } else {
+        // Fetch documents from storage or Anvil
+        await viewSignedDocument({ etchPacketEid, signerStatus: 'completed' });
+      }
+    };
+
+    const openDocument = (doc) => {
+      window.open(doc.url || doc.signedUrl, '_blank');
     };
 
     const deleteEtchPacketFromDocumentDb = async (etchPacketEid) => {
@@ -531,7 +678,55 @@ export default {
       }
     };
 
-    onMounted(fetchEtchPackets);
+    // Load contract if not already loaded
+    const loadContractIfNeeded = async () => {
+      const contractIdFromRoute = route.params.id;
+      const contractIdInStore = store.state.contractId;
+
+      console.log('GenerateContract - Route ID:', contractIdFromRoute);
+      console.log('GenerateContract - Store contract ID:', contractIdInStore);
+      console.log('GenerateContract - Store has form data:', !!store.state.property);
+
+      // Check if we need to load the contract
+      // Either: no contract ID in store, or different contract ID, or missing form data
+      if (!contractIdInStore ||
+          contractIdInStore !== contractIdFromRoute ||
+          !store.state.property?.address) {
+
+        console.log('Loading contract from database...');
+        isLoadingContract.value = true;
+
+        try {
+          const contract = await ContractAPI.get(contractIdFromRoute);
+          console.log('Loaded contract:', contract);
+
+          // Use the selectContract action to load all the data properly
+          store.dispatch('selectContract', contract);
+
+          toast.add({
+            severity: 'success',
+            summary: 'Contract Loaded',
+            detail: 'Contract data has been loaded successfully.',
+            life: 3000
+          });
+        } catch (error) {
+          console.error('Error loading contract:', error);
+          toast.add({
+            severity: 'error',
+            summary: 'Load Failed',
+            detail: 'Unable to load contract data. Please try again.',
+            life: 5000
+          });
+        } finally {
+          isLoadingContract.value = false;
+        }
+      }
+    };
+
+    onMounted(async () => {
+      await loadContractIfNeeded();
+      await fetchEtchPackets();
+    });
 
     return {
       contracts,
@@ -543,6 +738,13 @@ export default {
       fetchEtchPackets,
       displayConfirmation,
       formatDate,
+      showDocumentsDialog,
+      selectedPacketDocuments,
+      formatDocumentName,
+      toggleDocumentList,
+      openDocument,
+      dbEtchPackets,
+      isLoadingContract,
     };
   },
 };

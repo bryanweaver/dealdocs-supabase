@@ -64,7 +64,34 @@
       "Bash(find:*)",
       "Bash(npx eslint:*)",
       "WebFetch(domain:www.useanvil.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(docker logs:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_press_key",
+      "mcp__playwright__browser_network_requests",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_take_screenshot",
+      "Bash(psql:*)",
+      "Bash(curl:*)",
+      "mcp__playwright__browser_wait_for",
+      "Bash(supabase db psql:*)",
+      "mcp__playwright__browser_close",
+      "Bash(tasklist)",
+      "Bash(findstr:*)",
+      "Bash(npm run test:persistence:*)",
+      "Bash(npm run test:playwright:*)",
+      "Bash(del \"C:\\projects\\dealdocs-supabase\\src\\tests\\steps\\index.ts\")",
+      "Bash(del \"C:\\projects\\dealdocs-supabase\\tsconfig.cucumber.json\")",
+      "Bash(npx vitest run:*)",
+      "Bash(npm run test:login:*)",
+      "Bash(npm run test:auth:*)",
+      "Bash(dir:*)",
+      "Bash(npx cucumber-js:*)",
+      "Bash(where cucumber-js)"
     ],
     "deny": [],
     "ask": [],
@@ -72,6 +99,11 @@
       "C:\\"
     ]
   },
+  "enabledMcpjsonServers": [],
+  "disabledMcpjsonServers": [
+    "playwright",
+    "supabase"
+  ],
   "hooks": {
     "PreToolUse": [
       {
@@ -79,7 +111,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \".claude/hooks/audit_logger.js\""
+            "command": "node \".claude/hooks/audit_logger.cjs\""
           }
         ]
       }
@@ -90,7 +122,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \".claude/hooks/audit_logger.js\""
+            "command": "node \".claude/hooks/audit_logger.cjs\""
           }
         ]
       }
@@ -102,11 +134,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \".claude/hooks/audit_logger.js\""
+            "command": "node \".claude/hooks/audit_logger.cjs\""
           },
           {
             "type": "command",
-            "command": "node \".claude/hooks/session_manager.js\""
+            "command": "node \".claude/hooks/session_manager.cjs\""
           }
         ]
       }
@@ -117,11 +149,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \".claude/hooks/audit_logger.js\""
+            "command": "node \".claude/hooks/audit_logger.cjs\""
           },
           {
             "type": "command",
-            "command": "node \".claude/hooks/session_manager.js\""
+            "command": "node \".claude/hooks/session_manager.cjs\""
           }
         ]
       }
@@ -132,5 +164,29 @@
         "hooks": []
       }
     ]
+  },
+  "mcpServers": {
+    "playwright": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@playwright/mcp",
+        "--stdio"
+      ]
+    },
+    "supabase": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@supabase/mcp-server-supabase@latest"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "…"
+      }
+    }
   }
 }

@@ -34,7 +34,6 @@ declare module 'vue' {
     InputNumber: typeof import('primevue/inputnumber')['default']
     InputText: typeof import('primevue/inputtext')['default']
     LazyImage: typeof import('./src/components/LazyImage.vue')['default']
-    Listbox: typeof import('primevue/listbox')['default']
     Message: typeof import('primevue/message')['default']
     Panel: typeof import('primevue/panel')['default']
     Popover: typeof import('primevue/popover')['default']

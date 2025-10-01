@@ -292,14 +292,28 @@ serve(async (req) => {
         .select('*')
         .eq('etch_packet_id', etchPacketEid)
         .single()
-      
+
       if (etchPackets) {
         const signedPdfUrl = documents[0]?.signedUrl
-        
+
+        // Prepare document URLs for storage
+        const signedDocumentUrls = documents.map(doc => ({
+          type: 'signed',
+          path: doc.storagePath,
+          url: doc.signedUrl,
+          fileName: doc.fileName
+        }))
+
+        // Merge with existing document_urls if any (keep generated docs)
+        const existingDocUrls = etchPackets.document_urls || []
+        const generatedDocs = existingDocUrls.filter(doc => doc.type === 'generated')
+        const allDocUrls = [...generatedDocs, ...signedDocumentUrls]
+
         await supabase
           .from('etch_packets')
           .update({
             signed_pdf_url: signedPdfUrl,
+            document_urls: allDocUrls,
             status: 'completed',
             updated_at: new Date().toISOString()
           })

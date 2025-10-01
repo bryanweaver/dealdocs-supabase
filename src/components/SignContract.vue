@@ -385,6 +385,7 @@ export default {
 
       return {
         userId: this.contractId, // Use contract ID instead of user ID
+        accountId: this.accountId,
         name: "Residential Resale Contract for Signing",
         isDraft: false,
         isTest: true,
