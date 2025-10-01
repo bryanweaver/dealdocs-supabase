@@ -23,9 +23,10 @@
           <PrimeButton
             v-if="slotProps.data.signerStatus === 'completed'"
             class="p-button-info p-button-sm"
-            icon="pi pi-file-pdf"
+            :icon="loadingDocuments ? 'pi pi-spin pi-spinner' : 'pi pi-file-pdf'"
             label="View Documents"
             severity="info"
+            :loading="loadingDocuments"
             @click="toggleDocumentList(slotProps.data.etchPacketEid)"
           />
           <PrimeButton
@@ -222,6 +223,7 @@ export default {
     const selectedEtchPacketEid = ref("");
     const showDocumentsDialog = ref(false);
     const selectedPacketDocuments = ref([]);
+    const loadingDocuments = ref(false);
 
     const fetchEtchPackets = async () => {
       const contractId = store.state.contractId;
@@ -564,44 +566,50 @@ export default {
     const toggleDocumentList = async (etchPacketEid) => {
       console.log('toggleDocumentList called with:', etchPacketEid);
 
-      // Always fetch the latest packet data to ensure we have current document_urls
-      await fetchEtchPackets();
+      loadingDocuments.value = true;
 
-      // Fetch documents for this packet
-      const packet = dbEtchPackets.value.find(p => p.etch_packet_id === etchPacketEid);
-      console.log('Found packet:', packet);
-      console.log('Packet document_urls:', packet?.document_urls);
+      try {
+        // Always fetch the latest packet data to ensure we have current document_urls
+        await fetchEtchPackets();
 
-      if (packet && packet.document_urls && packet.document_urls.length > 0) {
-        // Generate fresh signed URLs for all documents
-        try {
-          const docsWithFreshUrls = await Promise.all(
-            packet.document_urls
-              .filter(doc => !doc.fileName?.toLowerCase().includes('anvil certificate'))
-              .map(async (doc) => {
-                // Generate a fresh signed URL valid for 1 hour
-                const freshUrl = await StorageAPI.getSignedUrl(doc.path, 'contracts', 3600);
-                return {
-                  ...doc,
-                  freshUrl // Store the fresh URL separately to preserve original
-                };
-              })
-          );
+        // Fetch documents for this packet
+        const packet = dbEtchPackets.value.find(p => p.etch_packet_id === etchPacketEid);
+        console.log('Found packet:', packet);
+        console.log('Packet document_urls:', packet?.document_urls);
 
-          selectedPacketDocuments.value = docsWithFreshUrls;
-          showDocumentsDialog.value = true;
-        } catch (error) {
-          console.error('Error generating fresh URLs for documents:', error);
-          toast.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Unable to load document links. Please try again.',
-            life: 3000
-          });
+        if (packet && packet.document_urls && packet.document_urls.length > 0) {
+          // Generate fresh signed URLs for all documents
+          try {
+            const docsWithFreshUrls = await Promise.all(
+              packet.document_urls
+                .filter(doc => !doc.fileName?.toLowerCase().includes('anvil certificate'))
+                .map(async (doc) => {
+                  // Generate a fresh signed URL valid for 1 hour
+                  const freshUrl = await StorageAPI.getSignedUrl(doc.path, 'contracts', 3600);
+                  return {
+                    ...doc,
+                    freshUrl // Store the fresh URL separately to preserve original
+                  };
+                })
+            );
+
+            selectedPacketDocuments.value = docsWithFreshUrls;
+            showDocumentsDialog.value = true;
+          } catch (error) {
+            console.error('Error generating fresh URLs for documents:', error);
+            toast.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'Unable to load document links. Please try again.',
+              life: 3000
+            });
+          }
+        } else {
+          // Fetch documents from storage or Anvil - this will populate document_urls
+          await viewSignedDocument({ etchPacketEid, signerStatus: 'completed' });
         }
-      } else {
-        // Fetch documents from storage or Anvil - this will populate document_urls
-        await viewSignedDocument({ etchPacketEid, signerStatus: 'completed' });
+      } finally {
+        loadingDocuments.value = false;
       }
     };
 
@@ -788,6 +796,7 @@ export default {
       openDocument,
       dbEtchPackets,
       isLoadingContract,
+      loadingDocuments,
     };
   },
 };
