@@ -282,29 +282,46 @@ export default {
         const etchPacket = await EtchAPI.getByEtchPacketId(data.etchPacketEid);
         console.log('Etch packet from database:', etchPacket);
 
-        // Check if we have stored document URLs
+        // Check if we have stored document paths (not URLs, as URLs expire)
         if (etchPacket?.document_urls && etchPacket.document_urls.length > 0) {
-          console.log('Found stored document URLs:', etchPacket.document_urls);
+          console.log('Found stored document paths:', etchPacket.document_urls);
 
-          // Open all stored documents
-          etchPacket.document_urls.forEach((doc, index) => {
-            const delay = index === 0 ? 0 : index * 500;
-            setTimeout(() => {
-              console.log(`Opening stored document ${index + 1}: ${doc.type} - ${doc.path}`);
-              const newWindow = window.open(doc.url, `_blank_${index}`);
-              if (!newWindow) {
-                console.warn(`Failed to open window for document ${index + 1} - popup may be blocked`);
-              }
-            }, delay);
-          });
+          // Generate fresh signed URLs for each stored document path
+          try {
+            const freshUrls = await Promise.all(
+              etchPacket.document_urls.map(async (doc) => {
+                // Generate a fresh signed URL valid for 1 hour
+                const signedUrl = await StorageAPI.getSignedUrl(doc.path, 'contracts', 3600);
+                return {
+                  ...doc,
+                  url: signedUrl
+                };
+              })
+            );
 
-          toast.add({
-            severity: 'success',
-            summary: 'Documents Found',
-            detail: `Opening ${etchPacket.document_urls.length} document(s)`,
-            life: 3000
-          });
-          return;
+            // Open all documents with fresh URLs
+            freshUrls.forEach((doc, index) => {
+              const delay = index === 0 ? 0 : index * 500;
+              setTimeout(() => {
+                console.log(`Opening document ${index + 1}: ${doc.type} - ${doc.path}`);
+                const newWindow = window.open(doc.url, `_blank_${index}`);
+                if (!newWindow) {
+                  console.warn(`Failed to open window for document ${index + 1} - popup may be blocked`);
+                }
+              }, delay);
+            });
+
+            toast.add({
+              severity: 'success',
+              summary: 'Documents Found',
+              detail: `Opening ${freshUrls.length} document(s)`,
+              life: 3000
+            });
+            return;
+          } catch (urlError) {
+            console.error('Error generating fresh signed URLs:', urlError);
+            // Fall through to try other methods
+          }
         }
         
         // Check if all signers have completed
@@ -564,18 +581,52 @@ export default {
       const packet = dbEtchPackets.value.find(p => p.etch_packet_id === etchPacketEid);
 
       if (packet && packet.document_urls && packet.document_urls.length > 0) {
-        // Use stored documents from database
-        selectedPacketDocuments.value = packet.document_urls
-          .filter(doc => !doc.fileName?.toLowerCase().includes('anvil certificate'));
-        showDocumentsDialog.value = true;
+        // Generate fresh signed URLs for all documents
+        try {
+          const docsWithFreshUrls = await Promise.all(
+            packet.document_urls
+              .filter(doc => !doc.fileName?.toLowerCase().includes('anvil certificate'))
+              .map(async (doc) => {
+                // Generate a fresh signed URL valid for 1 hour
+                const freshUrl = await StorageAPI.getSignedUrl(doc.path, 'contracts', 3600);
+                return {
+                  ...doc,
+                  freshUrl // Store the fresh URL separately to preserve original
+                };
+              })
+          );
+
+          selectedPacketDocuments.value = docsWithFreshUrls;
+          showDocumentsDialog.value = true;
+        } catch (error) {
+          console.error('Error generating fresh URLs for documents:', error);
+          toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Unable to load document links. Please try again.',
+            life: 3000
+          });
+        }
       } else {
         // Fetch documents from storage or Anvil
         await viewSignedDocument({ etchPacketEid, signerStatus: 'completed' });
       }
     };
 
-    const openDocument = (doc) => {
-      window.open(doc.url || doc.signedUrl, '_blank');
+    const openDocument = async (doc) => {
+      // Always generate a fresh signed URL when opening
+      try {
+        const freshUrl = doc.freshUrl || await StorageAPI.getSignedUrl(doc.path, 'contracts', 3600);
+        window.open(freshUrl, '_blank');
+      } catch (error) {
+        console.error('Error opening document:', error);
+        toast.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Unable to open document. Please try again.',
+          life: 3000
+        });
+      }
     };
 
     const deleteEtchPacketFromDocumentDb = async (etchPacketEid) => {
