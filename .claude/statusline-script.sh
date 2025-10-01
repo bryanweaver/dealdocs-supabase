@@ -32,7 +32,10 @@ git_info=""
 if git -C "$current_dir" rev-parse --git-dir >/dev/null 2>&1; then
     # Get branch name
     branch=$(git -C "$current_dir" branch --show-current 2>/dev/null || echo "detached")
-    
+    if [ -z "$branch" ]; then
+        branch="detached"
+    fi
+
     if [ -n "$branch" ] && [ "$branch" != "detached" ]; then
         git_info=" on $branch"
         
