@@ -86,7 +86,7 @@ serve(async (req) => {
     }
 
     console.log('Processing e-sign request for contract:', userId)
-    
+
     // Prepare Anvil API request
     const anvilApiKey = Deno.env.get('ANVIL_API_KEY')
     console.log('Anvil API Key exists:', !!anvilApiKey)
@@ -95,7 +95,17 @@ serve(async (req) => {
       throw new Error('Anvil API key not configured')
     }
 
-    // Create etch packet with Anvil GraphQL API
+    // Check if an etch packet already exists for this contract
+    let etchPacketData = null
+    let shouldCreateNewPacket = true
+
+    if (etchPacket) {
+      console.log('Using existing etch packet:', etchPacket.eid)
+      etchPacketData = etchPacket
+      shouldCreateNewPacket = false
+    }
+
+    // Create etch packet with Anvil GraphQL API only if needed
     const graphqlMutation = `
       mutation CreateEtchPacket(
         $name: String!,
@@ -150,46 +160,51 @@ serve(async (req) => {
     }
 
     console.log('Sending to Anvil - Full payload:', JSON.stringify(anvilPayload, null, 2))
-    
+
     const anvilAuthHeader = `Basic ${btoa(anvilApiKey + ':')}`
     console.log('Auth header format check:', anvilAuthHeader.substring(0, 20) + '...')
 
-    const anvilResponse = await fetch('https://graphql.useanvil.com', {
-      method: 'POST',
-      headers: {
-        'Authorization': anvilAuthHeader,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(anvilPayload)
-    })
-
-    if (!anvilResponse.ok) {
-      const errorText = await anvilResponse.text()
-      console.error('Anvil API error response:', {
-        status: anvilResponse.status,
-        statusText: anvilResponse.statusText,
-        body: errorText
+    if (shouldCreateNewPacket) {
+      console.log('Creating new etch packet with Anvil...')
+      const anvilResponse = await fetch('https://graphql.useanvil.com', {
+        method: 'POST',
+        headers: {
+          'Authorization': anvilAuthHeader,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(anvilPayload)
       })
-      throw new Error(`Anvil API failed: ${anvilResponse.status} - ${errorText}`)
+
+      if (!anvilResponse.ok) {
+        const errorText = await anvilResponse.text()
+        console.error('Anvil API error response:', {
+          status: anvilResponse.status,
+          statusText: anvilResponse.statusText,
+          body: errorText
+        })
+        throw new Error(`Anvil API failed: ${anvilResponse.status} - ${errorText}`)
+      }
+
+      const anvilResult = await anvilResponse.json()
+      console.log('Anvil response:', JSON.stringify(anvilResult, null, 2))
+
+      // Check for GraphQL errors
+      if (anvilResult.errors) {
+        console.error('GraphQL errors:', anvilResult.errors)
+        throw new Error(`GraphQL error: ${anvilResult.errors[0]?.message || 'Unknown error'}`)
+      }
+
+      etchPacketData = anvilResult.data?.createEtchPacket
+      if (!etchPacketData) {
+        throw new Error('No etch packet data returned from Anvil')
+      }
+    } else {
+      console.log('Skipping etch packet creation - using existing packet')
     }
 
-    const anvilResult = await anvilResponse.json()
-    console.log('Anvil response:', JSON.stringify(anvilResult, null, 2))
-    
-    // Check for GraphQL errors
-    if (anvilResult.errors) {
-      console.error('GraphQL errors:', anvilResult.errors)
-      throw new Error(`GraphQL error: ${anvilResult.errors[0]?.message || 'Unknown error'}`)
-    }
-    
-    const etchPacketData = anvilResult.data?.createEtchPacket
-    if (!etchPacketData) {
-      throw new Error('No etch packet data returned from Anvil')
-    }
-
-    // Download and save the generated documents immediately
+    // Download and save the generated documents immediately (only for new packets)
     let documentUrls = []
-    if (etchPacketData.eid && etchPacketData.documentGroup?.eid) {
+    if (shouldCreateNewPacket && etchPacketData.eid && etchPacketData.documentGroup?.eid) {
       try {
         console.log('Downloading generated documents from Anvil...')
         const anvilClient = new Anvil({ apiKey: anvilApiKey })

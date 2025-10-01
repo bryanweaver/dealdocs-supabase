@@ -62,15 +62,12 @@ serve(async (req) => {
       throw new Error('Etch packet EID is required')
     }
 
-    console.log('Fetching document group for etch packet:', etchPacketEid)
     
     // Get Anvil API key
     const anvilApiKey = Deno.env.get('VITE_ANVIL_PROD_API_KEY')
     if (!anvilApiKey) {
       throw new Error('Anvil API key not configured')
     }
-    
-    console.log('Using Anvil API endpoint: https://app.useanvil.com/graphql')
 
     // First, get the etch packet and document group info
     const query = `
@@ -126,32 +123,53 @@ serve(async (req) => {
       throw new Error('Document group not found')
     }
     
-    console.log('Document group found:', {
-      eid: documentGroup.eid,
-      status: documentGroup.status,
-      signersCount: documentGroup.signers?.length
-    })
 
     // For completed document groups, fetch the signed documents
     const documents = []
-    
+
     if (documentGroup.status === 'completed' || documentGroup.signers?.some(s => s.status === 'completed')) {
-      console.log('Document group has completed signers, checking for signed documents')
-      
+      // Check if ALL signers have completed
+      const allSignersCompleted = documentGroup.signers?.every(s => s.status === 'completed') || false
+      const completedSignersCount = documentGroup.signers?.filter(s => s.status === 'completed').length || 0
+
       // First, check if we already have the documents stored in Supabase
       // Use the proper path structure: accounts/{accountId}/contracts/{contractId}/etch-packets/{etchPacketEid}/
-      const storagePath = accountId && contractId 
+      const storagePath = accountId && contractId
         ? `accounts/${accountId}/contracts/${contractId}/etch-packets/${etchPacketEid}/`
         : `signed-documents/${etchPacketEid}/`
-      console.log(`Checking for existing documents in: ${storagePath}`)
-      
+
       try {
         const { data: existingFiles, error: listError } = await supabase.storage
           .from('contracts')
           .list(storagePath)
-        
+
+        // Check if existing files are outdated
+        // We need to re-download if any signer completed AFTER the files were created
+        let needFreshDownload = true
+
         if (!listError && existingFiles && existingFiles.length > 0) {
-          console.log(`Found ${existingFiles.length} existing documents in storage`)
+          // Get the creation time of the newest existing file
+          const newestFile = existingFiles.reduce((newest, file) => {
+            const fileTime = new Date(file.created_at || file.updated_at || 0).getTime()
+            const newestTime = new Date(newest.created_at || newest.updated_at || 0).getTime()
+            return fileTime > newestTime ? file : newest
+          })
+
+          const fileCreatedAt = new Date(newestFile.created_at || newestFile.updated_at || 0).getTime()
+
+          // Check if any signer completed after the files were created
+          const latestSignerCompletion = documentGroup.signers?.reduce((latest, signer) => {
+            if (!signer.completedAt) return latest
+            const signerTime = new Date(signer.completedAt).getTime()
+            return signerTime > latest ? signerTime : latest
+          }, 0) || 0
+
+          // If files were created AFTER the last signer completed, they're up to date
+          needFreshDownload = latestSignerCompletion > fileCreatedAt
+        }
+
+        // Only use existing files if they're up to date
+        if (!listError && existingFiles && existingFiles.length > 0 && !needFreshDownload) {
           
           // Get signed URLs for existing documents
           for (const file of existingFiles) {
@@ -163,9 +181,6 @@ serve(async (req) => {
             const originalUrl = urlData?.signedUrl || null
             const fixedUrl = fixSignedUrl(originalUrl)
             
-            if (originalUrl !== fixedUrl) {
-              console.log(`Fixed URL from ${originalUrl?.substring(0, 50)}... to ${fixedUrl?.substring(0, 50)}...`)
-            }
             
             documents.push({
               fileName: file.name,
@@ -173,28 +188,20 @@ serve(async (req) => {
               storagePath: filePath
             })
           }
-          
-          console.log('Returning existing documents from storage')
         } else {
-          console.log('No existing documents found, attempting to fetch from Anvil')
           
           // Download documents from Anvil using the SDK
           try {
             const anvilClient = new Anvil({ apiKey: anvilApiKey })
-            console.log(`Downloading documents for documentGroupEid: ${documentGroup.eid}`)
-            
+
             const { statusCode, data } = await anvilClient.downloadDocuments(documentGroup.eid)
-            
+
             if (statusCode !== 200) {
               throw new Error(`Failed to download documents: ${statusCode}`)
             }
             
-            console.log('Successfully downloaded documents from Anvil')
-            
             // The response data is a Buffer/Uint8Array containing the ZIP
             const zipBuffer = new Uint8Array(data)
-            
-            console.log('Extracting PDF files from ZIP...')
             
             try {
               // Load the ZIP file using JSZip
@@ -214,13 +221,17 @@ serve(async (req) => {
                 }
               }
               
-              console.log(`Found ${pdfFiles.length} PDF files in ZIP`)
-              
+
+              // Generate timestamp to version the files (so we don't overwrite previous versions)
+              const timestamp = Date.now()
+
               // Upload each PDF to the proper storage path
               for (const file of pdfFiles) {
-                const uploadPath = `${storagePath}${file.name}`
-                console.log(`Uploading PDF: ${uploadPath}`)
-                
+                // Create versioned filename to preserve all signing stages
+                const baseName = file.name.replace('.pdf', '')
+                const versionedName = `${baseName}_signed_${timestamp}.pdf`
+                const uploadPath = `${storagePath}${versionedName}`
+
                 const { data: uploadData, error: uploadError } = await supabase.storage
                   .from('contracts')
                   .upload(uploadPath, file.content, {
@@ -229,17 +240,16 @@ serve(async (req) => {
                   })
                 
                 if (uploadError) {
-                  console.error(`Failed to upload ${file.name}:`, uploadError)
+                  console.error(`Failed to upload ${versionedName}:`, uploadError)
                 } else {
-                  console.log(`Successfully uploaded: ${file.name}`)
-                  
+
                   // Get signed URL for the PDF
                   const { data: urlData } = await supabase.storage
                     .from('contracts')
                     .createSignedUrl(uploadPath, 60 * 60 * 24 * 30) // 30 days
-                  
+
                   documents.push({
-                    fileName: file.name,
+                    fileName: versionedName,
                     signedUrl: fixSignedUrl(urlData?.signedUrl || null),
                     storagePath: uploadPath
                   })
@@ -251,8 +261,6 @@ serve(async (req) => {
               // Fallback: store the ZIP file itself
               const fileName = `signed_documents_${etchPacketEid}.zip`
               const filePath = `${storagePath}${fileName}`
-              
-              console.log(`Storing ZIP file as fallback: ${filePath}`)
               
               const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('contracts')
@@ -281,8 +289,6 @@ serve(async (req) => {
       } catch (error) {
         console.error('Error processing signed documents:', error)
       }
-    } else {
-      console.log('Document group not yet completed - no signed documents available')
     }
 
     // Update etch packet with signed PDF URLs if we have them
@@ -319,17 +325,12 @@ serve(async (req) => {
           .update({
             signed_pdf_url: signedPdfUrl,
             document_urls: allDocUrls,
-            status: 'completed',
-            updated_at: new Date().toISOString()
+            status: 'completed'
           })
           .eq('id', etchPackets.id)
       }
     }
 
-    console.log(`Returning ${documents.length} documents to client`)
-    documents.forEach((doc, idx) => {
-      console.log(`  ${idx + 1}. ${doc.fileName}: ${doc.signedUrl?.substring(0, 60)}...`)
-    })
     
     return new Response(
       JSON.stringify({ 

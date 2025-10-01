@@ -748,14 +748,11 @@ export const EtchAPI = {
   async update(id, updates) {
     const { data, error } = await supabase
       .from('etch_packets')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
+      .update(updates)
       .eq('id', id)
       .select()
       .single()
-    
+
     if (error) throw error
     return data
   },

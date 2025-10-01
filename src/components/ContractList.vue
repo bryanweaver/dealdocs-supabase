@@ -103,6 +103,16 @@ export default {
     console.log("etchPackets", store.state.etchPackets);
     const etchPackets = computed(() => {
       return store.state.etchPackets.flatMap((packet) => {
+        // Find the most recently completed signer (they'll have the latest documents)
+        const completedSigners = packet.documentGroup.signers.filter(s => s.status === 'completed');
+        const latestCompletedSigner = completedSigners.length > 0
+          ? completedSigners.reduce((latest, current) => {
+              const latestDate = latest.completedAt ? new Date(latest.completedAt) : new Date(0);
+              const currentDate = current.completedAt ? new Date(current.completedAt) : new Date(0);
+              return currentDate > latestDate ? current : latest;
+            })
+          : null;
+
         return packet.documentGroup.signers.map((signer) => ({
           key: `${packet.eid}-${signer.email}`,
           name: packet.name,
@@ -110,7 +120,9 @@ export default {
           signerName: signer.name,
           signerStatus: signer.status,
           etchPacketEid: packet.eid,
-          uploadKeys: signer.uploadKeys,
+          // Use the latest completed signer's documents for viewing (they have all signatures)
+          // If no one has completed yet, use this signer's documents
+          uploadKeys: latestCompletedSigner?.uploadKeys || signer.uploadKeys || [],
         }));
       });
     });

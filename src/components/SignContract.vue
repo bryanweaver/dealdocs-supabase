@@ -521,22 +521,45 @@ export default {
       const currentEtchPacket = this.$store.state.etchPackets.find(
         (packet) => packet.eid === this.eid,
       );
+
+      console.log('getSignersInput - currentEtchPacket:', currentEtchPacket);
+      console.log('getSignersInput - local signers:', signers);
+
       let incompleteSigner;
       if (currentEtchPacket) {
         const sortedSigners = currentEtchPacket.documentGroup.signers.sort(
           (a, b) => a.signingOrder - b.signingOrder,
         );
+
+        console.log('getSignersInput - sortedSigners from Anvil:', sortedSigners);
+
         incompleteSigner = sortedSigners.find(
           (signer) => signer.status !== "completed",
         );
-        const currentSigner = incompleteSigner
+
+        console.log('getSignersInput - incompleteSigner:', incompleteSigner);
+
+        // Try to match by aliasId first, then by email as fallback
+        let currentSigner = incompleteSigner
           ? signers.find((signer) => signer.id === incompleteSigner.aliasId)
           : null;
+
+        // If no match by aliasId, try matching by email
+        if (!currentSigner && incompleteSigner) {
+          currentSigner = signers.find((signer) =>
+            signer.email.toLowerCase() === incompleteSigner.email.toLowerCase()
+          );
+          console.log('getSignersInput - matched by email:', currentSigner);
+        }
+
+        console.log('getSignersInput - final currentSigner:', currentSigner);
+
         return {
           signers,
           currentSigner: currentSigner ? currentSigner.id : signers[0].id,
         };
       } else {
+        console.log('getSignersInput - no etch packet, using first signer');
         return {
           signers,
           currentSigner: signers[0].id,
@@ -552,8 +575,7 @@ export default {
           // Update existing etch packet
           const result = await EtchAPI.update(existing.id, {
             signer_info: etchPacket.documentGroup, // Changed from document_group to signer_info
-            status: etchPacket.status || 'pending',
-            updated_at: new Date().toISOString()
+            status: etchPacket.status || 'pending'
           });
           console.log("Updated etchPacket:", result);
         } else {
