@@ -384,18 +384,21 @@ export default {
             
             const { documents } = await response.json();
             console.log('Fetched documents from Anvil:', documents);
-            
-            // Open all signed documents
+
+            // Show documents in dialog instead of auto-opening
             if (documents && documents.length > 0) {
-                console.log(`Opening ${documents.length} documents...`);
-                console.log('Documents received:', documents);
-                
-                // Ensure all URLs are valid before opening
-                const validDocs = documents.filter(doc => doc && doc.signedUrl);
-                console.log(`Found ${validDocs.length} documents with valid URLs`);
-                
+                console.log(`Found ${documents.length} documents`);
+
+                // Filter out certificates and invalid docs
+                const validDocs = documents.filter(doc =>
+                  doc && doc.signedUrl &&
+                  !doc.fileName.toLowerCase().includes('anvil certificate') &&
+                  !doc.fileName.toLowerCase().includes('certificate')
+                );
+
+                console.log(`Filtered to ${validDocs.length} valid documents`);
+
                 if (validDocs.length === 0) {
-                  console.error('No documents with valid URLs found');
                   toast.add({
                     severity: 'warning',
                     summary: 'No Valid Documents',
@@ -404,49 +407,28 @@ export default {
                   });
                   return;
                 }
-                
-                // Open only the main contract document (not the Anvil Certificate)
-                // Filter out the certificate and find the main contract
-                const mainDocs = validDocs.filter(doc =>
-                  !doc.fileName.toLowerCase().includes('anvil certificate') &&
-                  !doc.fileName.toLowerCase().includes('certificate')
-                );
 
-                if (mainDocs.length > 0) {
-                  // Open the main residential contract first
-                  const mainContract = mainDocs.find(doc =>
-                    doc.fileName.toLowerCase().includes('residential_resale_contract')
-                  ) || mainDocs[0];
+                // Format documents for the dialog
+                const formattedDocs = validDocs.map(doc => ({
+                  type: 'signed',
+                  path: doc.storagePath,
+                  fileName: doc.fileName,
+                  freshUrl: doc.signedUrl // Use freshUrl since it's already fresh from Anvil
+                }));
 
-                  console.log(`Opening main document: ${mainContract.fileName}`);
-                  window.open(mainContract.signedUrl, '_blank');
+                // Show the documents dialog
+                selectedPacketDocuments.value = formattedDocs;
+                showDocumentsDialog.value = true;
 
-                  // If there are addendums, show a message about them
-                  const otherDocs = mainDocs.filter(doc => doc !== mainContract);
-                  if (otherDocs.length > 0) {
-                    const docNames = otherDocs.map(d => d.fileName.replace(/_signed_\d+\.pdf$/, '').replace(/_/g, ' ')).join(', ');
-                    toast.add({
-                      severity: 'info',
-                      summary: 'Additional Documents Available',
-                      detail: `Also signed: ${docNames}. Use browser back button to view them individually.`,
-                      life: 8000
-                    });
-
-                    // Store the URLs for potential later use
-                    console.log('Other documents available:', otherDocs);
-                  }
-                } else if (validDocs.length > 0) {
-                  // Fallback: open the first document if no main contract found
-                  console.log(`Opening document: ${validDocs[0].fileName}`);
-                  window.open(validDocs[0].signedUrl, '_blank');
-                }
-                
                 toast.add({
                   severity: 'success',
-                  summary: 'Document Opened',
-                  detail: 'Your signed contract has been opened in a new tab',
+                  summary: 'Documents Ready',
+                  detail: `Found ${formattedDocs.length} document(s) - click to open`,
                   life: 3000
                 });
+
+                // Refresh the etch packets list to get updated document_urls
+                await fetchEtchPackets();
                 return;
               }
           } catch (err) {
@@ -577,8 +559,12 @@ export default {
     };
 
     const toggleDocumentList = async (etchPacketEid) => {
+      console.log('toggleDocumentList called with:', etchPacketEid);
+
       // Fetch documents for this packet
       const packet = dbEtchPackets.value.find(p => p.etch_packet_id === etchPacketEid);
+      console.log('Found packet:', packet);
+      console.log('Packet document_urls:', packet?.document_urls);
 
       if (packet && packet.document_urls && packet.document_urls.length > 0) {
         // Generate fresh signed URLs for all documents
