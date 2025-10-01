@@ -19,11 +19,21 @@
       <div class="flex font-bold items-center gap-2">
         <span>Created: {{ slotProps.data.createdAt }}</span>
         <!-- <span>(ID: {{ slotProps.data.etchPacketEid }})</span> -->
-        <PrimeButton
-          class="p-button-danger p-button-text p-button-rounded ml-auto"
-          icon="pi pi-trash"
-          @click="confirmDelete(slotProps.data.etchPacketEid)"
-        />
+        <div class="ml-auto flex items-center gap-2">
+          <PrimeButton
+            v-if="slotProps.data.signerStatus === 'completed'"
+            class="p-button-info p-button-sm"
+            icon="pi pi-file-pdf"
+            label="View Documents"
+            severity="info"
+            @click="toggleDocumentList(slotProps.data.etchPacketEid)"
+          />
+          <PrimeButton
+            class="p-button-danger p-button-text p-button-rounded"
+            icon="pi pi-trash"
+            @click="confirmDelete(slotProps.data.etchPacketEid)"
+          />
+        </div>
       </div>
     </template>
     <Column field="createdAt" header="Created At"></Column>
@@ -45,15 +55,6 @@
             @etch-packet-created="fetchEtchPackets"
             @etch-packet-updated="fetchEtchPackets"
           />
-          <div v-if="slotProps.data.signerStatus === 'completed'" class="flex justify-end">
-            <PrimeButton
-              class="p-button-info p-button-sm"
-              icon="pi pi-file-pdf"
-              label="View Documents"
-              severity="info"
-              @click="toggleDocumentList(slotProps.data.etchPacketEid)"
-            />
-          </div>
         </div>
       </template>
     </Column>
