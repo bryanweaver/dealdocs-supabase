@@ -100,10 +100,11 @@
       "C:\\"
     ]
   },
-  "enabledMcpjsonServers": [],
-  "disabledMcpjsonServers": [
-    "playwright",
+  "enabledMcpjsonServers": [
     "supabase"
+  ],
+  "disabledMcpjsonServers": [
+    "playwright"
   ],
   "hooks": {
     "PreToolUse": [
