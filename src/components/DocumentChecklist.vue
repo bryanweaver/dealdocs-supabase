@@ -49,7 +49,7 @@ export default defineComponent({
   emits: ["checklist-status", "files-for-agent-email"],
   setup(_, { emit }) {
     const store = useStore();
-    const documents = ref([
+    const allDocuments = ref([
       {
         name: "Residential Resale Contract",
         bucket: "etch-packets",
@@ -118,10 +118,17 @@ export default defineComponent({
       },
     ]);
 
+    // Computed property for visible documents
+    const documents = ref([]);
+
     const updateDocumentStatus = () => {
-      const filteredDocuments = documents.value.filter(
+      // Filter documents based on their showIf conditions
+      const filteredDocuments = allDocuments.value.filter(
         (doc) => !doc.showIf || doc.showIf(store.state.formData),
       );
+
+      // Update the visible documents list
+      documents.value = filteredDocuments;
 
       filteredDocuments.forEach((doc) => {
         if (doc.bucket === "etch-packets") {
@@ -171,11 +178,18 @@ export default defineComponent({
           }
         }
       });
-      const allDocumentsExist = documents.value.every((doc) => doc.exists);
+      // Only check documents that should be shown based on their conditions
+      const visibleDocuments = documents.value.filter(
+        (doc) => !doc.showIf || doc.showIf(store.state.formData)
+      );
+
+      const allDocumentsExist = visibleDocuments.every((doc) => doc.exists);
       emit("checklist-status", allDocumentsExist);
+
+      // Only include documents that should be shown AND exist
       emit(
         "files-for-agent-email",
-        documents.value.filter((doc) => doc.exists),
+        visibleDocuments.filter((doc) => doc.exists),
       );
     };
 
