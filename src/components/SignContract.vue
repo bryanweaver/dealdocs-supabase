@@ -265,6 +265,10 @@ export default {
       }
     },
     getPayload() {
+      console.log('SignContract - formData from store:', JSON.stringify(this.$store.state.formData, null, 2));
+      console.log('SignContract - buyers data:', this.$store.state.formData.buyers);
+      console.log('SignContract - sellers data:', this.$store.state.formData.sellers);
+
       const contractData = mapAll2017Fields(this.$store.state.formData);
 
       const hasHOA =
@@ -507,7 +511,7 @@ export default {
             {
               id: "primaryBuyerSigner",
               email: buyers.email,
-              name: `${buyers.primaryFirstName} ${buyers.primaryMi} ${buyers.primaryLastName}`,
+              name: `${buyers.primaryName || ''}`, // Use primaryName instead of split fields
               routingOrder: 1,
               signerType: "embedded",
               fields: primaryBuyerFields,
