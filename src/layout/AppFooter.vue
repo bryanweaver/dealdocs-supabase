@@ -8,7 +8,6 @@
       target="_blank"
       rel="noopener noreferrer"
       class="text-primary font-bold hover:underline"
-      >PPP</a
-    >
+    >PPP</a>
   </div>
 </template>

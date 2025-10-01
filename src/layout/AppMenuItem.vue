@@ -89,14 +89,18 @@ const itemKey = computed(() => {
         v-if="item.icon"
         :class="[item.icon, 'mr-2']"
         class="layout-menuitem-icon flex items-center"
-      ></i>
+      />
       <span class="layout-menuitem-text flex items-center">{{
         item.label
       }}</span>
     </router-link>
 
     <!-- If the item has child items, render an Accordion -->
-    <Accordion v-else-if="item.items" v-model:activeIndex="active" class="mb-0">
+    <Accordion
+      v-else-if="item.items"
+      v-model:active-index="active"
+      class="mb-0"
+    >
       <AccordionTab>
         <template #header>
           <div class="flex align-items-center">
@@ -104,7 +108,7 @@ const itemKey = computed(() => {
               v-if="item.icon"
               :class="[item.icon, 'mr-2']"
               class="layout-menuitem-icon"
-            ></i>
+            />
             <span class="layout-menuitem-text">{{ item.label }}</span>
           </div>
         </template>
@@ -133,7 +137,7 @@ const itemKey = computed(() => {
         v-if="item.icon"
         :class="[item.icon, 'mr-2']"
         class="layout-menuitem-icon"
-      ></i>
+      />
       <span class="layout-menuitem-text">{{ item.label }}</span>
     </div>
   </li>

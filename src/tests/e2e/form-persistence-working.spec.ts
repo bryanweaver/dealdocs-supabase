@@ -43,7 +43,7 @@ test.describe("Form Data Persistence Tests (Fixed)", () => {
     
     console.log(`Found ${textCount} text inputs and ${numberCount} number inputs (total: ${totalInputs})`);
 
-    let filledFields = [];
+    const filledFields = [];
     
     // Try to fill some text inputs
     for (let i = 0; i < Math.min(textCount, 2); i++) {

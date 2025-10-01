@@ -46,7 +46,7 @@ test.describe("Form Data Persistence Tests - Working", () => {
     
     console.log(`Found inputs: ${textCount} text, ${numberCount} number, ${primeTextCount} prime text, ${primeNumberCount} prime number`);
 
-    let filledFields = [];
+    const filledFields = [];
     
     // Try to fill the first available text input
     if (textCount > 0) {

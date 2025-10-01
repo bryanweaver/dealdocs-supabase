@@ -6,11 +6,20 @@
         @checklist-status="handleChecklistStatus"
       />
     </div>
-    <div v-if="showEmailForm" class="email-form">
+    <div
+      v-if="showEmailForm"
+      class="email-form"
+    >
       <AgentEmailForm :files-for-agent-email="filesForAgentEmail" />
     </div>
-    <div v-else class="m-4">
-      <Message severity="warn" class="mb-4">
+    <div
+      v-else
+      class="m-4"
+    >
+      <Message
+        severity="warn"
+        class="mb-4"
+      >
         Please ensure you have uploaded all required documents and generated
         your contract before sending the contract to the agent. Once these
         things are complete, the agent email form will be available below.

@@ -19,7 +19,10 @@
           documentType="addendum"
         /> -->
       </div>
-      <div v-if="isCompleted" class="flex justify-center pt-2 pb-4">
+      <div
+        v-if="isCompleted"
+        class="flex justify-center pt-2 pb-4"
+      >
         <Button
           label="Let's sign the contract!"
           class="p-button-primary"

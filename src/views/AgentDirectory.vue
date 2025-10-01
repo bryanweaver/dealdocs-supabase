@@ -1,11 +1,15 @@
 <template>
   <div class="px-6 py-8">
-    <h1 class="text-2xl font-semibold mb-6">Real Estate Agent Directory</h1>
+    <h1 class="text-2xl font-semibold mb-6">
+      Real Estate Agent Directory
+    </h1>
 
     <!-- Admin Tools Section -->
     <div class="bg-white rounded-lg shadow p-6 mb-6">
       <div class="flex justify-between items-center">
-        <h2 class="text-lg font-medium">Directory Tools</h2>
+        <h2 class="text-lg font-medium">
+          Directory Tools
+        </h2>
         <div class="flex space-x-2">
           <button
             class="px-4 py-2 bg-indigo-600 text-white rounded-md shadow hover:bg-indigo-700 flex items-center"
@@ -26,12 +30,12 @@
                 r="10"
                 stroke="currentColor"
                 stroke-width="4"
-              ></circle>
+              />
               <path
                 class="opacity-75"
                 fill="currentColor"
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
+              />
             </svg>
             <span>{{ loading ? "Refreshing..." : "Refresh Data" }}</span>
           </button>
@@ -52,7 +56,9 @@
 
     <!-- Dashboard Summary Section -->
     <div class="bg-white rounded-lg shadow p-6 mb-6">
-      <h2 class="text-xl font-medium mb-4">Agent Counts by Source</h2>
+      <h2 class="text-xl font-medium mb-4">
+        Agent Counts by Source
+      </h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div
           v-for="source in dashboardSources"
@@ -60,7 +66,9 @@
           class="bg-gray-50 rounded-lg p-4 shadow flex flex-col items-center cursor-pointer hover:bg-blue-50"
           @click="filterBySource(source.key)"
         >
-          <div class="text-lg font-semibold mb-2">{{ source.label }}</div>
+          <div class="text-lg font-semibold mb-2">
+            {{ source.label }}
+          </div>
           <div class="text-3xl font-bold text-blue-700">
             {{ dashboardCounts[source.key] ?? "—" }}
           </div>
@@ -96,14 +104,17 @@
           </button>
         </div>
         <!-- Exact Name Search -->
-        <div v-if="searchTab === 'exact'" class="flex gap-4 items-end mt-4">
+        <div
+          v-if="searchTab === 'exact'"
+          class="flex gap-4 items-end mt-4"
+        >
           <input
             v-model="exactNameQuery"
             type="text"
             placeholder="Enter exact agent name..."
             class="w-full p-2 border border-gray-300 rounded-md"
             @keyup.enter="runExactNameSearch"
-          />
+          >
           <button
             :disabled="loading || !exactNameQuery.trim()"
             class="px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -123,12 +134,12 @@
                   r="10"
                   stroke="currentColor"
                   stroke-width="4"
-                ></circle>
+                />
                 <path
                   class="opacity-75"
                   fill="currentColor"
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
+                />
               </svg>
               Searching...
             </span>
@@ -136,14 +147,17 @@
           </button>
         </div>
         <!-- Scan Search -->
-        <div v-if="searchTab === 'scan'" class="flex gap-4 items-end mt-4">
+        <div
+          v-if="searchTab === 'scan'"
+          class="flex gap-4 items-end mt-4"
+        >
           <input
             v-model="scanQuery"
             type="text"
             placeholder="Scan by partial name..."
             class="w-full p-2 border border-gray-300 rounded-md"
             @keyup.enter="runScanSearch"
-          />
+          >
           <button
             :disabled="scanning || !scanQuery.trim()"
             class="px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -163,12 +177,12 @@
                   r="10"
                   stroke="currentColor"
                   stroke-width="4"
-                ></circle>
+                />
                 <path
                   class="opacity-75"
                   fill="currentColor"
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
+                />
               </svg>
               Scanning...
             </span>
@@ -224,12 +238,18 @@
       </div>
 
       <!-- Loading Indicator -->
-      <div v-if="searching" class="mt-4 text-blue-600">
+      <div
+        v-if="searching"
+        class="mt-4 text-blue-600"
+      >
         Searching for agents...
       </div>
 
       <!-- Search Results -->
-      <div v-if="searchResults.length > 0" class="mt-6">
+      <div
+        v-if="searchResults.length > 0"
+        class="mt-6"
+      >
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-lg font-medium">
             Search Results ({{ searchResults.length }})
@@ -241,11 +261,21 @@
               class="border rounded p-1 text-sm"
               @change="sortResults"
             >
-              <option value="name">Name (A-Z)</option>
-              <option value="name-desc">Name (Z-A)</option>
-              <option value="agency">Agency (A-Z)</option>
-              <option value="date-desc">Newest First</option>
-              <option value="date">Oldest First</option>
+              <option value="name">
+                Name (A-Z)
+              </option>
+              <option value="name-desc">
+                Name (Z-A)
+              </option>
+              <option value="agency">
+                Agency (A-Z)
+              </option>
+              <option value="date-desc">
+                Newest First
+              </option>
+              <option value="date">
+                Oldest First
+              </option>
             </select>
           </div>
         </div>
@@ -368,7 +398,9 @@
             d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        <h3 class="mt-2 text-lg font-medium">No agents found</h3>
+        <h3 class="mt-2 text-lg font-medium">
+          No agents found
+        </h3>
         <p class="mt-1 text-sm">
           Try adjusting your search terms or filters to find what you're looking
           for.
@@ -392,7 +424,9 @@
       >
         <div class="p-6 border-b">
           <div class="flex justify-between items-center">
-            <h3 class="text-xl font-semibold">Agent Details</h3>
+            <h3 class="text-xl font-semibold">
+              Agent Details
+            </h3>
             <button
               class="text-gray-400 hover:text-gray-500"
               @click="selectedAgent = null"
@@ -409,7 +443,7 @@
                   stroke-linejoin="round"
                   stroke-width="2"
                   d="M6 18L18 6M6 6l12 12"
-                ></path>
+                />
               </svg>
             </button>
           </div>
@@ -417,16 +451,22 @@
         <div class="p-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h4 class="text-lg font-medium mb-4">Basic Information</h4>
+              <h4 class="text-lg font-medium mb-4">
+                Basic Information
+              </h4>
               <dl class="space-y-2">
                 <div>
-                  <dt class="text-sm font-medium text-gray-500">Name</dt>
+                  <dt class="text-sm font-medium text-gray-500">
+                    Name
+                  </dt>
                   <dd class="mt-1 text-sm text-gray-900">
                     {{ selectedAgent.name || "Not provided" }}
                   </dd>
                 </div>
                 <div>
-                  <dt class="text-sm font-medium text-gray-500">Agency</dt>
+                  <dt class="text-sm font-medium text-gray-500">
+                    Agency
+                  </dt>
                   <dd class="mt-1 text-sm text-gray-900">
                     {{ selectedAgent.agencyName || "Not provided" }}
                   </dd>
@@ -439,7 +479,7 @@
                     <ul
                       v-if="
                         selectedAgent.emailAddresses &&
-                        selectedAgent.emailAddresses.length
+                          selectedAgent.emailAddresses.length
                       "
                       class="list-disc pl-5"
                     >
@@ -450,8 +490,7 @@
                         <a
                           :href="`mailto:${email}`"
                           class="text-blue-600 hover:underline"
-                          >{{ email }}</a
-                        >
+                        >{{ email }}</a>
                       </li>
                     </ul>
                     <span v-else>Not provided</span>
@@ -465,7 +504,7 @@
                     <ul
                       v-if="
                         selectedAgent.phoneNumbers &&
-                        selectedAgent.phoneNumbers.length
+                          selectedAgent.phoneNumbers.length
                       "
                       class="list-disc pl-5"
                     >
@@ -473,7 +512,10 @@
                         v-for="(phone, idx) in selectedAgent.phoneNumbers"
                         :key="idx"
                       >
-                        <a :href="`tel:${phone}`" class="hover:underline">{{
+                        <a
+                          :href="`tel:${phone}`"
+                          class="hover:underline"
+                        >{{
                           formatPhoneNumber(phone)
                         }}</a>
                       </li>
@@ -484,10 +526,14 @@
               </dl>
             </div>
             <div>
-              <h4 class="text-lg font-medium mb-4">Additional Information</h4>
+              <h4 class="text-lg font-medium mb-4">
+                Additional Information
+              </h4>
               <dl class="space-y-2">
                 <div>
-                  <dt class="text-sm font-medium text-gray-500">Profile URL</dt>
+                  <dt class="text-sm font-medium text-gray-500">
+                    Profile URL
+                  </dt>
                   <dd class="mt-1 text-sm text-gray-900">
                     <a
                       v-if="selectedAgent.profileUrl"
@@ -501,17 +547,21 @@
                   </dd>
                 </div>
                 <div>
-                  <dt class="text-sm font-medium text-gray-500">Source</dt>
+                  <dt class="text-sm font-medium text-gray-500">
+                    Source
+                  </dt>
                   <dd class="mt-1 text-sm text-gray-900">
                     {{ selectedAgent.source || "Not provided" }}
                   </dd>
                 </div>
                 <div>
-                  <dt class="text-sm font-medium text-gray-500">Import Date</dt>
+                  <dt class="text-sm font-medium text-gray-500">
+                    Import Date
+                  </dt>
                   <dd class="mt-1 text-sm text-gray-900">
                     {{
                       formatDate(selectedAgent.importDate, "YYYY-MM-DD") ||
-                      "Unknown"
+                        "Unknown"
                     }}
                   </dd>
                 </div>
@@ -520,7 +570,9 @@
           </div>
 
           <div class="mt-6">
-            <h4 class="text-lg font-medium mb-4">Raw Metadata</h4>
+            <h4 class="text-lg font-medium mb-4">
+              Raw Metadata
+            </h4>
             <div class="bg-gray-50 p-4 rounded overflow-auto max-h-60">
               <pre class="text-xs">{{ prettyMetadata }}</pre>
             </div>

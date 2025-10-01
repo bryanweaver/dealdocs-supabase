@@ -1,16 +1,30 @@
 <template>
   <div :key="documentType">
-    <h2 class="text-2xl font-bold m-3">{{ title }}</h2>
+    <h2 class="text-2xl font-bold m-3">
+      {{ title }}
+    </h2>
     <div v-if="uploads.length > 0">
-      <DataTable :value="uploads" responsive-layout="scroll">
-        <Column field="date" header="Date"></Column>
-        <Column field="name" header="Name"></Column>
-        <Column field="filetype" header="Type">
+      <DataTable
+        :value="uploads"
+        responsive-layout="scroll"
+      >
+        <Column
+          field="date"
+          header="Date"
+        />
+        <Column
+          field="name"
+          header="Name"
+        />
+        <Column
+          field="filetype"
+          header="Type"
+        >
           <template #body="slotProps">
             <span
               class="p-2 fiv-viv fiv-size-lg"
               :class="`fiv-icon-${slotProps.data.filetype}`"
-            ></span>
+            />
           </template>
         </Column>
         <Column header="Actions">
@@ -49,7 +63,7 @@
               stroke-linejoin="round"
               stroke-width="2"
               d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-            ></path>
+            />
           </svg>
           <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">
             <span class="font-semibold">Click to upload</span> or drag and drop
@@ -61,12 +75,15 @@
           type="file"
           class="hidden"
           @change="handleFileChange"
-        />
+        >
       </label>
     </div>
 
     <!-- Add Upload Progress Bar -->
-    <div v-if="uploadProgress > 0 && uploadProgress < 100" class="mt-4 w-full">
+    <div
+      v-if="uploadProgress > 0 && uploadProgress < 100"
+      class="mt-4 w-full"
+    >
       <ProgressBar
         :value="uploadProgress"
         :show-value="false"
@@ -86,7 +103,10 @@
       :modal="true"
     >
       <div class="flex items-center justify-center">
-        <i class="pi pi-exclamation-triangle mr-4" style="font-size: 2rem" />
+        <i
+          class="pi pi-exclamation-triangle mr-4"
+          style="font-size: 2rem"
+        />
         <span>Are you sure you want to proceed?</span>
       </div>
       <template #footer>

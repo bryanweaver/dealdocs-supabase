@@ -7,10 +7,15 @@
   />
 
   <!-- Completion Section - Now directly under progress card -->
-  <div v-if="isContractComplete" class="mb-6">
+  <div
+    v-if="isContractComplete"
+    class="mb-6"
+  >
     <Panel class="w-full mx-auto">
       <template #header>
-        <h2 class="text-lg font-semibold">Contract Questions Complete! 🎉</h2>
+        <h2 class="text-lg font-semibold">
+          Contract Questions Complete! 🎉
+        </h2>
       </template>
       <div class="p-4">
         <p class="text-center mb-2">
@@ -20,13 +25,18 @@
 
         <!-- Next steps in a more compact layout -->
         <div class="next-steps mt-4">
-          <h3 class="mb-3 text-base font-semibold">Next Steps:</h3>
+          <h3 class="mb-3 text-base font-semibold">
+            Next Steps:
+          </h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <router-link
               :to="`/contracts/${$route.params.id}/upload-documents`"
               class="flex items-center p-3 bg-surface-50 dark:bg-surface-800 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
             >
-              <i class="pi pi-file-export mr-3 text-xl" style="color: var(--primary-color)"></i>
+              <i
+                class="pi pi-file-export mr-3 text-xl"
+                style="color: var(--primary-color)"
+              />
               <span class="text-sm">Upload contract documents</span>
             </router-link>
             
@@ -34,7 +44,10 @@
               :to="`/contracts/${$route.params.id}/generate-contract`"
               class="flex items-center p-3 bg-surface-50 dark:bg-surface-800 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
             >
-              <i class="pi pi-pencil mr-3 text-xl" style="color: var(--primary-color)"></i>
+              <i
+                class="pi pi-pencil mr-3 text-xl"
+                style="color: var(--primary-color)"
+              />
               <span class="text-sm">Generate and sign contract</span>
             </router-link>
             
@@ -42,7 +55,10 @@
               :to="`/contracts/${$route.params.id}/prepare-contract-package`"
               class="flex items-center p-3 bg-surface-50 dark:bg-surface-800 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
             >
-              <i class="pi pi-send mr-3 text-xl" style="color: var(--primary-color)"></i>
+              <i
+                class="pi pi-send mr-3 text-xl"
+                style="color: var(--primary-color)"
+              />
               <span class="text-sm">Email to selling agent</span>
             </router-link>
           </div>
@@ -52,7 +68,10 @@
   </div>
 
   <!-- Show navigation cards if not complete -->
-  <div v-else class="flex justify-between gap-6 mb-6 w-full">
+  <div
+    v-else
+    class="flex justify-between gap-6 mb-6 w-full"
+  >
     <GoToFormsCard />
     <GoToQuestionsCard />
   </div>
@@ -61,7 +80,9 @@
   <div class="mb-6">
     <Panel class="referral-status-grid w-full mx-auto">
       <template #header>
-        <h2 class="text-lg font-semibold">Referrals</h2>
+        <h2 class="text-lg font-semibold">
+          Referrals
+        </h2>
       </template>
       <div
         class="flex flex-row justify-center gap-8 items-center p-6"

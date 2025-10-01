@@ -9,10 +9,13 @@
         </template>
 
         <template #content>
-          <div v-if="loading" class="text-center py-12">
+          <div
+            v-if="loading"
+            class="text-center py-12"
+          >
             <ProgressSpinner class="mb-4" />
             <p class="text-lg text-gray-600">
-              Searching property records for<br />
+              Searching property records for<br>
               <span class="font-medium">{{ formattedAddress }}</span>
             </p>
           </div>
@@ -102,7 +105,10 @@
               </div>
             </div>
 
-            <div v-else-if="propertyData" class="space-y-6">
+            <div
+              v-else-if="propertyData"
+              class="space-y-6"
+            >
               <div class="px-4 sm:px-6 py-4 bg-primary-50 rounded-lg">
                 <div class="flex items-center">
                   <div class="flex-shrink-0">
@@ -188,7 +194,10 @@
                         v-if="propertyData.mostRecentPriceAmount"
                         class="text-3xl font-bold text-primary"
                       >${{ propertyData.mostRecentPriceAmount.toLocaleString() }}</span>
-                      <span v-else class="text-2xl font-bold text-gray-500">
+                      <span
+                        v-else
+                        class="text-2xl font-bold text-gray-500"
+                      >
                         Price not available
                       </span>
                     </div>
@@ -197,14 +206,14 @@
                         v-if="isPropertyForSale(propertyData)"
                         class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800"
                       >
-                        <i class="pi pi-tag mr-1"></i>
+                        <i class="pi pi-tag mr-1" />
                         For Sale
                       </span>
                       <span
                         v-else
                         class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-800"
                       >
-                        <i class="pi pi-check mr-1"></i>
+                        <i class="pi pi-check mr-1" />
                         Sold
                       </span>
                     </div>
@@ -305,25 +314,33 @@
                     </h3>
                     <dl class="space-y-3 sm:space-y-4">
                       <div class="flex flex-col sm:flex-row sm:justify-between">
-                        <dt class="text-gray-600 mb-1 sm:mb-0">MLS Number</dt>
+                        <dt class="text-gray-600 mb-1 sm:mb-0">
+                          MLS Number
+                        </dt>
                         <dd class="font-medium text-gray-900">
                           {{ propertyData.mlsNumber }}
                         </dd>
                       </div>
                       <div class="flex flex-col sm:flex-row sm:justify-between">
-                        <dt class="text-gray-600 mb-1 sm:mb-0">Subdivision</dt>
+                        <dt class="text-gray-600 mb-1 sm:mb-0">
+                          Subdivision
+                        </dt>
                         <dd class="font-medium text-gray-900">
                           {{ propertyData.subdivision }}
                         </dd>
                       </div>
                       <div class="flex flex-col sm:flex-row sm:justify-between">
-                        <dt class="text-gray-600 mb-1 sm:mb-0">Year Built</dt>
+                        <dt class="text-gray-600 mb-1 sm:mb-0">
+                          Year Built
+                        </dt>
                         <dd class="font-medium text-gray-900">
                           {{ propertyData.yearBuilt }}
                         </dd>
                       </div>
                       <div class="flex flex-col sm:flex-row sm:justify-between">
-                        <dt class="text-gray-600 mb-1 sm:mb-0">County</dt>
+                        <dt class="text-gray-600 mb-1 sm:mb-0">
+                          County
+                        </dt>
                         <dd class="font-medium text-gray-900">
                           {{ propertyData.county }}
                         </dd>
@@ -340,43 +357,53 @@
                     </h3>
                     <dl class="space-y-3 sm:space-y-4">
                       <div class="flex flex-col sm:flex-row sm:justify-between">
-                        <dt class="text-gray-600 mb-1 sm:mb-0">Bedrooms</dt>
+                        <dt class="text-gray-600 mb-1 sm:mb-0">
+                          Bedrooms
+                        </dt>
                         <dd class="font-medium text-gray-900">
                           {{ propertyData.numBedroom }}
                         </dd>
                       </div>
                       <div class="flex flex-col sm:flex-row sm:justify-between">
-                        <dt class="text-gray-600 mb-1 sm:mb-0">Bathrooms</dt>
+                        <dt class="text-gray-600 mb-1 sm:mb-0">
+                          Bathrooms
+                        </dt>
                         <dd class="font-medium text-gray-900">
                           {{ propertyData.numBathroom }}
                         </dd>
                       </div>
                       <div class="flex flex-col sm:flex-row sm:justify-between">
-                        <dt class="text-gray-600 mb-1 sm:mb-0">Floors</dt>
+                        <dt class="text-gray-600 mb-1 sm:mb-0">
+                          Floors
+                        </dt>
                         <dd class="font-medium text-gray-900">
                           {{ propertyData.numFloor }}
                         </dd>
                       </div>
                       <div class="flex flex-col sm:flex-row sm:justify-between">
-                        <dt class="text-gray-600 mb-1 sm:mb-0">Living Area</dt>
+                        <dt class="text-gray-600 mb-1 sm:mb-0">
+                          Living Area
+                        </dt>
                         <dd class="font-medium text-gray-900">
                           {{ propertyData.floorSizeValue }}
                           {{ propertyData.floorSizeUnit }}
                         </dd>
                       </div>
                       <div class="flex flex-col sm:flex-row sm:justify-between">
-                        <dt class="text-gray-600 mb-1 sm:mb-0">Lot Size</dt>
+                        <dt class="text-gray-600 mb-1 sm:mb-0">
+                          Lot Size
+                        </dt>
                         <dd class="font-medium text-gray-900">
                           {{ propertyData.lotSizeValue }}
                           {{ propertyData.lotSizeUnit }}
                         </dd>
                       </div>
                       <div class="flex flex-col sm:flex-row sm:justify-between">
-                        <dt class="text-gray-600 mb-1 sm:mb-0">List Price</dt>
+                        <dt class="text-gray-600 mb-1 sm:mb-0">
+                          List Price
+                        </dt>
                         <dd class="font-medium text-gray-900">
-                          <span v-if="propertyData.mostRecentPriceAmount"
-                            >${{ propertyData.mostRecentPriceAmount }}</span
-                          >
+                          <span v-if="propertyData.mostRecentPriceAmount">${{ propertyData.mostRecentPriceAmount }}</span>
                           <span v-else>Not available</span>
                         </dd>
                       </div>
@@ -401,7 +428,7 @@
                 <div
                   v-if="
                     propertyData.transactions &&
-                    propertyData.transactions.length > 0
+                      propertyData.transactions.length > 0
                   "
                   class="bg-gray-50 p-4 sm:p-6 rounded-lg border border-gray-200"
                 >
@@ -419,7 +446,7 @@
                             v-if="idx !== sortedTransactions.length - 1"
                             class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"
                             aria-hidden="true"
-                          ></span>
+                          />
                           <div class="relative flex space-x-3">
                             <div>
                               <span
@@ -444,13 +471,10 @@
                             >
                               <div>
                                 <p class="text-sm text-gray-900">
-                                  <span class="font-medium"
-                                    >{{ transaction.buyerFirstName }}
-                                    {{ transaction.buyerLastName }}</span
-                                  >
+                                  <span class="font-medium">{{ transaction.buyerFirstName }}
+                                    {{ transaction.buyerLastName }}</span>
                                   <span class="text-gray-600">
-                                    purchased the property</span
-                                  >
+                                    purchased the property</span>
                                 </p>
                                 <p
                                   v-if="transaction.documentNumber"
@@ -510,7 +534,7 @@
                             v-if="statusIdx !== uniqueStatuses.length - 1"
                             class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"
                             aria-hidden="true"
-                          ></span>
+                          />
                           <div class="relative flex space-x-3">
                             <div>
                               <span
@@ -520,7 +544,7 @@
                                 <svg
                                   v-if="
                                     status.type?.toLowerCase() === 'for sale' ||
-                                    status.type?.toLowerCase() === 'active'
+                                      status.type?.toLowerCase() === 'active'
                                   "
                                   class="h-5 w-5 text-white"
                                   xmlns="http://www.w3.org/2000/svg"
@@ -585,8 +609,7 @@
                                   <span
                                     v-if="status.isUnderContract === 'true'"
                                     class="text-gray-600"
-                                    >(Under Contract)</span
-                                  >
+                                  >(Under Contract)</span>
                                 </p>
                                 <p
                                   v-if="statusMatchesPrice(status)"
@@ -598,13 +621,13 @@
                                         new Date(
                                           price.firstDateSeen,
                                         ).getTime() <=
-                                          new Date(status.date).getTime() +
-                                            86400000 &&
+                                        new Date(status.date).getTime() +
+                                        86400000 &&
                                         new Date(
                                           price.firstDateSeen,
                                         ).getTime() >=
-                                          new Date(status.date).getTime() -
-                                            86400000,
+                                        new Date(status.date).getTime() -
+                                        86400000,
                                     )?.amountMax || "Not available"
                                   }}
                                 </p>
@@ -681,7 +704,10 @@
               </div>
             </div>
 
-            <div v-else class="bg-danger-50 p-6 rounded-lg">
+            <div
+              v-else
+              class="bg-danger-50 p-6 rounded-lg"
+            >
               <div class="flex">
                 <div class="flex-shrink-0">
                   <svg

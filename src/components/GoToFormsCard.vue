@@ -1,14 +1,19 @@
 <template>
-  <div class="card go-to-card" @click="goToForms">
+  <div
+    class="card go-to-card"
+    @click="goToForms"
+  >
     <div class="card-content">
       <div class="icon-container">
-        <i class="pi pi-file-edit text-white text-3xl"></i>
+        <i class="pi pi-file-edit text-white text-3xl" />
       </div>
       <h2>Go to Forms</h2>
-      <p class="description">Complete your contract section by section</p>
+      <p class="description">
+        Complete your contract section by section
+      </p>
       <div class="button-container">
         <span class="action-button">
-          Continue <i class="pi pi-arrow-right ml-2"></i>
+          Continue <i class="pi pi-arrow-right ml-2" />
         </span>
       </div>
     </div>

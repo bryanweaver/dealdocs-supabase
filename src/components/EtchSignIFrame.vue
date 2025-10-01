@@ -6,7 +6,7 @@
       height="800px"
       @load="handleIFrameLoad"
       @message="handleMessage"
-    ></iframe>
+    />
   </div>
 </template>
 

@@ -2,12 +2,21 @@
   <div class="w-full mx-auto">
     <Panel class="doc-status-grid">
       <template #header>
-        <h3 class="text-xl font-semibold">Required Documents</h3>
+        <h3 class="text-xl font-semibold">
+          Required Documents
+        </h3>
       </template>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div v-for="doc in documents" :key="doc.type" class="doc-panel">
+        <div
+          v-for="doc in documents"
+          :key="doc.type"
+          class="doc-panel"
+        >
           <div class="flex items-center gap-2 mb-3">
-            <i :class="doc.icon" class="text-xl"></i>
+            <i
+              :class="doc.icon"
+              class="text-xl"
+            />
             <span class="font-medium">{{ doc.label }}</span>
           </div>
           <div class="status-indicator mb-3">
@@ -18,7 +27,7 @@
                   : 'pi pi-times text-red-500',
                 'text-xl',
               ]"
-            ></i>
+            />
             <span>{{ doc.isUploaded ? "Uploaded" : "Required" }}</span>
           </div>
           <PrimeButton

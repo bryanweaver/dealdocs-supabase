@@ -11,7 +11,10 @@
     <!-- Question Panel -->
     <div class="question-container">
       <Panel class="question-panel">
-        <Transition :name="transitionName" mode="out-in">
+        <Transition
+          :name="transitionName"
+          mode="out-in"
+        >
           <!-- Question content -->
           <question-input
             :key="questionKey"

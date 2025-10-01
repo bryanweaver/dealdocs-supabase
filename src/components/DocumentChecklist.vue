@@ -1,12 +1,21 @@
 <template>
   <div class="document-checklist">
-    <DataView :value="documents" layout="list" data-key="name">
+    <DataView
+      :value="documents"
+      layout="list"
+      data-key="name"
+    >
       <template #header>
-        <h2 class="text-xl font-semibold mb-4">Document Checklist</h2>
+        <h2 class="text-xl font-semibold mb-4">
+          Document Checklist
+        </h2>
       </template>
       <template #list="slotProps">
         <div class="flex flex-col divide-y divide-gray-200">
-          <div v-for="(doc, index) in slotProps.items" :key="index">
+          <div
+            v-for="(doc, index) in slotProps.items"
+            :key="index"
+          >
             <div
               class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 hover:bg-gray-50 gap-3"
             >
@@ -19,17 +28,16 @@
                 v-if="doc.exists"
                 class="flex items-center text-green-600 bg-green-50 px-3 py-1 rounded-full text-xs sm:text-sm w-full sm:w-auto justify-center sm:justify-start"
               >
-                <i class="pi pi-check text-xs sm:text-sm"></i>
+                <i class="pi pi-check text-xs sm:text-sm" />
                 <span
                   class="ml-2 font-medium truncate max-w-[200px] sm:whitespace-normal sm:overflow-visible sm:max-w-full"
-                  >{{ doc.filename }}</span
-                >
+                >{{ doc.filename }}</span>
               </div>
               <div
                 v-else
                 class="flex items-center text-red-600 bg-red-50 px-3 py-1 rounded-full text-xs sm:text-sm w-full sm:w-auto justify-center sm:justify-start"
               >
-                <i class="pi pi-times text-xs sm:text-sm"></i>
+                <i class="pi pi-times text-xs sm:text-sm" />
                 <span class="ml-2 font-medium">Not uploaded</span>
               </div>
             </div>

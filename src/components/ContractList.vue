@@ -19,8 +19,14 @@
         />
       </div>
     </template>
-    <Column field="signerName" header="Signer"></Column>
-    <Column field="signerStatus" header="Status">
+    <Column
+      field="signerName"
+      header="Signer"
+    />
+    <Column
+      field="signerStatus"
+      header="Status"
+    >
       <template #body="slotProps">
         <Tag :status="slotProps.data.signerStatus" />
       </template>
@@ -51,7 +57,10 @@
     :modal="true"
   >
     <div class="flex items-center justify-center">
-      <i class="pi pi-exclamation-triangle mr-4" style="font-size: 2rem" />
+      <i
+        class="pi pi-exclamation-triangle mr-4"
+        style="font-size: 2rem"
+      />
       <span>Are you sure you want to proceed?</span>
     </div>
     <template #footer>
@@ -73,7 +82,10 @@
     </template>
   </Dialog>
   <div class="mt-4 flex justify-center">
-    <SignContract label="Generate New Contract" size="large" />
+    <SignContract
+      label="Generate New Contract"
+      size="large"
+    />
   </div>
 </template>
 

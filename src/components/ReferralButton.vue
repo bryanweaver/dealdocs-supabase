@@ -1,5 +1,9 @@
 <template>
-  <button class="referral-btn" :title="description" @click.prevent="openLink">
+  <button
+    class="referral-btn"
+    :title="description"
+    @click.prevent="openLink"
+  >
     <span>{{ label }}</span>
     <i class="pi pi-external-link ml-2" />
   </button>

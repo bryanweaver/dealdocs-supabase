@@ -577,7 +577,7 @@ function onMenuModeChange() {
               backgroundColor: `${primaryColor.name === 'noir' ? 'var(--text-color)' : primaryColor.palette['500']}`,
             }"
             @click="updateColors('primary', primaryColor)"
-          ></button>
+          />
         </div>
       </div>
       <div>
@@ -600,7 +600,7 @@ function onMenuModeChange() {
             ]"
             :style="{ backgroundColor: `${surface.palette['500']}` }"
             @click="updateColors('surface', surface)"
-          ></button>
+          />
         </div>
       </div>
       <div class="flex flex-col gap-2">

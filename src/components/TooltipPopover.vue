@@ -5,7 +5,7 @@
       v-ripple
       class="pi pi-question-circle tooltip-icon"
       @click="togglePopover"
-    ></i>
+    />
 
     <Popover
       :ref="'tooltipPopover'"
@@ -15,7 +15,7 @@
     >
       <!-- Try right positioning -->
       <div class="tooltip-content">
-        <slot></slot>
+        <slot />
       </div>
     </Popover>
   </div>

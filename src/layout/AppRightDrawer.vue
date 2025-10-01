@@ -1,8 +1,14 @@
 <template>
-  <Drawer v-model:visible="visible" header="Settings" position="right">
+  <Drawer
+    v-model:visible="visible"
+    header="Settings"
+    position="right"
+  >
     <!-- User Profile Section -->
     <div class="p-4">
-      <h2 class="text-xl font-semibold mb-4">User Profile</h2>
+      <h2 class="text-xl font-semibold mb-4">
+        User Profile
+      </h2>
       <p class="text-color-secondary">
         Manage your account settings and preferences
       </p>
@@ -17,14 +23,18 @@
         class="w-full"
         icon="pi pi-sign-out"
         @click="handleLogout"
-      ></Button>
+      />
     </div>
 
     <!-- Theme Configuration Section -->
     <div class="p-4">
       <div class="layout-config-menu">
         <!-- Theme Toggle with description -->
-        <button type="button" class="w-full text-left" @click="toggleDarkMode">
+        <button
+          type="button"
+          class="w-full text-left"
+          @click="toggleDarkMode"
+        >
           <div class="flex items-center gap-3">
             <div class="layout-topbar-action">
               <i
@@ -32,7 +42,7 @@
                   'pi',
                   { 'pi-moon': isDarkTheme, 'pi-sun': !isDarkTheme },
                 ]"
-              ></i>
+              />
             </div>
             <div>
               <h3 class="text-base font-medium m-0">
@@ -61,10 +71,12 @@
           >
             <div class="flex items-center gap-3">
               <div class="layout-topbar-action layout-topbar-action-highlight">
-                <i class="pi pi-palette"></i>
+                <i class="pi pi-palette" />
               </div>
               <div>
-                <h3 class="text-base font-medium m-0">Customize Theme</h3>
+                <h3 class="text-base font-medium m-0">
+                  Customize Theme
+                </h3>
                 <p class="text-sm text-color-secondary m-0">
                   Adjust colors and styling
                 </p>
@@ -76,7 +88,7 @@
       </div>
     </div>
 
-    <div class="border-t-1 border-surface-border mt-3"></div>
+    <div class="border-t-1 border-surface-border mt-3" />
   </Drawer>
 </template>
 

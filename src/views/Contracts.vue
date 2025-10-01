@@ -171,11 +171,19 @@ onMounted(async () => {
 
 <template>
   <div class="container mx-auto px-4 py-8">
-    <h1 class="text-center text-3xl font-bold mb-8">My Contracts</h1>
-    <div v-if="isLoading" class="flex justify-center items-center min-h-[400px]">
+    <h1 class="text-center text-3xl font-bold mb-8">
+      My Contracts
+    </h1>
+    <div
+      v-if="isLoading"
+      class="flex justify-center items-center min-h-[400px]"
+    >
       <ProgressSpinner />
     </div>
-    <div v-else-if="contracts.length > 0" class="flex flex-wrap -mx-4">
+    <div
+      v-else-if="contracts.length > 0"
+      class="flex flex-wrap -mx-4"
+    >
       <div
         v-for="contract in contracts"
         :key="contract.id"
@@ -186,87 +194,95 @@ onMounted(async () => {
           :class="{ loading: loadingContractId === contract.id }"
           @click="selectContract(contract)"
         >
-        <!-- Property Image -->
-        <div class="aspect-w-16 aspect-h-9 bg-gray-100 relative">
-          <img
-            v-if="(contract.property_info || contract.property) && ((contract.property_info || contract.property).imageUrl || (contract.property_info || contract.property).imageUrls?.length > 0 || (contract.property_info || contract.property).imageURLs?.length > 0)"
-            :src="(contract.property_info || contract.property)?.imageUrls?.[0] || (contract.property_info || contract.property)?.imageURLs?.[0] || (contract.property_info || contract.property)?.imageUrl"
-            alt="Property"
-            class="w-full h-48 object-cover"
-          />
-          <div
-            v-if="((contract.property_info || contract.property)?.imageUrls?.length > 1) || ((contract.property_info || contract.property)?.imageURLs?.length > 1)"
-            class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white px-2 py-1 rounded text-xs font-medium"
-          >
-            <i class="pi pi-images mr-1"></i>
-            {{ (contract.property_info || contract.property)?.imageUrls?.length || (contract.property_info || contract.property)?.imageURLs?.length }} photos
-          </div>
-          <div
-            v-else-if="!(contract.property_info || contract.property)?.imageUrl && !(contract.property_info || contract.property)?.imageUrls?.length && !(contract.property_info || contract.property)?.imageURLs?.length"
-            class="w-full h-48 bg-gray-200 flex items-center justify-center"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-16 w-16 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <!-- Property Image -->
+          <div class="aspect-w-16 aspect-h-9 bg-gray-100 relative">
+            <img
+              v-if="(contract.property_info || contract.property) && ((contract.property_info || contract.property).imageUrl || (contract.property_info || contract.property).imageUrls?.length > 0 || (contract.property_info || contract.property).imageURLs?.length > 0)"
+              :src="(contract.property_info || contract.property)?.imageUrls?.[0] || (contract.property_info || contract.property)?.imageURLs?.[0] || (contract.property_info || contract.property)?.imageUrl"
+              alt="Property"
+              class="w-full h-48 object-cover"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="1"
-                d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-              />
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="1"
-                d="M9 22V12h6v10"
-              />
-            </svg>
-          </div>
-        </div>
-        <!-- Property Details -->
-        <div class="p-5">
-          <h3 class="text-xl font-semibold mb-2">
-            {{ getProperty(contract)?.streetAddress || "No Address Available" }}
-          </h3>
-          <p class="mb-4">
-            {{ getProperty(contract)?.city || ""
-            }}{{
-              getProperty(contract)?.city && (getProperty(contract)?.province || getProperty(contract)?.state)
-                ? ", "
-                : ""
-            }}{{ getProperty(contract)?.province || getProperty(contract)?.state || "" }}
-            {{ getProperty(contract)?.postalCode || "" }}
-          </p>
-          <div class="flex justify-between items-center">
-            <div class="flex items-center">
-              <button class="select-button">
-                Select <i class="pi pi-arrow-right ml-2"></i>
-              </button>
+            <div
+              v-if="((contract.property_info || contract.property)?.imageUrls?.length > 1) || ((contract.property_info || contract.property)?.imageURLs?.length > 1)"
+              class="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white px-2 py-1 rounded text-xs font-medium"
+            >
+              <i class="pi pi-images mr-1" />
+              {{ (contract.property_info || contract.property)?.imageUrls?.length || (contract.property_info || contract.property)?.imageURLs?.length }} photos
             </div>
-            <Button
-              icon="pi pi-trash"
-              class="p-button-text p-button-danger"
-              aria-label="Delete contract"
-              @click.stop="deleteSelectedContract(contract.id)"
-            />
+            <div
+              v-else-if="!(contract.property_info || contract.property)?.imageUrl && !(contract.property_info || contract.property)?.imageUrls?.length && !(contract.property_info || contract.property)?.imageURLs?.length"
+              class="w-full h-48 bg-gray-200 flex items-center justify-center"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-16 w-16 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1"
+                  d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1"
+                  d="M9 22V12h6v10"
+                />
+              </svg>
+            </div>
           </div>
-        </div>
+          <!-- Property Details -->
+          <div class="p-5">
+            <h3 class="text-xl font-semibold mb-2">
+              {{ getProperty(contract)?.streetAddress || "No Address Available" }}
+            </h3>
+            <p class="mb-4">
+              {{ getProperty(contract)?.city || ""
+              }}{{
+                getProperty(contract)?.city && (getProperty(contract)?.province || getProperty(contract)?.state)
+                  ? ", "
+                  : ""
+              }}{{ getProperty(contract)?.province || getProperty(contract)?.state || "" }}
+              {{ getProperty(contract)?.postalCode || "" }}
+            </p>
+            <div class="flex justify-between items-center">
+              <div class="flex items-center">
+                <button class="select-button">
+                  Select <i class="pi pi-arrow-right ml-2" />
+                </button>
+              </div>
+              <Button
+                icon="pi pi-trash"
+                class="p-button-text p-button-danger"
+                aria-label="Delete contract"
+                @click.stop="deleteSelectedContract(contract.id)"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    <div v-else class="text-center py-12">
-      <p class="text-xl text-gray-600 mb-8">No contracts found.</p>
+    <div
+      v-else
+      class="text-center py-12"
+    >
+      <p class="text-xl text-gray-600 mb-8">
+        No contracts found.
+      </p>
       <Button
         label="Start New Contract"
         class="p-button-primary text-lg p-3 px-6"
         @click="$router.push('/contracts/new')"
       />
     </div>
-    <div v-if="!isLoading && contracts.length > 0" class="flex justify-center mt-8 mb-12">
+    <div
+      v-if="!isLoading && contracts.length > 0"
+      class="flex justify-center mt-8 mb-12"
+    >
       <Button
         label="Start New Contract"
         class="p-button-primary text-lg p-3 px-6"
@@ -274,7 +290,7 @@ onMounted(async () => {
       />
     </div>
   </div>
-  <ConfirmDialog></ConfirmDialog>
+  <ConfirmDialog />
   <Toast />
 </template>
 

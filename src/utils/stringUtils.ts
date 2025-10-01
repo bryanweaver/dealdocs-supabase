@@ -21,7 +21,7 @@ function parseLotBlock(text: string): ParseResult {
   const block = blockMatch ? blockMatch[1] : null;
 
   // Remove lot and block information from the original string
-  let legalDescription = text
+  const legalDescription = text
     .replace(lotPattern, "")
     .replace(blockPattern, "")
     .trim()

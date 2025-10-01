@@ -79,18 +79,24 @@ function toggleDrawer() {
         class="layout-menu-button layout-topbar-action"
         @click="onMenuToggle"
       >
-        <i class="pi pi-bars"></i>
+        <i class="pi pi-bars" />
       </button>
-      <router-link to="/contracts" class="layout-topbar-logo">
+      <router-link
+        to="/contracts"
+        class="layout-topbar-logo"
+      >
         <img
           src="@/assets/docudeals_logo_v1.png"
           alt="DocuDeals Logo"
           class="hidden lg:block h-8"
-        />
+        >
       </router-link>
     </div>
 
-    <div v-if="selectedContractId" class="stepper-container">
+    <div
+      v-if="selectedContractId"
+      class="stepper-container"
+    >
       <CustomStepper
         :current-step="currentStep"
         :steps="steps"
@@ -111,7 +117,7 @@ function toggleDrawer() {
         class="layout-topbar-action"
         @click="toggleDrawer"
       >
-        <i class="pi pi-ellipsis-v"></i>
+        <i class="pi pi-ellipsis-v" />
       </button>
     </div>
 

@@ -8,7 +8,10 @@
             <!-- Desktop Stepper -->
             <div class="hidden sm:block">
               <div class="w-full flex items-center">
-                <template v-for="(step, index) in steps" :key="index">
+                <template
+                  v-for="(step, index) in steps"
+                  :key="index"
+                >
                   <!-- Step Circle -->
                   <div
                     class="w-8 sm:w-10 h-8 sm:h-10 rounded-full flex items-center justify-center"
@@ -30,7 +33,7 @@
                     :class="[
                       currentStep > index ? 'bg-primary' : 'bg-gray-200',
                     ]"
-                  ></div>
+                  />
                 </template>
               </div>
 
@@ -67,7 +70,7 @@
                   :style="{
                     width: `${((currentStep + 1) / steps.length) * 100}%`,
                   }"
-                ></div>
+                />
               </div>
             </div>
           </div>
@@ -80,7 +83,7 @@
               :property-data="propertyData"
               @next-step="handleNextStep"
               @prev-step="handlePrevStep"
-            ></component>
+            />
           </div>
         </template>
       </Card>

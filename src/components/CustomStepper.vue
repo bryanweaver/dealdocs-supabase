@@ -67,24 +67,26 @@ const isLineActive = (index) => activeStep.value > index + 1;
       >
         <div class="step-number">
           <template v-if="index === 0 && isStep1Complete">
-            <i class="pi pi-check"></i>
+            <i class="pi pi-check" />
           </template>
           <template v-else-if="index === 1 && isStep2Complete">
-            <i class="pi pi-check"></i>
+            <i class="pi pi-check" />
           </template>
           <template v-else-if="index === 2 && isStep3Complete">
-            <i class="pi pi-check"></i>
+            <i class="pi pi-check" />
           </template>
           <template v-else>
             {{ index + 1 }}
           </template>
         </div>
-        <div class="step-label">{{ step.label }}</div>
+        <div class="step-label">
+          {{ step.label }}
+        </div>
         <div
           v-if="index < steps.length - 1"
           class="step-line"
           :class="{ active: isLineActive(index) }"
-        ></div>
+        />
       </component>
     </div>
   </div>

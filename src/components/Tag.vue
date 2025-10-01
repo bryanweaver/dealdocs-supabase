@@ -1,5 +1,7 @@
 <template>
-  <Tag :severity="getTagSeverity(status)">{{ status }}</Tag>
+  <Tag :severity="getTagSeverity(status)">
+    {{ status }}
+  </Tag>
 </template>
 
 <script lang="ts">

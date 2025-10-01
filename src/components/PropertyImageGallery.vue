@@ -1,38 +1,47 @@
 <template>
   <div class="property-image-gallery">
-    <div v-if="images && images.length > 0" class="gallery-container">
+    <div
+      v-if="images && images.length > 0"
+      class="gallery-container"
+    >
       <div class="main-image-container">
         <img
           :src="currentImage"
           :alt="`Property image ${currentIndex + 1}`"
           class="main-image"
           @click="showFullscreen = true"
-        />
+        >
         
         <button
           v-if="images.length > 1"
           class="nav-button prev"
-          @click="previousImage"
           :disabled="currentIndex === 0"
+          @click="previousImage"
         >
-          <i class="pi pi-chevron-left"></i>
+          <i class="pi pi-chevron-left" />
         </button>
         
         <button
           v-if="images.length > 1"
           class="nav-button next"
-          @click="nextImage"
           :disabled="currentIndex === images.length - 1"
+          @click="nextImage"
         >
-          <i class="pi pi-chevron-right"></i>
+          <i class="pi pi-chevron-right" />
         </button>
         
-        <div v-if="images.length > 1" class="image-counter">
+        <div
+          v-if="images.length > 1"
+          class="image-counter"
+        >
           {{ currentIndex + 1 }} / {{ images.length }}
         </div>
       </div>
       
-      <div v-if="images.length > 1" class="thumbnail-container">
+      <div
+        v-if="images.length > 1"
+        class="thumbnail-container"
+      >
         <div
           v-for="(image, index) in images"
           :key="index"
@@ -40,14 +49,20 @@
           :class="{ active: index === currentIndex }"
           @click="currentIndex = index"
         >
-          <img :src="image" :alt="`Thumbnail ${index + 1}`" />
+          <img
+            :src="image"
+            :alt="`Thumbnail ${index + 1}`"
+          >
         </div>
       </div>
     </div>
     
-    <div v-else class="no-image-placeholder">
+    <div
+      v-else
+      class="no-image-placeholder"
+    >
       <div class="placeholder-content">
-        <i class="pi pi-image"></i>
+        <i class="pi pi-image" />
         <p>No property images available</p>
       </div>
     </div>
@@ -55,8 +70,8 @@
     <Dialog
       v-model:visible="showFullscreen"
       modal
-      :dismissableMask="true"
-      :showHeader="false"
+      :dismissable-mask="true"
+      :show-header="false"
       :style="{ width: '90vw', maxWidth: '1200px' }"
       class="fullscreen-dialog"
     >
@@ -65,28 +80,28 @@
           :src="currentImage"
           :alt="`Property image ${currentIndex + 1}`"
           class="fullscreen-image"
-        />
+        >
         <button
           v-if="images.length > 1"
           class="fullscreen-nav prev"
-          @click="previousImage"
           :disabled="currentIndex === 0"
+          @click="previousImage"
         >
-          <i class="pi pi-chevron-left"></i>
+          <i class="pi pi-chevron-left" />
         </button>
         <button
           v-if="images.length > 1"
           class="fullscreen-nav next"
-          @click="nextImage"
           :disabled="currentIndex === images.length - 1"
+          @click="nextImage"
         >
-          <i class="pi pi-chevron-right"></i>
+          <i class="pi pi-chevron-right" />
         </button>
         <button
           class="fullscreen-close"
           @click="showFullscreen = false"
         >
-          <i class="pi pi-times"></i>
+          <i class="pi pi-times" />
         </button>
         <div class="fullscreen-counter">
           {{ currentIndex + 1 }} / {{ images.length }}

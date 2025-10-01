@@ -8,8 +8,9 @@
           <router-link
             :to="`/contracts/${contractId}/forms/${firstIncompleteSection}`"
             class="text-primary hover:underline"
-            >head back over to the data forms</router-link
           >
+            head back over to the data forms
+          </router-link>
           so we can gather all of the info we need.
         </p>
       </template>

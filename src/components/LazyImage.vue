@@ -6,7 +6,7 @@
     :class="imgClass"
     @load="onLoad"
     @error="onError"
-  />
+  >
   <div
     v-else
     ref="placeholder"
@@ -14,7 +14,7 @@
     :style="placeholderStyle"
   >
     <slot name="placeholder">
-      <div class="animate-pulse bg-gray-200 w-full h-full rounded"></div>
+      <div class="animate-pulse bg-gray-200 w-full h-full rounded" />
     </slot>
   </div>
 </template>

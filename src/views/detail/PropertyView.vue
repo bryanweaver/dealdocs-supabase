@@ -9,15 +9,26 @@
         </template>
 
         <template #content>
-          <div v-if="loading" class="text-center py-12">
+          <div
+            v-if="loading"
+            class="text-center py-12"
+          >
             <ProgressSpinner class="mb-4" />
-            <p class="text-lg text-gray-600">Loading property details...</p>
+            <p class="text-lg text-gray-600">
+              Loading property details...
+            </p>
           </div>
 
           <div v-else>
-            <div v-if="propertyData" class="space-y-6">
+            <div
+              v-if="propertyData"
+              class="space-y-6"
+            >
               <!-- Property Images Gallery at the top (like PropertyData.vue) -->
-              <div v-if="propertyData.imageUrl || propertyData.imageUrls?.length > 0 || propertyData.imageURLs?.length > 0" class="mb-8">
+              <div
+                v-if="propertyData.imageUrl || propertyData.imageUrls?.length > 0 || propertyData.imageURLs?.length > 0"
+                class="mb-8"
+              >
                 <PropertyImageGallery 
                   :images="propertyData.imageUrls || propertyData.imageURLs || (propertyData.imageUrl ? [propertyData.imageUrl] : [])"
                 />
@@ -168,25 +179,33 @@
                   </h3>
                   <dl class="space-y-3 sm:space-y-4">
                     <div class="flex flex-col sm:flex-row sm:justify-between">
-                      <dt class="text-gray-600 mb-1 sm:mb-0">MLS Number</dt>
+                      <dt class="text-gray-600 mb-1 sm:mb-0">
+                        MLS Number
+                      </dt>
                       <dd class="font-medium text-gray-900">
                         {{ propertyData.mlsNumber }}
                       </dd>
                     </div>
                     <div class="flex flex-col sm:flex-row sm:justify-between">
-                      <dt class="text-gray-600 mb-1 sm:mb-0">Subdivision</dt>
+                      <dt class="text-gray-600 mb-1 sm:mb-0">
+                        Subdivision
+                      </dt>
                       <dd class="font-medium text-gray-900">
                         {{ propertyData.subdivision }}
                       </dd>
                     </div>
                     <div class="flex flex-col sm:flex-row sm:justify-between">
-                      <dt class="text-gray-600 mb-1 sm:mb-0">Year Built</dt>
+                      <dt class="text-gray-600 mb-1 sm:mb-0">
+                        Year Built
+                      </dt>
                       <dd class="font-medium text-gray-900">
                         {{ propertyData.yearBuilt }}
                       </dd>
                     </div>
                     <div class="flex flex-col sm:flex-row sm:justify-between">
-                      <dt class="text-gray-600 mb-1 sm:mb-0">County</dt>
+                      <dt class="text-gray-600 mb-1 sm:mb-0">
+                        County
+                      </dt>
                       <dd class="font-medium text-gray-900">
                         {{ propertyData.county }}
                       </dd>
@@ -203,39 +222,51 @@
                   </h3>
                   <dl class="space-y-3 sm:space-y-4">
                     <div class="flex flex-col sm:flex-row sm:justify-between">
-                      <dt class="text-gray-600 mb-1 sm:mb-0">Bedrooms</dt>
+                      <dt class="text-gray-600 mb-1 sm:mb-0">
+                        Bedrooms
+                      </dt>
                       <dd class="font-medium text-gray-900">
                         {{ propertyData.numBedroom }}
                       </dd>
                     </div>
                     <div class="flex flex-col sm:flex-row sm:justify-between">
-                      <dt class="text-gray-600 mb-1 sm:mb-0">Bathrooms</dt>
+                      <dt class="text-gray-600 mb-1 sm:mb-0">
+                        Bathrooms
+                      </dt>
                       <dd class="font-medium text-gray-900">
                         {{ propertyData.numBathroom }}
                       </dd>
                     </div>
                     <div class="flex flex-col sm:flex-row sm:justify-between">
-                      <dt class="text-gray-600 mb-1 sm:mb-0">Floors</dt>
+                      <dt class="text-gray-600 mb-1 sm:mb-0">
+                        Floors
+                      </dt>
                       <dd class="font-medium text-gray-900">
                         {{ propertyData.numFloor }}
                       </dd>
                     </div>
                     <div class="flex flex-col sm:flex-row sm:justify-between">
-                      <dt class="text-gray-600 mb-1 sm:mb-0">Living Area</dt>
+                      <dt class="text-gray-600 mb-1 sm:mb-0">
+                        Living Area
+                      </dt>
                       <dd class="font-medium text-gray-900">
                         {{ propertyData.floorSizeValue }}
                         {{ propertyData.floorSizeUnit }}
                       </dd>
                     </div>
                     <div class="flex flex-col sm:flex-row sm:justify-between">
-                      <dt class="text-gray-600 mb-1 sm:mb-0">Lot Size</dt>
+                      <dt class="text-gray-600 mb-1 sm:mb-0">
+                        Lot Size
+                      </dt>
                       <dd class="font-medium text-gray-900">
                         {{ propertyData.lotSizeValue }}
                         {{ propertyData.lotSizeUnit }}
                       </dd>
                     </div>
                     <div class="flex flex-col sm:flex-row sm:justify-between">
-                      <dt class="text-gray-600 mb-1 sm:mb-0">List Price</dt>
+                      <dt class="text-gray-600 mb-1 sm:mb-0">
+                        List Price
+                      </dt>
                       <dd class="font-medium text-gray-900">
                         ${{ propertyData.price }}
                       </dd>
@@ -258,7 +289,10 @@
               </div>
             </div>
 
-            <div v-else class="bg-danger-50 p-6 rounded-lg">
+            <div
+              v-else
+              class="bg-danger-50 p-6 rounded-lg"
+            >
               <div class="flex">
                 <div class="flex-shrink-0">
                   <svg

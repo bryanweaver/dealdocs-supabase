@@ -1,11 +1,16 @@
 <template>
   <div class="agent-email-form">
     <div class="card flex flex-col gap-6 p-6">
-      <div class="text-l font-bold mb-4 text-center">Send Email</div>
+      <div class="text-l font-bold mb-4 text-center">
+        Send Email
+      </div>
       <div class="form-container">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="flex flex-col gap-2">
-            <label for="to-email" class="font-semibold">To:</label>
+            <label
+              for="to-email"
+              class="font-semibold"
+            >To:</label>
             <InputText
               id="to-email"
               v-model="toEmail"
@@ -17,7 +22,10 @@
         </div>
 
         <div class="flex flex-col gap-2">
-          <label for="comments" class="font-semibold">Comments:</label>
+          <label
+            for="comments"
+            class="font-semibold"
+          >Comments:</label>
           <Textarea
             id="comments"
             v-model="comments"
@@ -37,33 +45,51 @@
           @click="sendEmail"
         >
           <template #loading>
-            <i class="pi pi-spin pi-spinner mr-2"></i>
+            <i class="pi pi-spin pi-spinner mr-2" />
             Sending...
           </template>
         </Button>
       </div>
 
       <!-- Only show this section when there are previous email records -->
-      <div v-if="emailRecords.length" class="mt-6">
+      <div
+        v-if="emailRecords.length"
+        class="mt-6"
+      >
         <div class="text-l font-bold mb-4 text-center">
           Previously Sent Emails
         </div>
         <table class="min-w-full bg-white">
           <thead>
             <tr>
-              <th class="px-4 py-2 border text-left">Agent</th>
-              <th class="px-4 py-2 border text-left">Comments</th>
-              <th class="px-4 py-2 border text-left">Status</th>
-              <th class="px-4 py-2 border text-left">Sent</th>
+              <th class="px-4 py-2 border text-left">
+                Agent
+              </th>
+              <th class="px-4 py-2 border text-left">
+                Comments
+              </th>
+              <th class="px-4 py-2 border text-left">
+                Status
+              </th>
+              <th class="px-4 py-2 border text-left">
+                Sent
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="record in emailRecords" :key="record.id">
+            <tr
+              v-for="record in emailRecords"
+              :key="record.id"
+            >
               <td class="px-4 py-2 border">
                 {{ record.agentName }} ({{ record.agentEmail }})
               </td>
-              <td class="px-4 py-2 border">{{ record.comments }}</td>
-              <td class="px-4 py-2 border">{{ record.status }}</td>
+              <td class="px-4 py-2 border">
+                {{ record.comments }}
+              </td>
+              <td class="px-4 py-2 border">
+                {{ record.status }}
+              </td>
               <td class="px-4 py-2 border">
                 {{ formatDate(record.createdAt, "YYYY-MM-DD hh:mm A") }}
               </td>

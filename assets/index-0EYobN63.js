@@ -7878,11 +7878,11 @@ function WC(t, e = {}) {
     q0(eo, e),
     t.directive("tooltip", Z0),
     t.directive("close-popper", qC),
-    t.component("v-tooltip", Wf),
     t.component("VTooltip", Wf),
-    t.component("v-dropdown", bv),
+    t.component("VTooltip", Wf),
     t.component("VDropdown", bv),
-    t.component("v-menu", wv),
+    t.component("VDropdown", bv),
+    t.component("VMenu", wv),
     t.component("VMenu", wv));
 }
 const ny = { version: "2.0.0-y.0", install: WC, options: eo },
@@ -17497,7 +17497,7 @@ b`.split(/\n/).length != 3
       }
     }
     function fw(n, i) {
-      if (n.length > 1 && !/  /.test(n)) return n;
+      if (n.length > 1 && !/ {2}/.test(n)) return n;
       for (var a = i, l = "", c = 0; c < n.length; c++) {
         var p = n.charAt(c);
         p == " " &&

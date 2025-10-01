@@ -3,7 +3,10 @@
     <!-- Progress Bar at the top -->
     <div class="sticky-progress-bar">
       <div class="progress-bar-container">
-        <SectionProgressBar :section-id="sectionId" :section-title="section" />
+        <SectionProgressBar
+          :section-id="sectionId"
+          :section-title="section"
+        />
       </div>
     </div>
 
@@ -25,8 +28,7 @@
                   <span
                     v-if="isFieldRequired(question)"
                     class="required-asterisk"
-                    >*</span
-                  >
+                  >*</span>
                 </h2>
 
                 <TooltipPopover :id="question.fieldId">
@@ -45,7 +47,10 @@
               }"
             >
               <!-- Text Input -->
-              <div v-if="question.type === 'text'" class="flex flex-col">
+              <div
+                v-if="question.type === 'text'"
+                class="flex flex-col"
+              >
                 <InputGroup>
                   <InputText
                     v-model="inputValues[question.fieldId]"
@@ -60,7 +65,10 @@
                     class="w-full"
                     @blur="setInputValue(question, $event.target.value)"
                   />
-                  <div v-if="sectionId !== 'property' && !question.readOnly" class="flex justify-center items-center ml-4">
+                  <div
+                    v-if="sectionId !== 'property' && !question.readOnly"
+                    class="flex justify-center items-center ml-4"
+                  >
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -90,7 +98,10 @@
               </div>
 
               <!-- Number Input -->
-              <div v-else-if="question.type === 'number'" class="flex flex-col">
+              <div
+                v-else-if="question.type === 'number'"
+                class="flex flex-col"
+              >
                 <InputGroup>
                   <InputNumber
                     v-model="inputValues[question.fieldId]"
@@ -108,7 +119,10 @@
                     :max-fraction-digits="2"
                     @input="setInputValue(question, $event.value)"
                   />
-                  <div v-if="sectionId !== 'property'" class="flex justify-center items-center ml-4">
+                  <div
+                    v-if="sectionId !== 'property'"
+                    class="flex justify-center items-center ml-4"
+                  >
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -159,7 +173,10 @@
                     locale="en-US"
                     @input="setInputValue(question, $event.value)"
                   />
-                  <div v-if="sectionId !== 'property'" class="flex justify-center items-center ml-4">
+                  <div
+                    v-if="sectionId !== 'property'"
+                    class="flex justify-center items-center ml-4"
+                  >
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -189,7 +206,10 @@
               </div>
 
               <!-- Date Input -->
-              <div v-else-if="question.type === 'date'" class="flex flex-col">
+              <div
+                v-else-if="question.type === 'date'"
+                class="flex flex-col"
+              >
                 <InputGroup>
                   <DatePicker
                     v-model="inputValues[question.fieldId]"
@@ -206,7 +226,10 @@
                     class="w-full"
                     @update:model-value="setInputValue(question, $event)"
                   />
-                  <div v-if="sectionId !== 'property'" class="flex justify-center items-center ml-4">
+                  <div
+                    v-if="sectionId !== 'property'"
+                    class="flex justify-center items-center ml-4"
+                  >
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -236,7 +259,10 @@
               </div>
 
               <!-- Select Input -->
-              <div v-else-if="question.type === 'select'" class="flex flex-col">
+              <div
+                v-else-if="question.type === 'select'"
+                class="flex flex-col"
+              >
                 <InputGroup>
                   <Dropdown
                     v-model="inputValues[question.fieldId]"
@@ -255,7 +281,10 @@
                     class="w-full"
                     @update:model-value="setInputValue(question, $event)"
                   />
-                  <div v-if="sectionId !== 'property'" class="flex justify-center items-center ml-4">
+                  <div
+                    v-if="sectionId !== 'property'"
+                    class="flex justify-center items-center ml-4"
+                  >
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -309,7 +338,10 @@
                     class="mr-2"
                     @update:model-value="setInputValue(question, $event)"
                   />
-                  <div v-if="sectionId !== 'property'" class="flex justify-center items-center ml-4">
+                  <div
+                    v-if="sectionId !== 'property'"
+                    class="flex justify-center items-center ml-4"
+                  >
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -339,7 +371,10 @@
               </div>
 
               <!-- Phone Input -->
-              <div v-else-if="question.type === 'phone'" class="flex flex-col">
+              <div
+                v-else-if="question.type === 'phone'"
+                class="flex flex-col"
+              >
                 <InputGroup>
                   <InputMask
                     v-model="inputValues[question.fieldId]"
@@ -355,7 +390,10 @@
                     class="w-full"
                     @blur="setInputValue(question, $event.target.value)"
                   />
-                  <div v-if="sectionId !== 'property'" class="flex justify-center items-center ml-4">
+                  <div
+                    v-if="sectionId !== 'property'"
+                    class="flex justify-center items-center ml-4"
+                  >
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -466,6 +504,43 @@ export default {
     TooltipPopover,
     ReferralButton,
   },
+  async beforeRouteUpdate(to, from, next) {
+    // Auto-save when navigating between sections (for menu navigation)
+    console.log(`[FormPage beforeRouteUpdate] CALLED - from ${from.params.sectionId} to ${to.params.sectionId}`);
+    const oldSectionId = from.params.sectionId;
+    const newSectionId = to.params.sectionId;
+
+    if (oldSectionId && oldSectionId !== newSectionId && !this.isSaving) {
+      console.log(`[FormPage beforeRouteUpdate] Auto-saving ${oldSectionId} before switching to ${newSectionId}`);
+      this.isSaving = true;
+      try {
+        await this.saveCurrentSection();
+        console.log(`[FormPage beforeRouteUpdate] Save completed for ${oldSectionId}`);
+      } catch (error) {
+        console.error(`[FormPage beforeRouteUpdate] Save failed:`, error);
+      } finally {
+        this.isSaving = false;
+      }
+    }
+    next();
+  },
+  async beforeRouteLeave(to, from, next) {
+    // Auto-save before leaving the page completely
+    console.log(`[FormPage beforeRouteLeave] CALLED - leaving ${from.params.sectionId}`);
+    if (this.sectionId && !this.isSaving) {
+      console.log(`[FormPage beforeRouteLeave] Auto-saving ${this.sectionId} before leaving`);
+      this.isSaving = true;
+      try {
+        await this.saveCurrentSection();
+        console.log(`[FormPage beforeRouteLeave] Save completed for ${this.sectionId}`);
+      } catch (error) {
+        console.error(`[FormPage beforeRouteLeave] Save failed:`, error);
+      } finally {
+        this.isSaving = false;
+      }
+    }
+    next();
+  },
   data() {
     return {
       sectionId: this.$route.params.sectionId,
@@ -573,43 +648,6 @@ export default {
         return true;
       });
     },
-  },
-  async beforeRouteUpdate(to, from, next) {
-    // Auto-save when navigating between sections (for menu navigation)
-    console.log(`[FormPage beforeRouteUpdate] CALLED - from ${from.params.sectionId} to ${to.params.sectionId}`);
-    const oldSectionId = from.params.sectionId;
-    const newSectionId = to.params.sectionId;
-
-    if (oldSectionId && oldSectionId !== newSectionId && !this.isSaving) {
-      console.log(`[FormPage beforeRouteUpdate] Auto-saving ${oldSectionId} before switching to ${newSectionId}`);
-      this.isSaving = true;
-      try {
-        await this.saveCurrentSection();
-        console.log(`[FormPage beforeRouteUpdate] Save completed for ${oldSectionId}`);
-      } catch (error) {
-        console.error(`[FormPage beforeRouteUpdate] Save failed:`, error);
-      } finally {
-        this.isSaving = false;
-      }
-    }
-    next();
-  },
-  async beforeRouteLeave(to, from, next) {
-    // Auto-save before leaving the page completely
-    console.log(`[FormPage beforeRouteLeave] CALLED - leaving ${from.params.sectionId}`);
-    if (this.sectionId && !this.isSaving) {
-      console.log(`[FormPage beforeRouteLeave] Auto-saving ${this.sectionId} before leaving`);
-      this.isSaving = true;
-      try {
-        await this.saveCurrentSection();
-        console.log(`[FormPage beforeRouteLeave] Save completed for ${this.sectionId}`);
-      } catch (error) {
-        console.error(`[FormPage beforeRouteLeave] Save failed:`, error);
-      } finally {
-        this.isSaving = false;
-      }
-    }
-    next();
   },
   watch: {
     "$route.params.sectionId"(newVal) {

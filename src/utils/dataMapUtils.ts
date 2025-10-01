@@ -18,7 +18,7 @@ function joinAddress(address: any) {
 
 export function mapAll2017Fields(formData: any) {
   const resultForPDF = {};
-  for (let field of all2017Fields) {
+  for (const field of all2017Fields) {
     const { id, type } = field;
 
     switch (id) {
@@ -338,7 +338,7 @@ export function mapAll2017Fields(formData: any) {
           formData["propertyCondition"]["serviceContractReimbursementAmount"];
         break;
       case "brokerDisclosureLine1":
-        let brokerDisclosures = [];
+        const brokerDisclosures = [];
         if (formData["brokerDisclosure"]["buyerIsThirdPartyAgent"]) {
           brokerDisclosures.push("Buyer is a third party agent");
         }
@@ -351,13 +351,13 @@ export function mapAll2017Fields(formData: any) {
         resultForPDF[id] = brokerDisclosures.join(", ");
         break;
       case "closingDayAndMonth":
-        let date = formData["closing"]["closingDate"] || "";
+        const date = formData["closing"]["closingDate"] || "";
         const month = getMonthName(date.split("-")[1] - 1);
         const day = date.split("-")[2];
         resultForPDF[id] = `${month} ${day}`;
         break;
       case "closingYearLastTwoDigits":
-        let date2 = formData["closing"]["closingDate"] || "";
+        const date2 = formData["closing"]["closingDate"] || "";
         const yearLastTwoDigits = date2.split("-")[0].substring(2);
         resultForPDF[id] = yearLastTwoDigits;
         break;
@@ -462,7 +462,7 @@ export function mapAll2017Fields(formData: any) {
 
 export function mapAllHOAAddendumFields(formData: any) {
   const resultForPDF = {};
-  for (let field of allHOAAddendumFields) {
+  for (const field of allHOAAddendumFields) {
     const { id, type } = field;
     switch (id) {
       case "propertyAddressStreetAndCity": {
@@ -585,7 +585,7 @@ export function mapAllHOAAddendumFields(formData: any) {
 
 export function mapAllThirdPartyFinanceAddendumFields(formData: any) {
   const resultForPDF = {};
-  for (let field of allThirdPartyFinanceAddendumFields) {
+  for (const field of allThirdPartyFinanceAddendumFields) {
     const { id, type } = field;
     switch (id) {
       case "propertyAddressStreetAndCity": {
@@ -1007,7 +1007,7 @@ export function mapAllThirdPartyFinanceAddendumFields(formData: any) {
 
 export function mapAllLenderAppraisalTerminationAddendumFields(formData: any) {
   const resultForPDF = {};
-  for (let field of allLenderApprovalTerminationAddendumFields) {
+  for (const field of allLenderApprovalTerminationAddendumFields) {
     const { id, type } = field;
     switch (id) {
       case "propertyAddressAndCity": {

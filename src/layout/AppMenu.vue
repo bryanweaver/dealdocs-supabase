@@ -329,14 +329,20 @@ watch(
 
 <template>
   <ul class="layout-menu">
-    <template v-for="(item, i) in model" :key="item.label">
+    <template
+      v-for="(item, i) in model"
+      :key="item.label"
+    >
       <app-menu-item
         v-if="!item.separator && item.visible"
         :item="item"
         :index="i"
         :root="true"
       />
-      <li v-if="item.separator" class="menu-separator"></li>
+      <li
+        v-if="item.separator"
+        class="menu-separator"
+      />
     </template>
   </ul>
 </template>

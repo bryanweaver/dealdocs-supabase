@@ -121,34 +121,50 @@ const goToNext = () => {
           class="question-title"
           :class="{ 'marked-question': currentQuestion.marked }"
         >
-          <span v-if="currentQuestion.isRequired" class="required-asterisk"
-            >*</span
-          >
+          <span
+            v-if="currentQuestion.isRequired"
+            class="required-asterisk"
+          >*</span>
           <span>{{ currentQuestion.question }}</span>
         </div>
       </div>
 
       <!-- Introduction Only -->
-      <div v-if="currentQuestion.intro" class="intro-container">
+      <div
+        v-if="currentQuestion.intro"
+        class="intro-container"
+      >
         <div class="intro-content">
-          <p v-text="currentQuestion.intro"></p>
+          <p v-text="currentQuestion.intro" />
         </div>
       </div>
 
       <!-- Input Components based on type -->
-      <div v-else class="input-container">
+      <div
+        v-else
+        class="input-container"
+      >
         <!-- Input Text -->
-        <div v-if="currentQuestion.type === 'text'" class="input-wrapper">
+        <div
+          v-if="currentQuestion.type === 'text'"
+          class="input-wrapper"
+        >
           <InputText
             v-model="inputValue"
             class="w-full"
             :class="{ 'marked-input': currentQuestion.marked }"
             :placeholder="currentQuestion.placeholder || ''"
           />
-          <small v-if="hasValidationError" class="p-error">{{
+          <small
+            v-if="hasValidationError"
+            class="p-error"
+          >{{
             validationError
           }}</small>
-          <small v-if="currentQuestion.description" class="text-gray-600 mt-2">
+          <small
+            v-if="currentQuestion.description"
+            class="text-gray-600 mt-2"
+          >
             {{ currentQuestion.description }}
           </small>
         </div>
@@ -167,10 +183,16 @@ const goToNext = () => {
             />
             <TooltipPopover :tooltip-content="currentQuestion.tooltip" />
           </div>
-          <small v-if="hasValidationError" class="p-error">{{
+          <small
+            v-if="hasValidationError"
+            class="p-error"
+          >{{
             validationError
           }}</small>
-          <small v-if="currentQuestion.description" class="text-gray-600 mt-2">
+          <small
+            v-if="currentQuestion.description"
+            class="text-gray-600 mt-2"
+          >
             {{ currentQuestion.description }}
           </small>
         </div>
@@ -188,16 +210,25 @@ const goToNext = () => {
             :min-fraction-digits="0"
             :max-fraction-digits="2"
           />
-          <small v-if="hasValidationError" class="p-error">{{
+          <small
+            v-if="hasValidationError"
+            class="p-error"
+          >{{
             validationError
           }}</small>
-          <small v-if="currentQuestion.description" class="text-gray-600 mt-2">
+          <small
+            v-if="currentQuestion.description"
+            class="text-gray-600 mt-2"
+          >
             {{ currentQuestion.description }}
           </small>
         </div>
 
         <!-- Date Picker -->
-        <div v-else-if="currentQuestion.type === 'date'" class="input-wrapper">
+        <div
+          v-else-if="currentQuestion.type === 'date'"
+          class="input-wrapper"
+        >
           <DatePicker
             v-model="inputValue"
             class="w-full"
@@ -205,10 +236,16 @@ const goToNext = () => {
             date-format="mm/dd/yy"
             :show-icon="true"
           />
-          <small v-if="hasValidationError" class="p-error">{{
+          <small
+            v-if="hasValidationError"
+            class="p-error"
+          >{{
             validationError
           }}</small>
-          <small v-if="currentQuestion.description" class="text-gray-600 mt-2">
+          <small
+            v-if="currentQuestion.description"
+            class="text-gray-600 mt-2"
+          >
             {{ currentQuestion.description }}
           </small>
         </div>
@@ -225,10 +262,16 @@ const goToNext = () => {
             :class="{ 'marked-button': currentQuestion.marked }"
             class="w-full flex flex-wrap"
           />
-          <small v-if="hasValidationError" class="p-error">{{
+          <small
+            v-if="hasValidationError"
+            class="p-error"
+          >{{
             validationError
           }}</small>
-          <small v-if="currentQuestion.description" class="text-gray-600 mt-2">
+          <small
+            v-if="currentQuestion.description"
+            class="text-gray-600 mt-2"
+          >
             {{ currentQuestion.description }}
           </small>
         </div>
@@ -245,16 +288,25 @@ const goToNext = () => {
             class="w-full"
             :class="{ 'marked-input': currentQuestion.marked }"
           />
-          <small v-if="hasValidationError" class="p-error">{{
+          <small
+            v-if="hasValidationError"
+            class="p-error"
+          >{{
             validationError
           }}</small>
-          <small v-if="currentQuestion.description" class="text-gray-600 mt-2">
+          <small
+            v-if="currentQuestion.description"
+            class="text-gray-600 mt-2"
+          >
             {{ currentQuestion.description }}
           </small>
         </div>
 
         <!-- Input Mask (Formatted Input) -->
-        <div v-else-if="currentQuestion.type === 'mask'" class="input-wrapper">
+        <div
+          v-else-if="currentQuestion.type === 'mask'"
+          class="input-wrapper"
+        >
           <InputMask
             v-model="inputValue"
             :mask="currentQuestion.mask"
@@ -262,16 +314,25 @@ const goToNext = () => {
             :class="{ 'marked-input': currentQuestion.marked }"
             :placeholder="currentQuestion.placeholder || ''"
           />
-          <small v-if="hasValidationError" class="p-error">{{
+          <small
+            v-if="hasValidationError"
+            class="p-error"
+          >{{
             validationError
           }}</small>
-          <small v-if="currentQuestion.description" class="text-gray-600 mt-2">
+          <small
+            v-if="currentQuestion.description"
+            class="text-gray-600 mt-2"
+          >
             {{ currentQuestion.description }}
           </small>
         </div>
 
         <!-- Monetary Input (with $ prefix) -->
-        <div v-else-if="currentQuestion.type === 'money'" class="input-wrapper">
+        <div
+          v-else-if="currentQuestion.type === 'money'"
+          class="input-wrapper"
+        >
           <InputGroup>
             <span class="p-inputgroup-addon">$</span>
             <InputNumber
@@ -283,10 +344,16 @@ const goToNext = () => {
               :max-fraction-digits="2"
             />
           </InputGroup>
-          <small v-if="hasValidationError" class="p-error">{{
+          <small
+            v-if="hasValidationError"
+            class="p-error"
+          >{{
             validationError
           }}</small>
-          <small v-if="currentQuestion.description" class="text-gray-600 mt-2">
+          <small
+            v-if="currentQuestion.description"
+            class="text-gray-600 mt-2"
+          >
             {{ currentQuestion.description }}
           </small>
         </div>

@@ -67,7 +67,7 @@ export async function fillAllFormInputs(page: Page, customValues?: Record<string
   console.log(`  Current question: "${currentQuestion}"`);
   
   // Get the answer for this specific question from our config-based mapping
-  let pageAnswer = getAnswerForQuestion(currentQuestion);
+  const pageAnswer = getAnswerForQuestion(currentQuestion);
   console.log(`  Answer from mapping: "${pageAnswer}"`);
   
   // Get all visible input fields

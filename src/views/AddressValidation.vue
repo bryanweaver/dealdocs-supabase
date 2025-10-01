@@ -25,7 +25,10 @@
               @blur="handleBlur"
               @focus="handleFocus"
             />
-            <small v-if="noResultsFound" class="text-red-500 text-sm">
+            <small
+              v-if="noResultsFound"
+              class="text-red-500 text-sm"
+            >
               No matching addresses found. Please try a different search.
             </small>
             <small
@@ -37,8 +40,11 @@
           </div>
 
           <!-- Loading indicator -->
-          <div v-if="isSearching" class="absolute right-3 top-3 text-gray-500">
-            <i class="pi pi-spin pi-spinner"></i>
+          <div
+            v-if="isSearching"
+            class="absolute right-3 top-3 text-gray-500"
+          >
+            <i class="pi pi-spin pi-spinner" />
           </div>
 
           <!-- Dropdown results that show as user types -->
@@ -69,10 +75,12 @@
         >
           <div class="flex items-start gap-3">
             <div class="text-primary">
-              <i class="pi pi-check-circle text-xl"></i>
+              <i class="pi pi-check-circle text-xl" />
             </div>
             <div>
-              <p class="font-medium">Selected Address:</p>
+              <p class="font-medium">
+                Selected Address:
+              </p>
               <p>
                 {{ verifiedAddress.streetLine }}
                 {{ verifiedAddress.secondary }}, {{ verifiedAddress.city }},
@@ -82,7 +90,10 @@
           </div>
         </div>
 
-        <div v-if="verifiedAddress" class="flex justify-center">
+        <div
+          v-if="verifiedAddress"
+          class="flex justify-center"
+        >
           <PrimeButton
             label="Fetch Property Details"
             class="p-button-primary w-full sm:w-auto"

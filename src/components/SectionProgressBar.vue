@@ -2,7 +2,9 @@
 <template>
   <Panel class="section-progress-bar">
     <div class="header">
-      <h3 class="title">{{ sectionTitle }}</h3>
+      <h3 class="title">
+        {{ sectionTitle }}
+      </h3>
       <span class="progress-text">{{ progressPercentage }}% Complete</span>
     </div>
 
@@ -18,7 +20,10 @@
     >
       All questions here are optional
     </p>
-    <p v-else class="completion-text">
+    <p
+      v-else
+      class="completion-text"
+    >
       <span class="completed">{{ completedQuestions }}</span> out of
       <span class="total">{{ totalQuestions }}</span> questions completed
     </p>

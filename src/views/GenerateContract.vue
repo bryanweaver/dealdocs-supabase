@@ -1,7 +1,13 @@
 <template>
   <!-- Loading indicator -->
-  <div v-if="isLoadingContract" class="flex items-center justify-center p-6">
-    <i class="pi pi-spin pi-spinner text-4xl" style="color: var(--primary-color)"></i>
+  <div
+    v-if="isLoadingContract"
+    class="flex items-center justify-center p-6"
+  >
+    <i
+      class="pi pi-spin pi-spinner text-4xl"
+      style="color: var(--primary-color)"
+    />
     <span class="ml-3 text-lg">Loading contract data...</span>
   </div>
 
@@ -37,9 +43,18 @@
         </div>
       </div>
     </template>
-    <Column field="createdAt" header="Created At"></Column>
-    <Column field="signerName" header="Signer"></Column>
-    <Column field="signerStatus" header="Status">
+    <Column
+      field="createdAt"
+      header="Created At"
+    />
+    <Column
+      field="signerName"
+      header="Signer"
+    />
+    <Column
+      field="signerStatus"
+      header="Status"
+    >
       <template #body="slotProps">
         <Tag :status="slotProps.data.signerStatus" />
       </template>
@@ -67,7 +82,10 @@
     :modal="true"
   >
     <div class="flex items-center justify-center">
-      <i class="pi pi-exclamation-triangle mr-4" style="font-size: 2rem" />
+      <i
+        class="pi pi-exclamation-triangle mr-4"
+        style="font-size: 2rem"
+      />
       <span>Are you sure you want to proceed?</span>
     </div>
     <template #footer>
@@ -96,17 +114,24 @@
     :style="{ width: '600px' }"
     :modal="true"
   >
-    <div v-if="selectedPacketDocuments.length > 0" class="space-y-3">
+    <div
+      v-if="selectedPacketDocuments.length > 0"
+      class="space-y-3"
+    >
       <div
         v-for="doc in selectedPacketDocuments"
         :key="doc.fileName"
         class="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
       >
         <div class="flex items-center gap-3">
-          <i class="pi pi-file-pdf text-2xl text-red-600"></i>
+          <i class="pi pi-file-pdf text-2xl text-red-600" />
           <div>
-            <p class="font-semibold">{{ formatDocumentName(doc.fileName) }}</p>
-            <p class="text-sm text-gray-500">{{ doc.type === 'signed' ? 'Signed Document' : 'Generated Document' }}</p>
+            <p class="font-semibold">
+              {{ formatDocumentName(doc.fileName) }}
+            </p>
+            <p class="text-sm text-gray-500">
+              {{ doc.type === 'signed' ? 'Signed Document' : 'Generated Document' }}
+            </p>
           </div>
         </div>
         <PrimeButton
@@ -117,13 +142,21 @@
         />
       </div>
     </div>
-    <div v-else class="text-center py-8">
-      <i class="pi pi-inbox text-4xl text-gray-400 mb-3"></i>
-      <p class="text-gray-500">No documents available yet</p>
+    <div
+      v-else
+      class="text-center py-8"
+    >
+      <i class="pi pi-inbox text-4xl text-gray-400 mb-3" />
+      <p class="text-gray-500">
+        No documents available yet
+      </p>
     </div>
   </Dialog>
 
-  <div v-if="!isLoadingContract" class="mt-4 flex justify-center">
+  <div
+    v-if="!isLoadingContract"
+    class="mt-4 flex justify-center"
+  >
     <SignContract
       label="Generate New Contract"
       size="large"

@@ -204,7 +204,7 @@ onMounted(async () => {
           src="@/assets/docudeals_logo_v1.png" 
           alt="DealDocs Logo" 
           class="mx-auto h-24 w-auto mb-6"
-        />
+        >
         <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
           {{ isSignUp ? 'Create your account' : 'Sign in to your account' }}
         </h2>
@@ -215,34 +215,62 @@ onMounted(async () => {
       
       <Card class="w-full relative">
         <!-- Loading Overlay -->
-        <div v-if="isLoading && loadingMessage" class="absolute inset-0 bg-white/95 rounded-lg flex items-center justify-center z-50">
+        <div
+          v-if="isLoading && loadingMessage"
+          class="absolute inset-0 bg-white/95 rounded-lg flex items-center justify-center z-50"
+        >
           <div class="text-center px-8 py-12">
-            <i class="pi pi-spin pi-spinner text-4xl mb-4" style="color: var(--primary-color)"></i>
-            <p class="text-lg font-semibold text-gray-800">{{ loadingMessage }}</p>
+            <i
+              class="pi pi-spin pi-spinner text-4xl mb-4"
+              style="color: var(--primary-color)"
+            />
+            <p class="text-lg font-semibold text-gray-800">
+              {{ loadingMessage }}
+            </p>
           </div>
         </div>
 
         <template #content>
-          <form class="space-y-6" @submit.prevent="handleAuth">
-
+          <form
+            class="space-y-6"
+            @submit.prevent="handleAuth"
+          >
             <!-- Error Message -->
-            <Message v-if="error" severity="error" :closable="false">
+            <Message
+              v-if="error"
+              severity="error"
+              :closable="false"
+            >
               {{ error }}
             </Message>
 
             <!-- Success Message -->
-            <Message v-if="message" severity="success" :closable="false">
+            <Message
+              v-if="message"
+              severity="success"
+              :closable="false"
+            >
               {{ message }}
             </Message>
             
             <!-- Full Name (Sign Up only) -->
-            <div v-if="isSignUp" class="flex flex-col gap-2">
+            <div
+              v-if="isSignUp"
+              class="flex flex-col gap-2"
+            >
               <div class="flex items-center gap-2">
-                <label for="fullName" class="text-sm font-medium text-gray-700">Full Name</label>
+                <label
+                  for="fullName"
+                  class="text-sm font-medium text-gray-700"
+                >Full Name</label>
                 <TooltipPopover id="signup-fullname">
                   <div class="p-2 max-w-xs">
-                    <p class="font-semibold mb-1">Important Notice</p>
-                    <p class="text-sm">This name will be used on all contracts you create and cannot be changed after account creation. This ensures contract integrity and prevents unauthorized use of the platform.</p>
+                    <p class="font-semibold mb-1">
+                      Important Notice
+                    </p>
+                    <p class="text-sm">
+                      This name will be used on all contracts you create and cannot be changed after account creation. This ensures contract integrity and prevents unauthorized use of the platform.
+                    </p>
                   </div>
                 </TooltipPopover>
               </div>
@@ -256,8 +284,14 @@ onMounted(async () => {
             </div>
             
             <!-- Company (Sign Up only) -->
-            <div v-if="isSignUp" class="flex flex-col gap-2">
-              <label for="company" class="text-sm font-medium text-gray-700">Company (Optional)</label>
+            <div
+              v-if="isSignUp"
+              class="flex flex-col gap-2"
+            >
+              <label
+                for="company"
+                class="text-sm font-medium text-gray-700"
+              >Company (Optional)</label>
               <InputText
                 id="company"
                 v-model="formData.company"
@@ -268,7 +302,10 @@ onMounted(async () => {
             
             <!-- Email -->
             <div class="flex flex-col gap-2">
-              <label for="email" class="text-sm font-medium text-gray-700">Email Address</label>
+              <label
+                for="email"
+                class="text-sm font-medium text-gray-700"
+              >Email Address</label>
               <InputText
                 id="email"
                 v-model="formData.email"
@@ -280,7 +317,10 @@ onMounted(async () => {
             
             <!-- Password -->
             <div class="flex flex-col gap-2">
-              <label for="password" class="text-sm font-medium text-gray-700">Password</label>
+              <label
+                for="password"
+                class="text-sm font-medium text-gray-700"
+              >Password</label>
               <Password
                 id="password"
                 v-model="formData.password"
@@ -292,8 +332,14 @@ onMounted(async () => {
             </div>
             
             <!-- Confirm Password (Sign Up only) -->
-            <div v-if="isSignUp" class="flex flex-col gap-2">
-              <label for="confirmPassword" class="text-sm font-medium text-gray-700">Confirm Password</label>
+            <div
+              v-if="isSignUp"
+              class="flex flex-col gap-2"
+            >
+              <label
+                for="confirmPassword"
+                class="text-sm font-medium text-gray-700"
+              >Confirm Password</label>
               <Password
                 id="confirmPassword"
                 v-model="formData.confirmPassword"
@@ -327,7 +373,10 @@ onMounted(async () => {
             </div>
             
             <!-- Password Reset (Sign In only) -->
-            <div v-if="!isSignUp" class="text-center">
+            <div
+              v-if="!isSignUp"
+              class="text-center"
+            >
               <Button
                 label="Forgot your password?"
                 link

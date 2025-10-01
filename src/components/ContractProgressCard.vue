@@ -3,11 +3,9 @@
     <div class="flex flex-col md:flex-row justify-between items-center gap-4">
       <div class="stats-container">
         <div class="stat-item">
-          <i class="pi pi-check-circle text-green-500 text-2xl"></i>
+          <i class="pi pi-check-circle text-green-500 text-2xl" />
           <div class="stat-details">
-            <span class="stat-number"
-              >{{ completedSections }}/{{ totalSections }}</span
-            >
+            <span class="stat-number">{{ completedSections }}/{{ totalSections }}</span>
             <span class="stat-label">Sections Complete</span>
           </div>
         </div>
@@ -15,7 +13,7 @@
           <div
             class="progress-fill"
             :style="{ width: `${(completedSections / totalSections) * 100}%` }"
-          ></div>
+          />
         </div>
       </div>
     </div>
