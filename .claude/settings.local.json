@@ -91,7 +91,8 @@
       "Bash(npm run test:auth:*)",
       "Bash(dir:*)",
       "Bash(npx cucumber-js:*)",
-      "Bash(where cucumber-js)"
+      "Bash(where cucumber-js)",
+      "Bash(git show-branch:*)"
     ],
     "deny": [],
     "ask": [],
