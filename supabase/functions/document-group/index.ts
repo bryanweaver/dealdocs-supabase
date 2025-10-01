@@ -304,9 +304,14 @@ serve(async (req) => {
           fileName: doc.fileName
         }))
 
-        // Merge with existing document_urls if any (keep generated docs)
+        // Merge with existing document_urls
+        // Note: When multiple signers sign sequentially, Anvil updates the same documents
+        // with additional signatures, so we replace signed docs with the latest version
+        // but keep generated docs (pre-signature versions)
         const existingDocUrls = etchPackets.document_urls || []
         const generatedDocs = existingDocUrls.filter(doc => doc.type === 'generated')
+
+        // Replace signed docs with latest versions (which contain all signatures)
         const allDocUrls = [...generatedDocs, ...signedDocumentUrls]
 
         await supabase
