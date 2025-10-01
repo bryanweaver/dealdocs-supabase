@@ -45,13 +45,15 @@
             @etch-packet-created="fetchEtchPackets"
             @etch-packet-updated="fetchEtchPackets"
           />
-          <PrimeButton
-            v-if="slotProps.data.signerStatus === 'completed'"
-            class="p-button-success p-button-sm"
-            icon="pi pi-file-pdf"
-            label="View Documents"
-            @click="toggleDocumentList(slotProps.data.etchPacketEid)"
-          />
+          <div v-if="slotProps.data.signerStatus === 'completed'" class="flex justify-end">
+            <PrimeButton
+              class="p-button-info p-button-sm"
+              icon="pi pi-file-pdf"
+              label="View Documents"
+              severity="info"
+              @click="toggleDocumentList(slotProps.data.etchPacketEid)"
+            />
+          </div>
         </div>
       </template>
     </Column>
@@ -561,6 +563,9 @@ export default {
     const toggleDocumentList = async (etchPacketEid) => {
       console.log('toggleDocumentList called with:', etchPacketEid);
 
+      // Always fetch the latest packet data to ensure we have current document_urls
+      await fetchEtchPackets();
+
       // Fetch documents for this packet
       const packet = dbEtchPackets.value.find(p => p.etch_packet_id === etchPacketEid);
       console.log('Found packet:', packet);
@@ -594,7 +599,7 @@ export default {
           });
         }
       } else {
-        // Fetch documents from storage or Anvil
+        // Fetch documents from storage or Anvil - this will populate document_urls
         await viewSignedDocument({ etchPacketEid, signerStatus: 'completed' });
       }
     };
