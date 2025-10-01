@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -73,24 +72,8 @@ serve(async (req) => {
 
     console.log("Sending email to:", emailData.agentEmail)
 
-    // Send email via SMTP to Inbucket (local development)
+    // Send email via Mailpit API (local development)
     try {
-      const client = new SmtpClient()
-
-      // Connect to Inbucket SMTP server (no authentication required for local)
-      await client.connectTLS({
-        hostname: "host.docker.internal", // Use this to connect from Docker to host
-        port: 54325, // Inbucket SMTP port
-        username: "", // No auth needed for Inbucket
-        password: "",
-      }).catch(async () => {
-        // If TLS fails, try plain connection
-        await client.connect({
-          hostname: "host.docker.internal",
-          port: 54325,
-        })
-      })
-
       // Prepare email content
       let emailContent = `
         <html>
@@ -111,20 +94,34 @@ serve(async (req) => {
         </html>
       `
 
-      // Send email
-      await client.send({
-        from: "noreply@dealdocs.local",
-        to: emailData.agentEmail,
-        subject: emailData.subject,
-        content: emailContent,
-        html: emailContent,
+      // Send to Mailpit via JSON API
+      const mailpitResponse = await fetch('http://supabase_inbucket_dealdocs-supabase:8025/api/v1/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: {
+            email: "noreply@dealdocs.local",
+            name: "DealDocs"
+          },
+          to: [{
+            email: emailData.agentEmail,
+            name: emailData.agentName || ""
+          }],
+          subject: emailData.subject,
+          html: emailContent,
+        }),
       })
 
-      await client.close()
-      console.log("Email sent successfully via Inbucket")
-    } catch (smtpError) {
-      console.error("SMTP Error:", smtpError)
-      // Don't fail the whole operation if SMTP fails in dev
+      if (!mailpitResponse.ok) {
+        throw new Error(`Mailpit API error: ${mailpitResponse.status} ${await mailpitResponse.text()}`)
+      }
+
+      console.log("Email sent successfully via Mailpit")
+    } catch (emailError) {
+      console.error("Email sending error:", emailError)
+      // Don't fail the whole operation if email fails in dev
       console.log("Email sending failed but continuing (dev mode)")
     }
 

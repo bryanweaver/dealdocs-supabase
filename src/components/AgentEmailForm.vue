@@ -171,7 +171,7 @@ export default defineComponent({
           earnestFile: otherFiles["earnest"] || "",
           optionFile: otherFiles["optionfee"] || "",
           subject: `Contract Package for ${streetAddress}`,
-          body: `Please find attached the contract package for ${streetAddress}. ${comments.value}`,
+          body: `Please find attached the contract package for ${streetAddress}.`,
         };
 
         console.log("Email payload:", emailPayload);
