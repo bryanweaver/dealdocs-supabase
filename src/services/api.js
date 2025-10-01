@@ -28,7 +28,6 @@ export const ContractAPI = {
     // Create listing agent first if we have data
     let listing_agent_id = null
     if (listing_agent_data) {
-      console.log('ContractAPI.create - creating listing agent:', listing_agent_data)
 
       const { data: agentData, error: agentError } = await supabase
         .from('listing_agents')
@@ -68,7 +67,6 @@ export const ContractAPI = {
       if (agentError) {
         console.error('Failed to create listing agent:', agentError)
       } else {
-        console.log('Created listing agent:', agentData)
         listing_agent_id = agentData.id
       }
     }
@@ -107,7 +105,6 @@ export const ContractAPI = {
     if (fetchError) {
       // If contract doesn't exist, try to create it instead
       if (fetchError.code === 'PGRST116') {
-        console.log('Contract not found, creating new contract instead of updating non-existent ID:', id);
 
         // Extract the user from the session
         const user = await getUser();
@@ -161,7 +158,6 @@ export const ContractAPI = {
           if (agentError) {
             console.error('Failed to create listing agent during contract creation:', agentError);
           } else {
-            console.log('Created listing agent during contract creation:', agentData);
             listing_agent_id = agentData.id;
           }
         }
@@ -196,14 +192,6 @@ export const ContractAPI = {
       throw fetchError;
     }
     
-    console.log('ContractAPI.update - existing JSONB columns:', {
-      property_info: existingContract.property_info,
-      parties: existingContract.parties,
-      financial_details: existingContract.financial_details,
-      title_closing: existingContract.title_closing,
-      legal_sections: existingContract.legal_sections,
-      additional_info: existingContract.additional_info
-    });
 
     // Check if data is already transformed (has property_info or parties instead of property/buyers/sellers)
     const isAlreadyTransformed = 'property_info' in updates || 'parties' in updates
@@ -269,9 +257,6 @@ export const ContractAPI = {
     // Handle listing agent data separately if present
     let listing_agent_id = existingContract.listing_agent_id;
     if (listing_agent_data) {
-      console.log('ContractAPI.update - processing listing agent data:', listing_agent_data);
-      console.log('ContractAPI.update - hasListingAgentInfo value:', listing_agent_data.hasListingAgentInfo);
-
       // Convert camelCase to snake_case for database
       const agentDataForDb = {
         has_listing_agent_info: listing_agent_data.hasListingAgentInfo || false,
@@ -303,8 +288,6 @@ export const ContractAPI = {
         updated_at: new Date().toISOString()
       };
 
-      console.log('ContractAPI.update - agent data for database:', agentDataForDb);
-
       if (listing_agent_id) {
         // Update existing listing agent
         const { data: agentData, error: agentError } = await supabase
@@ -316,8 +299,6 @@ export const ContractAPI = {
 
         if (agentError) {
           console.error('Failed to update listing agent:', agentError);
-        } else {
-          console.log('Updated listing agent:', agentData);
         }
       } else {
         // Create new listing agent
@@ -333,7 +314,6 @@ export const ContractAPI = {
         if (agentError) {
           console.error('Failed to create listing agent:', agentError);
         } else {
-          console.log('Created listing agent:', agentData);
           listing_agent_id = agentData.id;
         }
       }
@@ -348,10 +328,6 @@ export const ContractAPI = {
       ...(listing_agent_id && { listing_agent_id })
     };
 
-    console.log('ContractAPI.update - final merged update:', finalUpdate);
-    console.log('ContractAPI.update - marked_questions in final:', finalUpdate.marked_questions);
-    console.log('ContractAPI.update - finalUpdate.parties:', JSON.stringify(finalUpdate.parties, null, 2));
-
     const { data, error } = await supabase
       .from('contracts')
       .update(finalUpdate)
@@ -359,9 +335,6 @@ export const ContractAPI = {
       .select()
       .single();
 
-    console.log('ContractAPI.update - Supabase response data:', JSON.stringify(data, null, 2));
-    console.log('ContractAPI.update - Supabase response error:', error);
-    
     if (error) throw error
     return data
   },
@@ -382,7 +355,6 @@ export const ContractAPI = {
     if (error) throw error
 
     // Log the raw data structure for debugging
-    console.log('Raw contract data from Supabase:', data)
 
     // Add listing agent data to the contract for transformation
     if (data.listing_agents) {
@@ -392,8 +364,6 @@ export const ContractAPI = {
 
     // Normalize the contract data for consistent field mapping
     const normalizedData = normalizeContractData(data)
-    console.log('Normalized contract data:', normalizedData)
-    console.log('Listing agent data:', normalizedData.listingAgent)
 
     return normalizedData
   },
@@ -425,7 +395,6 @@ export const ContractAPI = {
     }
 
     const result = await dbQuery(query);
-    console.log('ContractAPI.list - raw contracts from database:', result);
 
     // Normalize each contract in the list to ensure proper data transformation
     const normalizedResult = result.map(contract => {
@@ -438,11 +407,6 @@ export const ContractAPI = {
       // Normalize the contract data for consistent field mapping
       return normalizeContractData(contract);
     });
-
-    console.log('ContractAPI.list - normalized contracts:', normalizedResult);
-    if (normalizedResult && normalizedResult.length > 0) {
-      console.log('First normalized contract:', normalizedResult[0]);
-    }
 
     return normalizedResult
   },
@@ -719,10 +683,6 @@ export const StorageAPI = {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       // Handle both http and https
       const publicUrl = data.signedUrl.replace(/https?:\/\/kong:8000/g, supabaseUrl)
-      console.log('Fixed kong:8000 URL in StorageAPI.getSignedUrl:', {
-        original: data.signedUrl.substring(0, 60) + '...',
-        fixed: publicUrl.substring(0, 60) + '...'
-      })
       return publicUrl
     }
     
@@ -823,7 +783,6 @@ export const EtchAPI = {
   },
 
   async delete(id) {
-    console.log('EtchAPI.delete - Attempting to delete etch packet with ID:', id);
     
     const { data, error } = await supabase
       .from('etch_packets')
@@ -831,7 +790,6 @@ export const EtchAPI = {
       .eq('id', id)
       .select() // Add select to see what was deleted
     
-    console.log('EtchAPI.delete - Delete result:', { data, error });
     
     if (error) {
       console.error('EtchAPI.delete - Error:', error);
@@ -844,7 +802,6 @@ export const EtchAPI = {
       throw new Error('No rows were deleted. You may not have permission to delete this etch packet.');
     }
     
-    console.log('EtchAPI.delete - Successfully deleted:', data);
     return true
   }
 }

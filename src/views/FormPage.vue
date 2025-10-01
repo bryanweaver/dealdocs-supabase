@@ -632,8 +632,6 @@ export default {
     },
   },
   async created() {
-    console.log('🟢 FormPage.vue created() - component is loading');
-    console.log('🟢 Methods available:', Object.keys(this.$options.methods || {}));
     this.sectionIndex = this.formDataKeys.indexOf(this.sectionId);
     this.updateFormData();
     
@@ -668,9 +666,6 @@ export default {
   },
   methods: {
     updateFormData() {
-      console.log(`[FormPage] updateFormData called for section: ${this.sectionId}`);
-      console.log(`[FormPage] Store formData for ${this.sectionId}:`, this.$store.state.formData[this.sectionId]);
-
       // Clear formData
       Object.keys(this.formData).forEach((key) => {
         delete this.formData[key];
@@ -685,9 +680,6 @@ export default {
         this.$store.state.formData[this.sectionId] || {},
       );
       Object.assign(this.inputValues, this.formData);
-
-      console.log(`[FormPage] After update - formData:`, this.formData);
-      console.log(`[FormPage] After update - inputValues:`, this.inputValues);
 
       this.questions = getQuestionsForSection(this.sectionId);
       this.section = this.questions[0]?.section || "";
@@ -724,16 +716,12 @@ export default {
 
       // Debug logging for critical fields
       if (question.fieldId === 'hasListingAgentInfo' || question.fieldId === 'primaryName' || question.fieldId === 'secondaryName') {
-        console.log(`Setting ${question.fieldId} to:`, value);
-        console.log('Value type:', typeof value);
-        console.log('Current inputValues before update:', {...this.inputValues});
       }
 
       this.inputValues[question.fieldId] = formattedValue;
 
       // Log after setting
       if (question.fieldId === 'primaryName' || question.fieldId === 'secondaryName') {
-        console.log(`After setting ${question.fieldId}, inputValues:`, {...this.inputValues});
       }
 
       // Update the store's formData
@@ -745,8 +733,6 @@ export default {
 
       // Debug log the store update for boolean fields
       if (question.fieldId === 'hasListingAgentInfo') {
-        console.log('Store updated with hasListingAgentInfo:', formattedValue);
-        console.log('Current store value:', this.$store.state.formData.listingAgent?.hasListingAgentInfo);
       }
 
       const isRequired = this.isFieldRequired(question);
@@ -794,14 +780,11 @@ export default {
       });
     },
     handleNextButtonClick(event) {
-      console.log('🔴 NEXT BUTTON CLICKED!', event);
-      console.log('🔴 Current section:', this.sectionId);
       event.preventDefault();
       this.submitFormAndLoadNextSection();
     },
     async saveCurrentSection() {
       try {
-        console.log(`[FormPage SAVE] ========== saveCurrentSection() CALLED for ${this.sectionId} ==========`);
 
         // Extract save logic into reusable function
         const markedFields = this.$store.state.markedQuestions[this.sectionId] || [];
@@ -814,8 +797,6 @@ export default {
           }
         });
 
-        console.log(`[FormPage SAVE] Saving section: ${this.sectionId}`);
-        console.log(`[FormPage SAVE] Data to save:`, JSON.stringify(dataToSave, null, 2));
 
         // Update the store's formData with non-marked fields only
         this.$store.commit("updateSectionFormData", {
@@ -831,8 +812,6 @@ export default {
         // Special handling for sections that share JSONB columns
         // When saving sellers, also include buyers data (both go to 'parties' column)
         if (this.sectionId === 'sellers') {
-          console.log('[FormPage SAVE] Saving sellers section');
-          console.log('[FormPage SAVE] dataToSave for sellers:', dataToSave);
           sectionUpdate.buyers = this.$store.state.formData.buyers || {};
         }
         // When saving buyers, also include sellers data (both go to 'parties' column)
@@ -850,7 +829,6 @@ export default {
         }
         // When saving listing agent, include other additional_info sections
         else if (this.sectionId === 'listingAgent') {
-          console.log('[FormPage SAVE] Saving listingAgent section with data:', dataToSave);
           const additionalSections = ['propertyCondition', 'brokerDisclosure', 'possession'];
           additionalSections.forEach(section => {
             if (this.$store.state.formData[section]) {
@@ -886,33 +864,26 @@ export default {
           });
         }
 
-        console.log('Section update being sent:', sectionUpdate);
 
         // Use the field mapping utilities to create the proper payload
         const updatePayload = createContractPayload(sectionUpdate, {
           markedQuestions: this.$store.state.markedQuestions
         });
 
-        console.log('Updating contract with payload:', updatePayload);
 
         // Update the contract using Supabase API
         const response = await ContractAPI.update(this.$store.state.contractId, updatePayload);
-        console.log("Contract updated:", response);
 
         // If a new contract was created (because the old one didn't exist), update the store
         if (response.id !== this.$store.state.contractId) {
-          console.log("New contract created with ID:", response.id);
           this.$store.commit("setContractId", response.id);
         }
-
-        console.log("Contract update response:", response);
       } catch (error) {
         console.error('[FormPage SAVE] ERROR in saveCurrentSection:', error);
         throw error;
       }
     },
     async submitFormAndLoadNextSection() {
-      console.log(`[FormPage SAVE] ========== SAVE TRIGGERED FOR SECTION: ${this.sectionId} ==========`);
       this.isSaving = true;
 
       try {
@@ -926,7 +897,6 @@ export default {
           });
         } else {
           // All form sections completed - navigate to the contract dashboard
-          console.log("All form sections completed. Navigating to dashboard.");
           this.$router.push({
             name: "ContractDashboard",
             params: { id: this.$store.state.contractId },

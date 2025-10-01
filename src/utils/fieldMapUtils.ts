@@ -125,7 +125,6 @@ export function transformVuexDataForSupabase(vuexFormData: any): any {
 
       case 'sellers':
         // Transform sellers from form format to database format
-        console.log(`[fieldMapUtils] Transforming sellers data:`, fieldData);
         if (fieldData.primaryName) {
           supabaseData.parties.sellers = {
             seller1: {
@@ -143,10 +142,8 @@ export function transformVuexDataForSupabase(vuexFormData: any): any {
             };
           }
         } else {
-          console.log(`[fieldMapUtils] No primaryName for sellers, using fieldData as-is:`, fieldData);
           supabaseData.parties.sellers = fieldData;
         }
-        console.log(`[fieldMapUtils] Final parties.sellers:`, supabaseData.parties.sellers);
         break;
         
       // Financial details column
@@ -232,11 +229,9 @@ export function transformSupabaseDataForVuex(supabaseData: any): any {
         
       // Parties (buyers and sellers)
       case 'parties':
-        console.log('[fieldMapUtils] Loading parties from database:', fieldData);
         if (typeof fieldData === 'object') {
           // Transform sellers data from database format to form format
           if (fieldData.sellers) {
-            console.log('[fieldMapUtils] Loading sellers data:', fieldData.sellers);
             if (fieldData.sellers.seller1) {
               // Convert from {seller1: {name, email, phone}} to {primaryName, email, phone}
               vuexData.sellers = {
@@ -290,15 +285,12 @@ export function transformSupabaseDataForVuex(supabaseData: any): any {
         
       // Financial details
       case 'financial_details':
-        console.log('Loading financial_details from database:', fieldData);
         if (typeof fieldData === 'object') {
           // Check if it's stored as nested or flat
           if (fieldData.finance) {
-            console.log('Found nested finance data:', fieldData.finance);
             vuexData.finance = fieldData.finance;
           } else if (Object.keys(fieldData).length > 0) {
             // It's stored flat, so use it directly
-            console.log('Using flat financial_details as finance:', fieldData);
             vuexData.finance = fieldData;
           }
         }
@@ -469,10 +461,6 @@ export function createContractPayload(vuexFormData: any, additionalFields: any =
     payload.listing_agent_data = listing_agent_data;
   }
 
-  console.log('Final contract payload:', payload);
-  console.log('listing_agent_data in payload:', payload.listing_agent_data);
-  console.log('marked_questions in payload:', payload.marked_questions);
-  console.log('marked_questions type:', typeof payload.marked_questions, Array.isArray(payload.marked_questions));
 
   return payload;
 }
@@ -487,27 +475,20 @@ function formatMarkedQuestionsForDatabase(markedQuestions: any): string[] {
   const result: string[] = [];
   
   if (!markedQuestions || typeof markedQuestions !== 'object') {
-    console.log('formatMarkedQuestionsForDatabase - Invalid input:', markedQuestions);
     return result;
   }
   
-  console.log('formatMarkedQuestionsForDatabase - Input:', JSON.stringify(markedQuestions));
-  console.log('formatMarkedQuestionsForDatabase - Type:', typeof markedQuestions);
-  console.log('formatMarkedQuestionsForDatabase - Keys:', Object.keys(markedQuestions));
   
   // markedQuestions is an object like: { buyers: ['primaryName', 'phone'], sellers: ['name'] }
   Object.entries(markedQuestions).forEach(([sectionId, fieldIds]) => {
-    console.log(`Processing section ${sectionId}:`, fieldIds);
     if (Array.isArray(fieldIds) && fieldIds.length > 0) {
       fieldIds.forEach(fieldId => {
         const formatted = `${sectionId}.${fieldId}`;
-        console.log(`Adding: ${formatted}`);
         result.push(formatted);
       });
     }
   });
   
-  console.log('formatMarkedQuestionsForDatabase - Final result:', result);
   return result;
 }
 
