@@ -292,19 +292,26 @@ serve(async (req) => {
     // Get signing URL - for embedded signers, we need to generate it
     const signerData = signers.find(s => s.id === currentSigner)
     const anvilSigner = etchPacketData.documentGroup?.signers?.find(s => s.email === signerData?.email)
-    
+
     let signingUrl = null
     if (anvilSigner) {
-      // For embedded signers, we need to generate a signing URL
+      // Check if this is an embedded signer
+      const isEmbeddedSigner = signerData?.signerType === 'embedded'
       console.log('Anvil signer found:', anvilSigner)
-      
+      console.log('Is embedded signer:', isEmbeddedSigner)
+
       // We need to make another GraphQL call to generate the signing URL
-      const generateSignUrlMutation = `
+      // For embedded signers, we should use generateEmbedURL mutation
+      const generateSignUrlMutation = isEmbeddedSigner ? `
+        mutation GenerateEmbedURL($signerEid: String!, $clientUserId: String!) {
+          generateEmbedURL(signerEid: $signerEid, clientUserId: $clientUserId)
+        }
+      ` : `
         mutation GenerateEtchSignURL($signerEid: String!, $clientUserId: String!) {
           generateEtchSignURL(signerEid: $signerEid, clientUserId: $clientUserId)
         }
       `
-      
+
       const signUrlPayload = {
         query: generateSignUrlMutation,
         variables: {
@@ -312,9 +319,10 @@ serve(async (req) => {
           clientUserId: userIdFromAuth || userId // Use authenticated user ID if available, otherwise use the contract ID
         }
       }
-      
+
       console.log('Generating sign URL with payload:', JSON.stringify(signUrlPayload, null, 2))
-      
+      console.log('Using mutation:', isEmbeddedSigner ? 'generateEmbedURL' : 'generateEtchSignURL')
+
       const signUrlResponse = await fetch('https://graphql.useanvil.com', {
         method: 'POST',
         headers: {
@@ -323,14 +331,15 @@ serve(async (req) => {
         },
         body: JSON.stringify(signUrlPayload)
       })
-      
+
       if (signUrlResponse.ok) {
         const signUrlResult = await signUrlResponse.json()
         console.log('Sign URL response:', JSON.stringify(signUrlResult, null, 2))
-        
-        if (signUrlResult.data?.generateEtchSignURL) {
-          signingUrl = signUrlResult.data.generateEtchSignURL
-          console.log('Generated signing URL:', signingUrl)
+
+        const urlField = isEmbeddedSigner ? 'generateEmbedURL' : 'generateEtchSignURL'
+        if (signUrlResult.data?.[urlField]) {
+          signingUrl = signUrlResult.data[urlField]
+          console.log(`Generated ${isEmbeddedSigner ? 'embedded' : 'regular'} signing URL:`, signingUrl)
         }
       } else {
         console.error('Failed to generate sign URL:', await signUrlResponse.text())

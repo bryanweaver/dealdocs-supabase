@@ -181,18 +181,42 @@ export default {
     window.addEventListener("message", this.handleMessage);
     if (this.signingUrl) {
       this.isLoading = true;
-      // Detect CSP errors
-      this.detectCSPError();
+
+      // Monitor for CSP errors by checking console
+      const checkForCSPError = () => {
+        // Create a temporary iframe to test if CSP blocks it
+        const testFrame = document.createElement('iframe');
+        testFrame.style.display = 'none';
+        testFrame.src = this.signingUrl;
+
+        const errorHandler = () => {
+          console.log('EtchSignIFrame - CSP or loading error detected');
+          this.iframeError = true;
+          this.isLoading = false;
+          document.body.removeChild(testFrame);
+        };
+
+        testFrame.onerror = errorHandler;
+
+        // Also check after a short delay
+        setTimeout(() => {
+          if (testFrame.contentWindow === null) {
+            errorHandler();
+          } else {
+            document.body.removeChild(testFrame);
+          }
+        }, 100);
+
+        document.body.appendChild(testFrame);
+      };
 
       // Set a timeout to detect if iframe fails to load
       setTimeout(() => {
         if (this.isLoading && !this.iframeError) {
           console.warn('EtchSignIFrame - Iframe took too long to load, checking for CSP issues');
-          // Check if we're still loading after 5 seconds
-          this.iframeError = true;
-          this.isLoading = false;
+          checkForCSPError();
         }
-      }, 5000);
+      }, 3000);
     }
   },
   beforeUnmount() {
