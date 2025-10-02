@@ -166,9 +166,18 @@ export default defineComponent({
 
     // Track document upload status
     const hasUploadedDocuments = computed(() => {
-      const uploadedDocs = store.state.uploadedDocuments || {};
-      // Check if at least one document has been uploaded
-      return Object.keys(uploadedDocs).some(key => uploadedDocs[key]?.isUploaded);
+      const contractId = store.state.contractId;
+      if (!contractId) return false;
+
+      const contractDocs = store.state.uploadedDocuments?.[contractId] || {};
+      console.log('[ContractDashboard] Checking uploaded documents:', {
+        contractId,
+        contractDocs,
+        hasAnyDocs: Object.keys(contractDocs).length > 0,
+        uploadedDocs: Object.entries(contractDocs).filter(([key, doc]) => doc?.isUploaded === true)
+      });
+      // Check if at least one document has been uploaded for this contract
+      return Object.values(contractDocs).some(doc => doc?.isUploaded === true);
     });
 
     // Track contract generation status
@@ -212,6 +221,12 @@ export default defineComponent({
       const contractId = store.state.contractId;
       const folderPrefix = `accounts/${accountId}/contracts/${contractId}/`;
       const result = await StorageAPI.list(folderPrefix, 'contracts');
+
+      console.log('[ContractDashboard] fetchUploads - Storage results:', {
+        folderPrefix,
+        resultCount: result.length,
+        files: result.map(item => item.name)
+      });
 
       // Group documents by type based on path
       const documentsByType = result.reduce((acc, item) => {

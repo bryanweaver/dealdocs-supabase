@@ -34,12 +34,21 @@
       :dismissable-mask="true"
       :draggable="false"
       :resizable="false"
+      @show="onDialogShow"
+      @hide="onDialogHide"
     >
-      <EtchSignIFrame
-        :signing-url="signingUrl"
-        :current-signer="currentSigner"
-        @signer-complete="handleSignerComplete"
-      />
+      <template v-if="showIframeDialog && signingUrl">
+        <EtchSignIFrame
+          :signing-url="signingUrl"
+          :current-signer="currentSigner"
+          @signer-complete="handleSignerComplete"
+        />
+      </template>
+      <template v-else>
+        <div class="flex justify-center items-center h-96">
+          <p class="text-gray-500">Loading signing interface...</p>
+        </div>
+      </template>
     </Dialog>
   </div>
 </template>
@@ -48,6 +57,7 @@
 import { mapGetters } from "vuex";
 import EtchSignIFrame from "./EtchSignIFrame.vue";
 import PrimeButton from "primevue/button";
+import Dialog from "primevue/dialog";
 import {
   mapAll2017Fields,
   mapAllHOAAddendumFields,
@@ -77,6 +87,7 @@ export default {
   components: {
     PrimeButton,
     EtchSignIFrame,
+    Dialog,
   },
   props: {
     label: {
@@ -127,6 +138,17 @@ export default {
     // },
   },
   methods: {
+    onDialogShow() {
+      console.log('SignContract - Dialog shown, signingUrl:', this.signingUrl);
+      console.log('SignContract - Dialog visibility state:', {
+        showIframeDialog: this.showIframeDialog,
+        hasSigningUrl: !!this.signingUrl,
+        currentSigner: this.currentSigner
+      });
+    },
+    onDialogHide() {
+      console.log('SignContract - Dialog hidden');
+    },
     async handleSignerComplete({ event }) {
       console.log("Signer completed:", event.completedSignerEid);
 
@@ -260,6 +282,20 @@ export default {
 
         if (url && signer) {
           console.log('SignContract - Opening signing dialog with URL:', url);
+
+          // Check URL format
+          try {
+            const urlObj = new URL(url);
+            console.log('SignContract - URL validation:', {
+              hostname: urlObj.hostname,
+              pathname: urlObj.pathname,
+              protocol: urlObj.protocol,
+              isAnvilUrl: urlObj.hostname.includes('anvil'),
+            });
+          } catch (e) {
+            console.error('SignContract - Invalid URL format:', e);
+          }
+
           this.signingUrl = url;
           this.currentSigner = signer;
           this.showIframeDialog = true;
