@@ -27,28 +27,25 @@
     </div>
     <Dialog
       v-model:visible="showIframeDialog"
-      class="min-h-[200px]"
       :modal="true"
-      :position="'bottom'"
-      :style="{ width: '100%', height: '80%' }"
+      position="bottom"
+      :style="{ width: '90vw', height: '85vh', zIndex: 9999 }"
       :dismissable-mask="true"
       :draggable="false"
       :resizable="false"
+      :base-z-index="9000"
       @show="onDialogShow"
       @hide="onDialogHide"
     >
-      <template v-if="showIframeDialog && signingUrl">
-        <EtchSignIFrame
-          :signing-url="signingUrl"
-          :current-signer="currentSigner"
-          @signer-complete="handleSignerComplete"
-        />
-      </template>
-      <template v-else>
-        <div class="flex justify-center items-center h-96">
-          <p class="text-gray-500">Loading signing interface...</p>
-        </div>
-      </template>
+      <EtchSignIFrame
+        v-if="signingUrl"
+        :signing-url="signingUrl"
+        :current-signer="currentSigner"
+        @signer-complete="handleSignerComplete"
+      />
+      <div v-else class="flex justify-center items-center h-96">
+        <p class="text-gray-500">Loading signing interface...</p>
+      </div>
     </Dialog>
   </div>
 </template>
@@ -298,8 +295,16 @@ export default {
 
           this.signingUrl = url;
           this.currentSigner = signer;
-          this.showIframeDialog = true;
-          console.log('SignContract - Dialog should be visible now, showIframeDialog:', this.showIframeDialog);
+
+          // Force Vue to update before showing dialog
+          this.$nextTick(() => {
+            this.showIframeDialog = true;
+            console.log('SignContract - Dialog triggered:', {
+              showIframeDialog: this.showIframeDialog,
+              signingUrl: this.signingUrl,
+              currentSigner: this.currentSigner
+            });
+          });
         } else {
           console.error("Error: Missing signing URL or signer information", { url, signer, responseBody });
           // Show user-friendly error
