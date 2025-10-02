@@ -311,7 +311,6 @@ serve(async (req) => {
           mutation GenerateEmbedURL($type: String!, $eid: String!, $userEid: String) {
             generateEmbedURL(type: $type, eid: $eid, userEid: $userEid) {
               url
-              userEid
             }
           }
         `
