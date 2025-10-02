@@ -301,45 +301,24 @@ serve(async (req) => {
       console.log('Is embedded signer:', isEmbeddedSigner)
 
       // We need to make another GraphQL call to generate the signing URL
-      // For embedded signers, we should use generateEmbedURL mutation which has different parameters
-      let generateSignUrlMutation
-      let signUrlPayload
-
-      if (isEmbeddedSigner) {
-        // generateEmbedURL requires type and eid parameters
-        generateSignUrlMutation = `
-          mutation GenerateEmbedURL($type: String!, $eid: String!, $userEid: String) {
-            generateEmbedURL(type: $type, eid: $eid, userEid: $userEid) {
-              url
-            }
-          }
-        `
-        signUrlPayload = {
-          query: generateSignUrlMutation,
-          variables: {
-            type: 'etchSigner',
-            eid: anvilSigner.eid,
-            userEid: userIdFromAuth || userId // Optional user ID for tracking
-          }
+      // Both embedded and regular signers use generateEtchSignURL
+      // The difference is in how we create the signers in the etch packet
+      const generateSignUrlMutation = `
+        mutation GenerateEtchSignURL($signerEid: String!, $clientUserId: String!) {
+          generateEtchSignURL(signerEid: $signerEid, clientUserId: $clientUserId)
         }
-      } else {
-        // Regular sign URL for non-embedded signers
-        generateSignUrlMutation = `
-          mutation GenerateEtchSignURL($signerEid: String!, $clientUserId: String!) {
-            generateEtchSignURL(signerEid: $signerEid, clientUserId: $clientUserId)
-          }
-        `
-        signUrlPayload = {
-          query: generateSignUrlMutation,
-          variables: {
-            signerEid: anvilSigner.eid,
-            clientUserId: userIdFromAuth || userId // Use authenticated user ID if available, otherwise use the contract ID
-          }
+      `
+
+      const signUrlPayload = {
+        query: generateSignUrlMutation,
+        variables: {
+          signerEid: anvilSigner.eid,
+          clientUserId: userIdFromAuth || userId // Use authenticated user ID if available, otherwise use the contract ID
         }
       }
 
       console.log('Generating sign URL with payload:', JSON.stringify(signUrlPayload, null, 2))
-      console.log('Using mutation:', isEmbeddedSigner ? 'generateEmbedURL' : 'generateEtchSignURL')
+      console.log('For signer type:', isEmbeddedSigner ? 'embedded' : 'email')
 
       const signUrlResponse = await fetch('https://graphql.useanvil.com', {
         method: 'POST',
@@ -354,18 +333,10 @@ serve(async (req) => {
         const signUrlResult = await signUrlResponse.json()
         console.log('Sign URL response:', JSON.stringify(signUrlResult, null, 2))
 
-        if (isEmbeddedSigner) {
-          // For embedded signers, the URL is nested in the response object
-          if (signUrlResult.data?.generateEmbedURL?.url) {
-            signingUrl = signUrlResult.data.generateEmbedURL.url
-            console.log('Generated embedded signing URL:', signingUrl)
-          }
-        } else {
-          // For regular signers, the URL is returned directly
-          if (signUrlResult.data?.generateEtchSignURL) {
-            signingUrl = signUrlResult.data.generateEtchSignURL
-            console.log('Generated regular signing URL:', signingUrl)
-          }
+        // generateEtchSignURL returns the URL directly
+        if (signUrlResult.data?.generateEtchSignURL) {
+          signingUrl = signUrlResult.data.generateEtchSignURL
+          console.log(`Generated signing URL for ${isEmbeddedSigner ? 'embedded' : 'email'} signer:`, signingUrl)
         }
       } else {
         console.error('Failed to generate sign URL:', await signUrlResponse.text())
