@@ -32,7 +32,14 @@ const checkAndHandleSessionExpiry = () => {
 };
 
 const handleSignOut = async () => {
+  // Clear all persisted data
   localStorage.removeItem("loginTimestamp");
+  localStorage.removeItem("contractId");
+  localStorage.removeItem("dealdocs-vuex"); // Clear Vuex persisted state
+
+  // Reset store before signing out
+  store.commit("resetStore");
+
   await AuthService.signOut();
   isAuthenticated.value = false;
   window.location.href = "/#/auth"; // Force reload to auth page

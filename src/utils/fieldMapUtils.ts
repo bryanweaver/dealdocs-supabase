@@ -166,6 +166,7 @@ export function transformVuexDataForSupabase(vuexFormData: any): any {
       case 'buyerProvisions':
       case 'buyerNotices':
       case 'buyerAttorney':
+        console.log(`[fieldMapUtils] Mapping ${vuexFieldName} to legal_sections:`, fieldData);
         supabaseData.legal_sections[vuexFieldName] = fieldData;
         break;
         
@@ -197,11 +198,20 @@ export function transformVuexDataForSupabase(vuexFormData: any): any {
     }
   });
 
-  // Clean up empty JSONB objects
+  // Clean up empty JSONB objects - but keep the main JSONB columns even if empty
+  // This ensures the database can properly merge the data
+  const jsonbColumns = ['property_info', 'parties', 'financial_details', 'title_closing', 'legal_sections', 'additional_info'];
   Object.keys(supabaseData).forEach(key => {
-    if (typeof supabaseData[key] === 'object' && Object.keys(supabaseData[key]).length === 0) {
+    if (!jsonbColumns.includes(key) && typeof supabaseData[key] === 'object' && Object.keys(supabaseData[key]).length === 0) {
       delete supabaseData[key];
     }
+  });
+
+  // Debug log the final transformation
+  console.log('[fieldMapUtils] Final transformed data for Supabase:', {
+    has_legal_sections: Object.keys(supabaseData.legal_sections).length > 0,
+    legal_sections_keys: Object.keys(supabaseData.legal_sections),
+    legal_sections: supabaseData.legal_sections
   });
 
   return supabaseData;

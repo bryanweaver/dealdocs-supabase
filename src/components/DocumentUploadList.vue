@@ -7,36 +7,45 @@
       <DataTable
         :value="uploads"
         responsive-layout="scroll"
+        class="document-upload-table"
       >
         <Column
           field="date"
           header="Date"
+          :style="{ width: '20%' }"
         />
         <Column
           field="name"
           header="Name"
+          :style="{ width: '40%' }"
         />
         <Column
           field="filetype"
           header="Type"
+          :style="{ width: '10%' }"
         >
           <template #body="slotProps">
-            <span
-              class="p-2 fiv-viv fiv-size-lg"
-              :class="`fiv-icon-${slotProps.data.filetype}`"
-            />
+            <div class="flex justify-start">
+              <span
+                class="p-2 fiv-viv fiv-size-lg"
+                :class="`fiv-icon-${slotProps.data.filetype}`"
+              />
+            </div>
           </template>
         </Column>
-        <Column header="Actions">
+        <Column
+          header="Actions"
+          :style="{ width: '30%' }"
+        >
           <template #body="slotProps">
-            <div class="flex justify-center space-x-4">
+            <div class="flex justify-start space-x-2">
               <PrimeButton
-                class="p-button-primary"
-                label="Open"
+                class="p-button-primary p-button-sm"
+                label="View"
                 @click="openUpload(slotProps.data.key)"
               />
               <PrimeButton
-                class="p-button-danger"
+                class="p-button-danger p-button-sm"
                 label="Delete"
                 @click="confirmDelete(slotProps.data.key)"
               />
@@ -127,6 +136,45 @@
         />
       </template>
     </PrimeDialog>
+
+    <!-- Document Viewer Dialog -->
+    <PrimeDialog
+      v-model:visible="showDocumentViewer"
+      :header="currentDocumentName"
+      :style="{ width: '90vw', height: '90vh' }"
+      :modal="true"
+      :maximizable="true"
+      :dismissableMask="true"
+    >
+      <div class="document-viewer-container">
+        <div v-if="documentLoading" class="flex justify-center items-center h-full">
+          <i class="pi pi-spinner pi-spin" style="font-size: 3rem" />
+        </div>
+        <iframe
+          v-else-if="currentDocumentUrl"
+          :key="currentDocumentKey + '_' + Date.now()"
+          :src="currentDocumentUrl"
+          class="w-full h-full"
+          style="min-height: 70vh; border: none;"
+        />
+        <div v-else class="flex justify-center items-center h-full">
+          <p>Unable to load document</p>
+        </div>
+      </div>
+      <template #footer>
+        <PrimeButton
+          label="Download"
+          icon="pi pi-download"
+          class="p-button-secondary"
+          @click="downloadDocument"
+        />
+        <PrimeButton
+          label="Close"
+          icon="pi pi-times"
+          @click="closeDocumentViewer"
+        />
+      </template>
+    </PrimeDialog>
     <Toast />
   </div>
 </template>
@@ -168,11 +216,23 @@ export default defineComponent({
     const pendingDeleteKey = ref(null);
     const toast = useToast();
 
+    // Document viewer state
+    const showDocumentViewer = ref(false);
+    const currentDocumentUrl = ref(null);
+    const currentDocumentName = ref('');
+    const currentDocumentKey = ref(null);
+    const documentLoading = ref(false);
+
     return {
       uploadProgress,
       showDeleteDialog,
       pendingDeleteKey,
       toast,
+      showDocumentViewer,
+      currentDocumentUrl,
+      currentDocumentName,
+      currentDocumentKey,
+      documentLoading,
     };
   },
   data() {
@@ -342,11 +402,40 @@ export default defineComponent({
     },
     async openUpload(uploadKey) {
       try {
-        // Get signed URL for private bucket access
+        // Close any existing viewer first to ensure clean state
+        if (this.showDocumentViewer) {
+          this.closeDocumentViewer();
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+
+        // Reset state before opening
+        this.currentDocumentUrl = null;
+        this.currentDocumentName = '';
+        this.currentDocumentKey = null;
+        this.documentLoading = true;
+
+        // Find the document name from uploads
+        const doc = this.uploads.find(u => u.key === uploadKey);
+        this.currentDocumentName = doc ? doc.name : 'Document';
+        this.currentDocumentKey = uploadKey;
+
+        // Show dialog after setting initial state
+        this.showDocumentViewer = true;
+
+        // Small delay to ensure dialog is rendered
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Get a fresh signed URL for the document
         const signedUrl = await StorageAPI.getSignedUrl(uploadKey, 'contracts', 3600);
-        window.open(signedUrl, "_blank");
+
+        // Set the URL and stop loading
+        this.currentDocumentUrl = signedUrl;
+        this.documentLoading = false;
       } catch (error) {
         console.error('Error getting signed URL:', error);
+        this.documentLoading = false;
+        this.showDocumentViewer = false;
+        this.currentDocumentUrl = null;
         this.$toast.add({
           severity: 'error',
           summary: 'Access Error',
@@ -376,6 +465,55 @@ export default defineComponent({
         contractId: this.contractId,
         documentType: this.documentType
       });
+    },
+    // Document viewer methods
+    closeDocumentViewer() {
+      this.showDocumentViewer = false;
+      // Reset all state when closing
+      this.currentDocumentUrl = null;
+      this.currentDocumentName = '';
+      this.currentDocumentKey = null;
+      this.documentLoading = false;
+    },
+    async downloadDocument() {
+      if (this.currentDocumentKey) {
+        try {
+          // Generate a fresh signed URL for download
+          const downloadUrl = await StorageAPI.getSignedUrl(this.currentDocumentKey, 'contracts', 3600);
+
+          // Fetch the file as a blob
+          const response = await fetch(downloadUrl);
+          const blob = await response.blob();
+
+          // Create a blob URL and trigger download
+          const blobUrl = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = this.currentDocumentName || 'document';
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          // Clean up the blob URL
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+
+          this.$toast.add({
+            severity: 'success',
+            summary: 'Download Complete',
+            detail: 'Your document has been downloaded.',
+            life: 3000
+          });
+        } catch (error) {
+          console.error('Error downloading document:', error);
+          this.$toast.add({
+            severity: 'error',
+            summary: 'Download Error',
+            detail: 'Unable to download the document. Please try again.',
+            life: 3000
+          });
+        }
+      }
     },
   },
 });

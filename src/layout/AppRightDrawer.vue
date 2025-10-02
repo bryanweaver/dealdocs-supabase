@@ -97,10 +97,12 @@ import { computed } from "vue";
 import Drawer from "primevue/drawer";
 import { AuthService } from "@/services/auth.js";
 import { useRouter } from "vue-router";
+import { useStore } from "vuex";
 import { useLayout } from "./composables/layout";
 import AppConfigurator from "./AppConfigurator.vue";
 
 const router = useRouter();
+const store = useStore();
 const { toggleDarkMode, isDarkTheme } = useLayout();
 
 const props = defineProps({
@@ -122,6 +124,14 @@ const visible = computed({
 });
 
 const handleLogout = async () => {
+  // Clear all persisted data
+  localStorage.removeItem("loginTimestamp");
+  localStorage.removeItem("contractId");
+  localStorage.removeItem("dealdocs-vuex"); // Clear Vuex persisted state
+
+  // Reset store before signing out
+  store.commit("resetStore");
+
   await AuthService.signOut();
   visible.value = false; // Close the drawer
   router.push("/auth"); // Navigate to auth page

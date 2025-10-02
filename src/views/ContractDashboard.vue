@@ -23,43 +23,46 @@
           contract. You can now proceed with reviewing and signing your contract.
         </p>
 
-        <!-- Next steps in a more compact layout -->
-        <div class="next-steps mt-4">
-          <h3 class="mb-3 text-base font-semibold">
-            Next Steps:
+        <!-- Next steps as actionable buttons -->
+        <div class="next-steps mt-6">
+          <h3 class="mb-4 text-lg font-semibold text-center">
+            Choose Your Next Action:
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <router-link
               :to="`/contracts/${$route.params.id}/upload-documents`"
-              class="flex items-center p-3 bg-surface-50 dark:bg-surface-800 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
+              :class="['action-button-card', { 'primary-action': nextPrimaryAction === 'upload', 'completed-action': hasUploadedDocuments }]"
             >
-              <i
-                class="pi pi-file-export mr-3 text-xl"
-                style="color: var(--primary-color)"
-              />
-              <span class="text-sm">Upload contract documents</span>
+              <div class="action-button-content">
+                <i :class="['action-icon', hasUploadedDocuments ? 'pi pi-check-circle' : 'pi pi-upload']" />
+                <h4 class="action-title">{{ hasUploadedDocuments ? 'Documents Uploaded' : 'Upload Documents' }}</h4>
+                <p class="action-description">{{ hasUploadedDocuments ? 'Documents ready' : 'Add supporting documents to your contract package' }}</p>
+                <span v-if="nextPrimaryAction === 'upload'" class="next-step-badge">Next Step</span>
+              </div>
             </router-link>
-            
+
             <router-link
               :to="`/contracts/${$route.params.id}/generate-contract`"
-              class="flex items-center p-3 bg-surface-50 dark:bg-surface-800 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
+              :class="['action-button-card', { 'primary-action': nextPrimaryAction === 'generate', 'completed-action': hasGeneratedContract }]"
             >
-              <i
-                class="pi pi-pencil mr-3 text-xl"
-                style="color: var(--primary-color)"
-              />
-              <span class="text-sm">Generate and sign contract</span>
+              <div class="action-button-content">
+                <i :class="['action-icon', hasGeneratedContract ? 'pi pi-check-circle' : 'pi pi-file-pdf']" />
+                <h4 class="action-title">{{ hasGeneratedContract ? 'Contract Generated' : 'Generate & Sign' }}</h4>
+                <p class="action-description">{{ hasGeneratedContract ? 'PDF created and signed' : 'Create PDF and add digital signatures' }}</p>
+                <span v-if="nextPrimaryAction === 'generate'" class="next-step-badge">Next Step</span>
+              </div>
             </router-link>
-            
+
             <router-link
               :to="`/contracts/${$route.params.id}/prepare-contract-package`"
-              class="flex items-center p-3 bg-surface-50 dark:bg-surface-800 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
+              :class="['action-button-card', { 'primary-action': nextPrimaryAction === 'send', 'completed-action': hasBeenSent }]"
             >
-              <i
-                class="pi pi-send mr-3 text-xl"
-                style="color: var(--primary-color)"
-              />
-              <span class="text-sm">Email to selling agent</span>
+              <div class="action-button-content">
+                <i :class="['action-icon', hasBeenSent ? 'pi pi-check-circle' : 'pi pi-send']" />
+                <h4 class="action-title">{{ hasBeenSent ? 'Sent to Agent' : 'Send to Agent' }}</h4>
+                <p class="action-description">{{ hasBeenSent ? 'Package delivered' : 'Email complete package to listing agent' }}</p>
+                <span v-if="nextPrimaryAction === 'send'" class="next-step-badge">Next Step</span>
+              </div>
             </router-link>
           </div>
         </div>
@@ -161,6 +164,41 @@ export default defineComponent({
 
     const isContractComplete = computed(() => store.getters.isContractComplete);
 
+    // Track document upload status
+    const hasUploadedDocuments = computed(() => {
+      const uploadedDocs = store.state.uploadedDocuments || {};
+      // Check if at least one document has been uploaded
+      return Object.keys(uploadedDocs).some(key => uploadedDocs[key]?.isUploaded);
+    });
+
+    // Track contract generation status
+    const hasGeneratedContract = computed(() => {
+      // Check if contract has been generated (PDF exists)
+      return store.state.formData?.contractGenerated ||
+             store.state.contract?.pdf_url ||
+             false;
+    });
+
+    // Track if contract has been sent
+    const hasBeenSent = computed(() => {
+      // Check if contract has been sent to agent
+      return store.state.formData?.contractSent ||
+             store.state.contract?.sent_to_agent ||
+             false;
+    });
+
+    // Determine the next primary action
+    const nextPrimaryAction = computed(() => {
+      if (!hasUploadedDocuments.value) {
+        return 'upload';
+      } else if (!hasGeneratedContract.value) {
+        return 'generate';
+      } else if (!hasBeenSent.value) {
+        return 'send';
+      }
+      return 'complete'; // All steps done
+    });
+
     const financingReferralUrl =
       import.meta.env?.VITE_FINANCING_REFERRAL_URL ||
       "https://example.com/referral";
@@ -229,31 +267,173 @@ export default defineComponent({
       completedSections,
       totalSections,
       financingReferralUrl,
+      hasUploadedDocuments,
+      hasGeneratedContract,
+      hasBeenSent,
+      nextPrimaryAction,
     };
   },
 });
 </script>
 
 <style scoped>
-/* .contract-landing {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-} */
-
-/* .card-container {
-  display: flex;
-  justify-content: space-around;
-  width: 100%;
-  max-width: 1000px;
-  margin-bottom: 40px;
-} */
-
 .card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
   cursor: pointer;
+}
+
+/* Action Button Styles */
+.action-button-card {
+  display: block;
+  padding: 1.5rem;
+  background: var(--surface-0);
+  border: 2px solid #d4d4d8;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.action-button-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: var(--primary-color);
+  background: var(--surface-50);
+}
+
+.action-button-card.primary-action {
+  border: 2px solid #93c5fd;
+  background: linear-gradient(135deg, var(--primary-50) 0%, var(--surface-0) 100%);
+}
+
+.action-button-card.primary-action:hover {
+  border-color: var(--primary-color);
+  background: linear-gradient(135deg, var(--primary-100) 0%, var(--primary-50) 100%);
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.25);
+}
+
+.action-button-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+
+.action-icon {
+  font-size: 2.5rem;
+  color: var(--primary-color);
+  margin-bottom: 0.75rem;
+  transition: transform 0.3s ease;
+}
+
+.action-button-card:hover .action-icon {
+  transform: scale(1.1);
+}
+
+.action-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+}
+
+.action-description {
+  font-size: 0.875rem;
+  color: var(--text-color-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Completed action styling */
+.action-button-card.completed-action {
+  border-color: #10b981;
+  background: #f0fdf4;
+  opacity: 0.9;
+}
+
+.action-button-card.completed-action .action-icon {
+  color: #10b981;
+}
+
+.action-button-card.completed-action:hover {
+  border-color: #059669;
+  transform: translateY(-2px);
+}
+
+/* Next Step Badge */
+.next-step-badge {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  background: var(--primary-color);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+/* Dark mode adjustments */
+.dark .action-button-card {
+  background: var(--surface-800);
+  border-color: var(--surface-600);
+}
+
+.dark .action-button-card:hover {
+  background: var(--surface-700);
+  border-color: var(--primary-color);
+}
+
+.dark .action-button-card.primary-action {
+  background: linear-gradient(135deg, var(--surface-800) 0%, var(--surface-900) 100%);
+  border-color: var(--primary-600);
+}
+
+.dark .action-button-card.primary-action:hover {
+  background: linear-gradient(135deg, var(--surface-700) 0%, var(--surface-800) 100%);
+}
+
+.dark .action-button-card.completed-action {
+  background: #064e3b;
+  border-color: #10b981;
+}
+
+.dark .action-button-card.completed-action:hover {
+  background: #065f46;
+  border-color: #34d399;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .action-button-card {
+    padding: 1.25rem;
+  }
+
+  .action-icon {
+    font-size: 2rem;
+  }
+
+  .action-title {
+    font-size: 1rem;
+  }
 }
 </style>

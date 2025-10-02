@@ -21,7 +21,7 @@
         :icon="eid ? 'pi pi-pencil' : 'pi pi-plus'"
         :label="label"
         :size="size"
-        class="font-bold"
+        class="font-bold sign-contract-btn"
         @click="fetchEsignUrl"
       />
     </div>
@@ -240,6 +240,7 @@ export default {
         });
         
         const responseBody = await response.json();
+        console.log('SignContract - Edge function response:', responseBody);
 
         const {
           signingUrl: url,
@@ -247,17 +248,31 @@ export default {
           createEtchPacket: etchPacket,
         } = responseBody;
 
+        console.log('SignContract - Extracted values:', {
+          url,
+          signer,
+          hasEtchPacket: !!etchPacket
+        });
+
         if (etchPacket) {
           this.$store.commit("updateEtchPacket", { etchPacket });
         }
 
         if (url && signer) {
+          console.log('SignContract - Opening signing dialog with URL:', url);
           this.signingUrl = url;
           this.currentSigner = signer;
           this.showIframeDialog = true;
+          console.log('SignContract - Dialog should be visible now, showIframeDialog:', this.showIframeDialog);
         } else {
-          console.error("Error filling PDF");
-          // ... (keep existing error handling)
+          console.error("Error: Missing signing URL or signer information", { url, signer, responseBody });
+          // Show user-friendly error
+          this.$toast?.add({
+            severity: 'error',
+            summary: 'Unable to Generate Contract',
+            detail: 'The signing URL could not be generated. Please try again.',
+            life: 5000
+          });
         }
       } catch (e) {
         console.error("Error filling PDF:", e);
@@ -603,3 +618,10 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+/* Add more space between icon and text */
+.sign-contract-btn :deep(.p-button-icon-left) {
+  margin-right: 0.75rem;
+}
+</style>

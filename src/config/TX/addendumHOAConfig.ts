@@ -75,7 +75,10 @@ export const HomeownersAssociationAddendumConfig = [
       "Indicate if you will require delivery of the Subdivision Information from the Homeowners Association. If not required, you are waiving your right to terminate the contract based on review of the Subdivision Information.",
     type: "boolean",
     fieldId: "requiresSubdivisionInfo", // if no, #4 checkbox is checked
-    dependsOnAll: [{ fieldId: "hasHomeownersAssociation", value: true }],
+    dependsOnAll: [
+      { fieldId: "hasHomeownersAssociation", value: true },
+      { fieldId: "receivedSubdivisionInfo", value: false }
+    ],
   },
   // if yes
   {

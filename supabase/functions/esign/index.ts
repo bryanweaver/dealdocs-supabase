@@ -146,7 +146,7 @@ serve(async (req) => {
     console.log('Files structure:', JSON.stringify(files, null, 2))
     console.log('Signers structure:', JSON.stringify(signers, null, 2))
     console.log('Data structure:', JSON.stringify(data, null, 2))
-    
+
     const anvilPayload = {
       query: graphqlMutation,
       variables: {

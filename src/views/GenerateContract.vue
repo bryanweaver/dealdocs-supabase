@@ -11,16 +11,51 @@
     <span class="ml-3 text-lg">Loading contract data...</span>
   </div>
 
-  <DataTable
-    v-else-if="etchPackets.length > 0"
-    :value="etchPackets"
-    row-group-mode="subheader"
-    group-rows-by="createdAt"
-    sort-mode="single"
-    sort-field="createdAt"
-    size="small"
-    scrollable
+  <!-- Empty State - No contracts yet -->
+  <div
+    v-else-if="etchPackets.length === 0 && !isLoadingContract"
+    class="empty-state-container"
   >
+    <div class="empty-state-card">
+      <i class="pi pi-file-pdf empty-state-icon" />
+      <h2 class="empty-state-title">No Contracts Generated Yet</h2>
+      <p class="empty-state-description">
+        Ready to create your contract? Click below to generate and sign your real estate purchase offer.
+      </p>
+      <div class="empty-state-button-container">
+        <SignContract
+          label="Generate and eSign Your Contract"
+          size="large"
+          class="empty-state-button"
+          @etch-packet-created="fetchEtchPackets"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- Existing Contracts View -->
+  <div v-else class="contracts-container">
+    <!-- Header Section -->
+    <div class="contracts-header">
+      <div class="header-content">
+        <h1 class="contracts-title">Your Contracts</h1>
+        <p class="contracts-subtitle">
+          Manage your generated contracts, view signing status, and access signed documents
+        </p>
+      </div>
+    </div>
+
+    <!-- Contracts Table -->
+    <DataTable
+      :value="etchPackets"
+      row-group-mode="subheader"
+      group-rows-by="createdAt"
+      sort-mode="single"
+      sort-field="createdAt"
+      size="small"
+      scrollable
+      class="contracts-table"
+    >
     <template #groupheader="slotProps">
       <div class="flex font-bold items-center gap-2">
         <span>Created: {{ slotProps.data.createdAt }}</span>
@@ -74,7 +109,8 @@
         </div>
       </template>
     </Column>
-  </DataTable>
+    </DataTable>
+  </div>
   <Dialog
     v-model:visible="displayConfirmation"
     header="Confirmation"
@@ -153,15 +189,22 @@
     </div>
   </Dialog>
 
+  <!-- Generate Another Contract Button (only when there are existing contracts) -->
   <div
-    v-if="!isLoadingContract"
-    class="mt-4 flex justify-center"
+    v-if="!isLoadingContract && etchPackets.length > 0"
+    class="generate-another-container"
   >
-    <SignContract
-      label="Generate New Contract"
-      size="large"
-      @etch-packet-created="fetchEtchPackets"
-    />
+    <div class="generate-another-card">
+      <p class="generate-another-text">Need to create another contract?</p>
+      <div class="generate-another-button-wrapper">
+        <SignContract
+          label="Generate Another Contract"
+          size="large"
+          class="generate-another-button"
+          @etch-packet-created="fetchEtchPackets"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -834,3 +877,195 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+/* Contracts View Styles */
+.contracts-container {
+  min-height: 60vh;
+}
+
+.contracts-header {
+  background: linear-gradient(135deg, var(--surface-0) 0%, var(--surface-50) 100%);
+  border-bottom: 2px solid var(--surface-200);
+  padding: 2rem 1rem;
+  margin-bottom: 2rem;
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.contracts-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+}
+
+.contracts-subtitle {
+  font-size: 1.125rem;
+  color: var(--text-color-secondary);
+  margin: 0;
+}
+
+.contracts-table {
+  max-width: 1200px;
+  margin: 0 auto 2rem;
+  padding: 0 1rem;
+}
+
+/* Generate Another Contract Section */
+.generate-another-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem 1rem 2rem;
+  margin-top: 2rem;
+}
+
+.generate-another-card {
+  text-align: center;
+  max-width: 600px;
+  width: 100%;
+  padding: 2.5rem 2rem;
+  background: var(--surface-0);
+  border-radius: 12px;
+  border: 2px dashed var(--surface-300);
+}
+
+.generate-another-text {
+  font-size: 1.125rem;
+  color: var(--text-color-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.generate-another-button-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.generate-another-button :deep(.p-button) {
+  padding: 1rem 2.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  border-radius: 8px;
+  min-width: 320px;
+  transition: all 0.3s ease;
+}
+
+.generate-another-button :deep(.p-button:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(var(--primary-color-rgb), 0.3);
+}
+
+/* Empty State Styles */
+.empty-state-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: 2rem;
+}
+
+.empty-state-card {
+  text-align: center;
+  max-width: 500px;
+  padding: 3rem 2rem;
+  background: var(--surface-0);
+  border-radius: 12px;
+  border: 2px dashed var(--surface-300);
+}
+
+.empty-state-icon {
+  font-size: 5rem;
+  color: var(--primary-300);
+  margin-bottom: 1.5rem;
+  display: block;
+}
+
+.empty-state-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 1rem;
+}
+
+.empty-state-description {
+  font-size: 1rem;
+  color: var(--text-color-secondary);
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+/* Center the button container */
+.empty-state-button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* Make the button more prominent in empty state */
+.empty-state-button :deep(.p-button) {
+  padding: 1rem 2.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  border-radius: 8px;
+  min-width: 320px;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.empty-state-button :deep(.p-button:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(var(--primary-color-rgb), 0.3);
+}
+
+/* Dark mode adjustments */
+.dark .contracts-header {
+  background: linear-gradient(135deg, var(--surface-800) 0%, var(--surface-900) 100%);
+  border-bottom-color: var(--surface-700);
+}
+
+.dark .generate-another-card {
+  background: var(--surface-800);
+  border-color: var(--surface-600);
+}
+
+.dark .empty-state-card {
+  background: var(--surface-800);
+  border-color: var(--surface-600);
+}
+
+.dark .empty-state-icon {
+  color: var(--primary-400);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .empty-state-container {
+    min-height: 50vh;
+    padding: 1rem;
+  }
+
+  .empty-state-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .empty-state-icon {
+    font-size: 4rem;
+  }
+
+  .empty-state-title {
+    font-size: 1.5rem;
+  }
+
+  .empty-state-button :deep(.p-button) {
+    min-width: 240px;
+    padding: 0.875rem 2rem;
+  }
+}
+</style>
