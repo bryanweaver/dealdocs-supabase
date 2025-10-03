@@ -13,22 +13,44 @@ const METRICS_FILE = path.join(AUDIT_BASE_DIR, 'session_metrics.json');
 
 class SessionManager {
     constructor() {
-        this.sessionId = this.getSessionId();
-        this.startTime = Date.now();
+-        this.sessionId = this.getSessionId();
+        const { sessionId, startTime } = this.loadSessionInfo();
+        this.sessionId = sessionId;
+        this.startTime = startTime;
     }
 
-    getSessionId() {
+-    getSessionId() {
+-        const sessionFile = path.join(AUDIT_BASE_DIR, 'current_session.json');
+-        if (fs.existsSync(sessionFile)) {
+-            try {
+-                const data = JSON.parse(fs.readFileSync(sessionFile, 'utf8'));
+-                return data.session_id || 'unknown';
+-            } catch (err) {
+-                // Session file is invalid
+-            }
+-        }
+-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+-        return `session_${timestamp}`;
+    loadSessionInfo() {
         const sessionFile = path.join(AUDIT_BASE_DIR, 'current_session.json');
         if (fs.existsSync(sessionFile)) {
             try {
                 const data = JSON.parse(fs.readFileSync(sessionFile, 'utf8'));
-                return data.session_id || 'unknown';
+                if (data.session_id) {
+                    const startMs = data.start_time
+                        ? Date.parse(data.start_time)
+                        : Date.now();
+                    return { sessionId: data.session_id, startTime: startMs };
+                }
             } catch (err) {
                 // Session file is invalid
             }
         }
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-        return `session_${timestamp}`;
+        const timestamp = new Date()
+            .toISOString()
+            .replace(/[:.]/g, '-')
+            .slice(0, -5);
+        return { sessionId: `session_${timestamp}`, startTime: Date.now() };
     }
 
     trackEvent(eventType, data) {
@@ -40,80 +62,10 @@ class SessionManager {
             event_type: eventType,
             elapsed_seconds: (Date.now() - this.startTime) / 1000
         };
-
-        // Add resource usage if available
-        try {
-            metrics.resources = {
-                memory_mb: process.memoryUsage().rss / 1024 / 1024,
-                heap_used_mb: process.memoryUsage().heapUsed / 1024 / 1024,
-                cpu_time: process.cpuUsage()
-            };
-        } catch (err) {
-            // Resource tracking failed
-        }
-
-        // Track specific event metrics
-        switch (eventType) {
-            case 'SessionStart':
-                Object.assign(metrics, this.trackSessionStart(data));
-                break;
-            case 'AgentSwitch':
-                Object.assign(metrics, this.trackAgentSwitch(data));
-                break;
-            case 'SessionEnd':
-                Object.assign(metrics, this.trackSessionEnd(data));
-                break;
-            case 'ToolSummary':
-                Object.assign(metrics, this.trackToolSummary(data));
-                break;
-        }
-
-        // Update session metadata
-        this.updateSessionMetadata(metrics);
-
-        // Write metrics
-        this.writeMetrics(metrics);
-
-        return metrics;
+        // …rest of method unchanged…
     }
-
-    trackSessionStart(data) {
-        return {
-            session: {
-                started_at: new Date().toISOString(),
-                is_new: data.is_new !== false,
-                working_directory: process.cwd(),
-                node_version: process.version,
-                platform: process.platform
-            }
-        };
-    }
-
-    trackAgentSwitch(data) {
-        return {
-            agent_switch: {
-                from_agent: data.from_agent || 'main',
-                to_agent: data.to_agent || 'unknown',
-                switch_reason: data.reason || 'task_delegation',
-                parent_task: data.parent_task || null
-            }
-        };
-    }
-
-    trackSessionEnd(data) {
-        const duration = (Date.now() - this.startTime) / 1000;
-
-        // Calculate summary statistics
-        const summary = this.calculateSessionSummary();
-
-        return {
-            session_end: {
-                ended_at: new Date().toISOString(),
-                total_duration_seconds: duration,
-                total_duration_human: this.formatDuration(duration),
-                summary: summary
-            }
-        };
+    // …other methods unchanged…
+}
     }
 
     trackToolSummary(data) {
