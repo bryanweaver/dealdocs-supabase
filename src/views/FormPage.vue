@@ -466,6 +466,43 @@ export default {
     TooltipPopover,
     ReferralButton,
   },
+  async beforeRouteUpdate(to, from, next) {
+    // Auto-save when navigating between sections (for menu navigation)
+    console.log(`[FormPage beforeRouteUpdate] CALLED - from ${from.params.sectionId} to ${to.params.sectionId}`);
+    const oldSectionId = from.params.sectionId;
+    const newSectionId = to.params.sectionId;
+
+    if (oldSectionId && oldSectionId !== newSectionId && !this.isSaving) {
+      console.log(`[FormPage beforeRouteUpdate] Auto-saving ${oldSectionId} before switching to ${newSectionId}`);
+      this.isSaving = true;
+      try {
+        await this.saveCurrentSection();
+        console.log(`[FormPage beforeRouteUpdate] Save completed for ${oldSectionId}`);
+      } catch (error) {
+        console.error(`[FormPage beforeRouteUpdate] Save failed:`, error);
+      } finally {
+        this.isSaving = false;
+      }
+    }
+    next();
+  },
+  async beforeRouteLeave(to, from, next) {
+    // Auto-save before leaving the page completely
+    console.log(`[FormPage beforeRouteLeave] CALLED - leaving ${from.params.sectionId}`);
+    if (this.sectionId && !this.isSaving) {
+      console.log(`[FormPage beforeRouteLeave] Auto-saving ${this.sectionId} before leaving`);
+      this.isSaving = true;
+      try {
+        await this.saveCurrentSection();
+        console.log(`[FormPage beforeRouteLeave] Save completed for ${this.sectionId}`);
+      } catch (error) {
+        console.error(`[FormPage beforeRouteLeave] Save failed:`, error);
+      } finally {
+        this.isSaving = false;
+      }
+    }
+    next();
+  },
   data() {
     return {
       sectionId: this.$route.params.sectionId,
@@ -573,43 +610,6 @@ export default {
         return true;
       });
     },
-  },
-  async beforeRouteUpdate(to, from, next) {
-    // Auto-save when navigating between sections (for menu navigation)
-    console.log(`[FormPage beforeRouteUpdate] CALLED - from ${from.params.sectionId} to ${to.params.sectionId}`);
-    const oldSectionId = from.params.sectionId;
-    const newSectionId = to.params.sectionId;
-
-    if (oldSectionId && oldSectionId !== newSectionId && !this.isSaving) {
-      console.log(`[FormPage beforeRouteUpdate] Auto-saving ${oldSectionId} before switching to ${newSectionId}`);
-      this.isSaving = true;
-      try {
-        await this.saveCurrentSection();
-        console.log(`[FormPage beforeRouteUpdate] Save completed for ${oldSectionId}`);
-      } catch (error) {
-        console.error(`[FormPage beforeRouteUpdate] Save failed:`, error);
-      } finally {
-        this.isSaving = false;
-      }
-    }
-    next();
-  },
-  async beforeRouteLeave(to, from, next) {
-    // Auto-save before leaving the page completely
-    console.log(`[FormPage beforeRouteLeave] CALLED - leaving ${from.params.sectionId}`);
-    if (this.sectionId && !this.isSaving) {
-      console.log(`[FormPage beforeRouteLeave] Auto-saving ${this.sectionId} before leaving`);
-      this.isSaving = true;
-      try {
-        await this.saveCurrentSection();
-        console.log(`[FormPage beforeRouteLeave] Save completed for ${this.sectionId}`);
-      } catch (error) {
-        console.error(`[FormPage beforeRouteLeave] Save failed:`, error);
-      } finally {
-        this.isSaving = false;
-      }
-    }
-    next();
   },
   watch: {
     "$route.params.sectionId"(newVal) {

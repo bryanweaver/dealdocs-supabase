@@ -33,6 +33,10 @@ const checkAndHandleSessionExpiry = () => {
 
 const handleSignOut = async () => {
   localStorage.removeItem("loginTimestamp");
+  // Clear all vuex persisted state
+  localStorage.removeItem("dealdocs-vuex");
+  // Clear the store state
+  store.dispatch("clearAllData");
   await AuthService.signOut();
   isAuthenticated.value = false;
   window.location.href = "/#/auth"; // Force reload to auth page
@@ -50,6 +54,10 @@ const loadStoredContract = async () => {
         store.dispatch("selectContract", contract);
         console.log("Contract loaded and dispatched to store");
         console.log("Store formData after loading:", JSON.stringify(store.state.formData, null, 2));
+
+        // Also load etch packets for this contract
+        await store.dispatch("loadEtchPacketsForContract", contractId);
+        console.log("Etch packets loaded for contract");
       }
     } catch (error) {
       console.error("Error loading stored contract:", error);

@@ -25,6 +25,7 @@ declare module 'vue' {
     DocumentChecklist: typeof import('./src/components/DocumentChecklist.vue')['default']
     DocumentUploadList: typeof import('./src/components/DocumentUploadList.vue')['default']
     Dropdown: typeof import('primevue/dropdown')['default']
+    EmailSendAnimation: typeof import('./src/components/EmailSendAnimation.vue')['default']
     EtchSignIFrame: typeof import('./src/components/EtchSignIFrame.vue')['default']
     FillContract: typeof import('./src/components/FillContract.vue')['default']
     GoToFormsCard: typeof import('./src/components/GoToFormsCard.vue')['default']

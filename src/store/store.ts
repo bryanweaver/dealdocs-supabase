@@ -990,7 +990,7 @@ const store = createStore({
     async fetchAgentContactCounts({ commit }, { sources }) {
       const { AgentAPI } = await import("@/services/api.js");
       const counts = {};
-      
+
       for (const src of sources) {
         try {
           // Use the agent list API with source filter
@@ -1002,6 +1002,49 @@ const store = createStore({
         }
       }
       commit("setAgentContactCounts", counts);
+    },
+
+    clearAllData({ commit }) {
+      // Clear all state data on logout
+      commit("setFormData", {});
+      commit("setVerifiedAddress", {});
+      commit("setAccountId", null);
+      commit("setContractId", null);
+      commit("setRequiredFields", {});
+      commit("setMarkedQuestions", {});
+      commit("setCurrentSectionId", null);
+      commit("setSkipCompletedQuestions", false);
+      commit("updateEtchPackets", []);
+      commit("setUploadedDocuments", []);
+      commit("setContracts", []);
+      commit("setAgentContactCounts", {});
+    },
+
+    async loadEtchPacketsForContract({ commit }, contractId) {
+      try {
+        const { EtchAPI } = await import("@/services/api.js");
+        const packets = await EtchAPI.list(contractId);
+        console.log("Raw etch packets from database:", packets);
+
+        if (packets && packets.length > 0) {
+          // Transform the packets to match the expected format
+          const formattedPackets = packets.map(packet => ({
+            eid: packet.etch_packet_id,
+            documentGroup: packet.signer_info,
+            signer_info: packet.signer_info, // Keep both for compatibility
+            status: packet.status,
+            pdf_url: packet.pdf_url,
+            document_urls: packet.document_urls,
+            created_at: packet.created_at
+          }));
+          console.log("Formatted etch packets for store:", formattedPackets);
+          commit("updateEtchPackets", formattedPackets);
+        } else {
+          console.log("No etch packets found for contract:", contractId);
+        }
+      } catch (error) {
+        console.error("Error loading etch packets:", error);
+      }
     },
   },
   plugins: [

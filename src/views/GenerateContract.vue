@@ -255,10 +255,23 @@ export default {
         // Fetch etch packets from Supabase
         const packets = await EtchAPI.list(contractId);
         console.log("Raw packets from database:", packets);
-        
+
         // Just use the packets as-is since we're doing hard delete
         dbEtchPackets.value = packets || [];
         console.log("Fetched etch packets from database:", dbEtchPackets.value);
+
+        // Also update the store with the fetched packets
+        if (packets && packets.length > 0) {
+          const formattedPackets = packets.map(packet => ({
+            eid: packet.etch_packet_id,
+            documentGroup: packet.signer_info,
+            status: packet.status,
+            pdf_url: packet.pdf_url,
+            document_urls: packet.document_urls,
+            createdAt: packet.created_at
+          }));
+          store.commit("updateEtchPackets", formattedPackets);
+        }
         
         // Fetch associated files from storage
         const contractsWithFiles = await Promise.all(

@@ -1,5 +1,15 @@
 <template>
   <div class="agent-email-form">
+    <!-- Email Send Animation -->
+    <EmailSendAnimation
+      ref="emailAnimation"
+      :visible="showAnimation"
+      :street-address="streetAddress"
+      @complete="handleAnimationComplete"
+      @retry="retryEmail"
+      @cancel="cancelAnimation"
+    />
+
     <div class="card flex flex-col gap-6 p-6">
       <div class="text-l font-bold mb-4 text-center">Send Email</div>
       <div class="form-container">
@@ -51,21 +61,25 @@
         <table class="min-w-full bg-white">
           <thead>
             <tr>
-              <th class="px-4 py-2 border text-left">Agent</th>
+              <th class="px-4 py-2 border text-left">Sent To</th>
               <th class="px-4 py-2 border text-left">Comments</th>
               <th class="px-4 py-2 border text-left">Status</th>
-              <th class="px-4 py-2 border text-left">Sent</th>
+              <th class="px-4 py-2 border text-left">Date Sent</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="record in emailRecords" :key="record.id">
               <td class="px-4 py-2 border">
-                {{ record.agentName }} ({{ record.agentEmail }})
+                {{ record.agentEmail || 'Unknown' }}
               </td>
-              <td class="px-4 py-2 border">{{ record.comments }}</td>
-              <td class="px-4 py-2 border">{{ record.status }}</td>
+              <td class="px-4 py-2 border">{{ record.comments || 'No comments' }}</td>
               <td class="px-4 py-2 border">
-                {{ formatDate(record.createdAt, "YYYY-MM-DD hh:mm A") }}
+                <span :class="getStatusClass(record.status)">
+                  {{ record.status || 'Sent' }}
+                </span>
+              </td>
+              <td class="px-4 py-2 border">
+                {{ formatDate(record.createdAt, "MM/DD/YYYY hh:mm A") }}
               </td>
             </tr>
           </tbody>
@@ -84,11 +98,13 @@ import { AuthService } from "@/services/auth.js";
 import { formatDate } from "@/utils/dateUtils";
 import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
+import EmailSendAnimation from "./EmailSendAnimation.vue";
 
 export default defineComponent({
   name: "AgentEmailForm",
   components: {
     Toast,
+    EmailSendAnimation,
   },
   props: {
     filesForAgentEmail: {
@@ -107,6 +123,9 @@ export default defineComponent({
     const comments = ref("");
     const emailRecords = ref([]);
     const isSending = ref(false);
+    const showAnimation = ref(false);
+    const emailAnimation = ref(null);
+    const pendingEmailPayload = ref(null);
 
     // Function to fetch the email records for the current contract
     const fetchEmailRecords = async () => {
@@ -141,85 +160,121 @@ export default defineComponent({
         return;
       }
 
-      isSending.value = true;
-      try {
-        console.log("Sending email to:", toEmail.value);
-        console.log("Comments:", comments.value);
-        console.log("Files:", props.filesForAgentEmail);
-        console.log("Account ID:", accountId);
-        console.log("Contract ID:", contractId);
-        console.log("Street Address:", streetAddress);
+      // Prepare the email payload first
+      const contractFiles = props.filesForAgentEmail
+        .filter((file) => file.bucket === "etch-packets")
+        .map((file) => file.filekey);
 
-        const contractFiles = props.filesForAgentEmail
-          .filter((file) => file.bucket === "etch-packets")
-          .map((file) => file.filekey);
-
-        const otherFiles = props.filesForAgentEmail.reduce((map, file) => {
-          if (file.bucket !== "etch-packets") {
-            map[file.bucket] = file.filekey;
-          }
-          return map;
-        }, {});
-
-        const emailPayload = {
-          contractId,
-          agentEmail: toEmail.value,
-          agentName: toEmail.value.split('@')[0], // Extract name from email for now
-          comments: comments.value,
-          contractFiles,
-          preApprovalFile: otherFiles["preapproval"] || "",
-          earnestFile: otherFiles["earnest"] || "",
-          optionFile: otherFiles["optionfee"] || "",
-          subject: `Contract Package for ${streetAddress}`,
-          body: `Please find attached the contract package for ${streetAddress}.`,
-        };
-
-        console.log("Email payload:", emailPayload);
-
-        // Call Supabase Edge Function for email sending
-        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${(await AuthService.getSession())?.access_token}`
-          },
-          body: JSON.stringify(emailPayload)
-        });
-
-        const result = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(result.error || 'Failed to send email');
+      const otherFiles = props.filesForAgentEmail.reduce((map, file) => {
+        if (file.bucket !== "etch-packets") {
+          map[file.bucket] = file.filekey;
         }
+        return map;
+      }, {});
 
-        console.log("Email sent:", result);
+      pendingEmailPayload.value = {
+        contractId,
+        agentEmail: toEmail.value,
+        agentName: toEmail.value.split('@')[0], // Extract name from email for now
+        comments: comments.value,
+        contractFiles,
+        preApprovalFile: otherFiles["preapproval"] || "",
+        earnestFile: otherFiles["earnest"] || "",
+        optionFile: otherFiles["optionfee"] || "",
+        subject: `Contract Package for ${streetAddress}`,
+        body: `Please find attached the contract package for ${streetAddress}.`,
+      };
 
-        // Reset form fields after sending
-        toEmail.value = "";
-        comments.value = "";
+      // Show animation and handle actual sending
+      isSending.value = true;
+      showAnimation.value = true;
 
-        // Refresh the email records list after sending a new email
-        fetchEmailRecords();
+      // Wait a bit to sync with animation phases
+      setTimeout(async () => {
+        try {
+          console.log("Sending email to:", toEmail.value);
+          console.log("Email payload:", pendingEmailPayload.value);
 
-        // Show success toast
-        toast.add({
-          severity: "success",
-          summary: "Email Sent",
-          detail: "The email has been sent successfully.",
-          life: 3000,
-        });
-      } catch (error) {
-        console.error("Error sending email", error);
+          // Call Supabase Edge Function for email sending
+          const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${(await AuthService.getSession())?.access_token}`
+            },
+            body: JSON.stringify(pendingEmailPayload.value)
+          });
 
-        // Show error toast
-        toast.add({
-          severity: "error",
-          summary: "Error",
-          detail: "Failed to send the email. Please try again.",
-          life: 3000,
-        });
-      } finally {
-        isSending.value = false;
+          const result = await response.json();
+
+          if (!response.ok) {
+            // Trigger error animation
+            if (emailAnimation.value) {
+              emailAnimation.value.triggerError();
+            }
+            throw new Error(result.error || 'Failed to send email');
+          }
+
+          console.log("Email sent:", result);
+
+          // Animation will auto-complete and trigger handleAnimationComplete
+        } catch (error) {
+          console.error("Error sending email:", error);
+          // Error animation is already triggered above
+          isSending.value = false;
+        }
+      }, 3000); // Start actual send midway through animation
+    };
+
+    const handleAnimationComplete = () => {
+      showAnimation.value = false;
+      isSending.value = false;
+
+      // Reset form fields after successful send
+      toEmail.value = "";
+      comments.value = "";
+
+      // Refresh the email records list after sending a new email
+      fetchEmailRecords();
+
+      // Show success toast
+      toast.add({
+        severity: "success",
+        summary: "Email Sent",
+        detail: "The email has been sent successfully.",
+        life: 3000,
+      });
+    };
+
+    const retryEmail = () => {
+      // Reset animation and try again
+      showAnimation.value = false;
+      isSending.value = false;
+
+      // Retry sending after a brief delay
+      setTimeout(() => {
+        sendEmail();
+      }, 100);
+    };
+
+    const cancelAnimation = () => {
+      showAnimation.value = false;
+      isSending.value = false;
+      pendingEmailPayload.value = null;
+    };
+
+    const getStatusClass = (status) => {
+      switch(status?.toLowerCase()) {
+        case 'sent':
+        case 'success':
+          return 'text-green-600 font-semibold';
+        case 'failed':
+        case 'error':
+          return 'text-red-600 font-semibold';
+        case 'pending':
+          return 'text-yellow-600 font-semibold';
+        default:
+          return 'text-gray-600';
       }
     };
 
@@ -230,6 +285,13 @@ export default defineComponent({
       sendEmail,
       emailRecords,
       isSending,
+      showAnimation,
+      emailAnimation,
+      streetAddress,
+      handleAnimationComplete,
+      retryEmail,
+      cancelAnimation,
+      getStatusClass,
     };
   },
 });

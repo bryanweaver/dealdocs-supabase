@@ -12,8 +12,8 @@
         <button
           v-if="images.length > 1"
           class="nav-button prev"
-          @click="previousImage"
           :disabled="currentIndex === 0"
+          @click="previousImage"
         >
           <i class="pi pi-chevron-left"></i>
         </button>
@@ -21,8 +21,8 @@
         <button
           v-if="images.length > 1"
           class="nav-button next"
-          @click="nextImage"
           :disabled="currentIndex === images.length - 1"
+          @click="nextImage"
         >
           <i class="pi pi-chevron-right"></i>
         </button>
@@ -69,16 +69,16 @@
         <button
           v-if="images.length > 1"
           class="fullscreen-nav prev"
-          @click="previousImage"
           :disabled="currentIndex === 0"
+          @click="previousImage"
         >
           <i class="pi pi-chevron-left"></i>
         </button>
         <button
           v-if="images.length > 1"
           class="fullscreen-nav next"
-          @click="nextImage"
           :disabled="currentIndex === images.length - 1"
+          @click="nextImage"
         >
           <i class="pi pi-chevron-right"></i>
         </button>

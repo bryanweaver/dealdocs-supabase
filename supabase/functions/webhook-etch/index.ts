@@ -110,14 +110,13 @@ serve(async (req) => {
         if (payload.data.signedPDFURL) {
           updateData.signed_pdf_url = payload.data.signedPDFURL
         }
-        
+
         // Update signer info with signed timestamp
         if (payload.data.signers && payload.data.signers.length > 0) {
-          const signer = payload.data.signers[0]
+          // Preserve the entire signer_info structure and update signers array
           updateData.signer_info = {
             ...etchPacket.signer_info,
-            signedAt: signer.signedAt || new Date().toISOString(),
-            status: signer.status
+            signers: payload.data.signers // Update the signers array with latest status
           }
         }
         break
@@ -125,11 +124,19 @@ serve(async (req) => {
       case 'packet.completed':
         updateData.status = 'completed'
         updateData.completed_at = payload.data.completedAt || new Date().toISOString()
-        
+
         if (payload.data.signedPDFURL || payload.data.downloadURL) {
           updateData.signed_pdf_url = payload.data.signedPDFURL || payload.data.downloadURL
         }
-        
+
+        // Update signer info with all signers marked as completed
+        if (payload.data.signers) {
+          updateData.signer_info = {
+            ...etchPacket.signer_info,
+            signers: payload.data.signers // Update the signers array with completed status
+          }
+        }
+
         // Update contract status and signed PDF URL
         if (etchPacket.contracts) {
           const { error: contractUpdateError } = await supabase
