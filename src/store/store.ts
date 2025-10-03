@@ -1006,24 +1006,25 @@ const store = createStore({
   },
   plugins: [
     createPersistedState({
-      paths: ["formData", "verifiedAddress", "accountId", "agentContactCounts"],
-      storage: window.sessionStorage,
-      reducer: (state) => {
-        return {
-          formData: state.formData,
-          verifiedAddress: state.verifiedAddress,
-          accountId: state.accountId,
-          contractId: state.contractId,
-          requiredFields: state.requiredFields,
-          markedQuestions: state.markedQuestions,
-          currentSectionId: state.currentSectionId,
-          skipCompletedQuestions: state.skipCompletedQuestions,
-          uploadedDocuments: state.uploadedDocuments,
-          etchPackets: state.etchPackets,
-          contracts: state.contracts,
-          agentContactCounts: state.agentContactCounts,
-        };
-      },
+      // Include all fields that should persist across sessions
+      paths: [
+        "formData",
+        "verifiedAddress",
+        "accountId",
+        "contractId",
+        "requiredFields",
+        "markedQuestions",
+        "currentSectionId",
+        "skipCompletedQuestions",
+        "uploadedDocuments",
+        "etchPackets",
+        "contracts",
+        "agentContactCounts"
+      ],
+      // Use localStorage for persistence across sessions (survives logout/login)
+      storage: window.localStorage,
+      // Optional: add a key prefix to avoid conflicts
+      key: 'dealdocs-vuex',
     }),
   ],
 });

@@ -1,65 +1,79 @@
 <template>
-  <!-- Loading indicator -->
-  <div v-if="isLoadingContract" class="flex items-center justify-center p-6">
-    <i class="pi pi-spin pi-spinner text-4xl" style="color: var(--primary-color)"></i>
-    <span class="ml-3 text-lg">Loading contract data...</span>
-  </div>
+  <div class="contract-generation-container">
+    <!-- Loading indicator -->
+    <div v-if="isLoadingContract" class="loading-container">
+      <i class="pi pi-spin pi-spinner loading-spinner"></i>
+      <span class="loading-text">Loading contract data...</span>
+    </div>
 
-  <DataTable
-    v-else-if="etchPackets.length > 0"
-    :value="etchPackets"
-    row-group-mode="subheader"
-    group-rows-by="createdAt"
-    sort-mode="single"
-    sort-field="createdAt"
-    size="small"
-    scrollable
-  >
-    <template #groupheader="slotProps">
-      <div class="flex font-bold items-center gap-2">
-        <span>Created: {{ slotProps.data.createdAt }}</span>
-        <!-- <span>(ID: {{ slotProps.data.etchPacketEid }})</span> -->
-        <div class="ml-auto flex items-center gap-2">
-          <PrimeButton
-            v-if="slotProps.data.signerStatus === 'completed'"
-            class="p-button-info p-button-sm"
-            :icon="loadingDocuments ? 'pi pi-spin pi-spinner' : 'pi pi-file-pdf'"
-            label="View Documents"
-            severity="info"
-            :loading="loadingDocuments"
-            @click="toggleDocumentList(slotProps.data.etchPacketEid)"
-          />
-          <PrimeButton
-            class="p-button-danger p-button-text p-button-rounded"
-            icon="pi pi-trash"
-            @click="confirmDelete(slotProps.data.etchPacketEid)"
-          />
-        </div>
-      </div>
-    </template>
-    <Column field="createdAt" header="Created At"></Column>
-    <Column field="signerName" header="Signer"></Column>
-    <Column field="signerStatus" header="Status">
-      <template #body="slotProps">
-        <Tag :status="slotProps.data.signerStatus" />
-      </template>
-    </Column>
-    <Column header="Actions">
-      <template #body="slotProps">
-        <div class="flex gap-2 items-center">
-          <SignContract
-            v-if="slotProps.data.signerStatus !== 'completed'"
-            :key="slotProps.data.key"
-            label="Sign"
-            size="small"
-            :eid="slotProps.data.etchPacketEid"
-            @etch-packet-created="fetchEtchPackets"
-            @etch-packet-updated="fetchEtchPackets"
-          />
-        </div>
-      </template>
-    </Column>
-  </DataTable>
+    <!-- Contracts Table -->
+    <div v-else-if="etchPackets.length > 0" class="contracts-table-wrapper">
+      <DataTable
+        :value="etchPackets"
+        row-group-mode="subheader"
+        group-rows-by="createdAt"
+        sort-mode="single"
+        sort-field="createdAt"
+        size="small"
+        scrollable
+        class="contracts-table"
+      >
+        <template #groupheader="slotProps">
+          <div class="group-header">
+            <div class="group-header-left">
+              <i class="pi pi-calendar group-icon"></i>
+              <span class="group-date">{{ slotProps.data.createdAt }}</span>
+            </div>
+            <div class="group-header-actions">
+              <PrimeButton
+                v-if="slotProps.data.signerStatus === 'completed'"
+                class="p-button-info p-button-sm view-docs-btn"
+                :icon="loadingDocuments ? 'pi pi-spin pi-spinner' : 'pi pi-file-pdf'"
+                label="View Documents"
+                severity="info"
+                :loading="loadingDocuments"
+                @click="toggleDocumentList(slotProps.data.etchPacketEid)"
+              />
+              <PrimeButton
+                class="p-button-danger p-button-text p-button-rounded delete-btn"
+                icon="pi pi-trash"
+                @click="confirmDelete(slotProps.data.etchPacketEid)"
+              />
+            </div>
+          </div>
+        </template>
+        <Column field="createdAt" header="Created At" class="created-column"></Column>
+        <Column field="signerName" header="Signer" class="signer-column"></Column>
+        <Column field="signerStatus" header="Status" class="status-column">
+          <template #body="slotProps">
+            <Tag :status="slotProps.data.signerStatus" />
+          </template>
+        </Column>
+        <Column header="Actions" class="actions-column">
+          <template #body="slotProps">
+            <div class="action-buttons">
+              <SignContract
+                v-if="slotProps.data.signerStatus !== 'completed'"
+                :key="slotProps.data.key"
+                label="Sign"
+                size="small"
+                class="sign-btn"
+                :eid="slotProps.data.etchPacketEid"
+                @etch-packet-created="fetchEtchPackets"
+                @etch-packet-updated="fetchEtchPackets"
+              />
+            </div>
+          </template>
+        </Column>
+      </DataTable>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else class="empty-state">
+      <i class="pi pi-file-o empty-icon"></i>
+      <h3 class="empty-title">No Contracts Yet</h3>
+      <p class="empty-description">Generate your first contract to get started</p>
+    </div>
   <Dialog
     v-model:visible="displayConfirmation"
     header="Confirmation"
@@ -123,12 +137,15 @@
     </div>
   </Dialog>
 
-  <div v-if="!isLoadingContract" class="mt-4 flex justify-center">
-    <SignContract
-      label="Generate New Contract"
-      size="large"
-      @etch-packet-created="fetchEtchPackets"
-    />
+    <!-- Generate Button -->
+    <div v-if="!isLoadingContract" class="generate-button-container">
+      <SignContract
+        label="Generate New Contract"
+        size="large"
+        class="generate-btn"
+        @etch-packet-created="fetchEtchPackets"
+      />
+    </div>
   </div>
 </template>
 
@@ -801,3 +818,232 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+/* Container Styles */
+.contract-generation-container {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Loading State */
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  gap: 0.75rem;
+}
+
+.loading-spinner {
+  font-size: 2rem;
+  color: var(--primary-color);
+}
+
+.loading-text {
+  font-size: 1.125rem;
+  color: var(--text-color);
+}
+
+/* Table Wrapper */
+.contracts-table-wrapper {
+  background: var(--surface-card);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.contracts-table {
+  border: none;
+}
+
+/* Group Header */
+.group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--surface-50);
+  border-left: 4px solid var(--primary-color);
+}
+
+.group-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.group-icon {
+  color: var(--primary-color);
+  font-size: 1rem;
+}
+
+.group-date {
+  color: var(--text-color);
+  font-size: 0.95rem;
+}
+
+.group-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-color-secondary);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  color: var(--surface-400);
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.empty-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+}
+
+.empty-description {
+  color: var(--text-color-secondary);
+  margin-bottom: 2rem;
+}
+
+/* Generate Button Container */
+.generate-button-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+/* Button Styles */
+.view-docs-btn {
+  font-size: 0.875rem;
+}
+
+.delete-btn:hover {
+  background-color: var(--red-50) !important;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Column Styles */
+:deep(.created-column) {
+  display: none;
+}
+
+:deep(.signer-column) {
+  font-weight: 500;
+}
+
+:deep(.status-column) {
+  width: 120px;
+}
+
+:deep(.actions-column) {
+  width: 100px;
+  text-align: right;
+}
+
+/* Document Dialog Enhancement */
+:deep(.p-dialog-content) {
+  padding: 1.25rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .contract-generation-container {
+    padding: 1rem;
+  }
+
+  .group-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .group-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  :deep(.p-datatable) {
+    font-size: 0.875rem;
+  }
+}
+
+/* Tag Component Override */
+:deep(.p-tag) {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  font-weight: 600;
+}
+
+/* DataTable Row Hover */
+:deep(.p-datatable-tbody > tr:hover) {
+  background-color: var(--surface-50);
+}
+
+/* DataTable Borders */
+:deep(.p-datatable .p-datatable-thead > tr > th) {
+  border-bottom: 2px solid var(--surface-200);
+  background-color: var(--surface-50);
+  color: var(--text-color-secondary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+:deep(.p-datatable .p-datatable-tbody > tr > td) {
+  border-bottom: 1px solid var(--surface-100);
+  padding: 0.75rem;
+}
+
+/* Document List Styles */
+.space-y-3 > * + * {
+  margin-top: 0.75rem;
+}
+
+.document-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  border: 1px solid var(--surface-200);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.document-item:hover {
+  background-color: var(--surface-50);
+  border-color: var(--primary-color-light);
+}
+
+/* Enhance Primary Button */
+:deep(.p-button.generate-btn) {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+:deep(.p-button.generate-btn:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+</style>
