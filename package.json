@@ -13,7 +13,7 @@
     "test:playwright": "playwright test",
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+    "lint": "eslint . --fix",
     "format": "prettier --write src/",
     "tailwind": "npx tailwindcss -i ./src/input.css -o ./src/output.css --watch",
     "bdd": "cucumber-js",
