@@ -13,24 +13,11 @@ const METRICS_FILE = path.join(AUDIT_BASE_DIR, 'session_metrics.json');
 
 class SessionManager {
     constructor() {
--        this.sessionId = this.getSessionId();
         const { sessionId, startTime } = this.loadSessionInfo();
         this.sessionId = sessionId;
         this.startTime = startTime;
     }
 
--    getSessionId() {
--        const sessionFile = path.join(AUDIT_BASE_DIR, 'current_session.json');
--        if (fs.existsSync(sessionFile)) {
--            try {
--                const data = JSON.parse(fs.readFileSync(sessionFile, 'utf8'));
--                return data.session_id || 'unknown';
--            } catch (err) {
--                // Session file is invalid
--            }
--        }
--        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
--        return `session_${timestamp}`;
     loadSessionInfo() {
         const sessionFile = path.join(AUDIT_BASE_DIR, 'current_session.json');
         if (fs.existsSync(sessionFile)) {
@@ -60,12 +47,30 @@ class SessionManager {
             timestamp: timestamp.toISOString(),
             session_id: this.sessionId,
             event_type: eventType,
-            elapsed_seconds: (Date.now() - this.startTime) / 1000
+            elapsed_seconds: (Date.now() - this.startTime) / 1000,
+            ...data
         };
-        // …rest of method unchanged…
+
+        try {
+            // Send to telemetry/analytics if configured
+            this.sendTelemetry(metrics);
+
+            // Log locally for debugging
+            const logPath = path.join(AUDIT_BASE_DIR, `${this.sessionId}_events.jsonl`);
+            fs.appendFileSync(logPath, JSON.stringify(metrics) + '\n');
+        } catch (error) {
+            console.error('Failed to track event:', error.message);
+        }
+
+        return metrics;
     }
-    // …other methods unchanged…
-}
+
+    sendTelemetry(metrics) {
+        // Placeholder for telemetry sending logic
+        // Could be extended to send to external analytics service
+        if (process.env.TELEMETRY_ENABLED === 'true') {
+            // Implementation would go here
+        }
     }
 
     trackToolSummary(data) {

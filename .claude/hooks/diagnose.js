@@ -31,10 +31,10 @@ function log(message, data = {}) {
 
 function simulateSessionStart() {
     log('Starting SessionStart simulation');
-    
+
     const hooks = [
-        '.claude/hooks/audit_logger.js',
-        '.claude/hooks/session_manager.js'
+        path.join(__dirname, 'audit_logger.cjs'),
+        path.join(__dirname, 'session_manager.cjs')
     ];
     
     const testInput = JSON.stringify({
@@ -137,8 +137,8 @@ function checkProcesses() {
 
 function testStdinHandling() {
     log('Testing stdin handling in hooks');
-    
-    const testHook = '.claude/hooks/audit_logger.js';
+
+    const testHook = path.join(__dirname, 'audit_logger.cjs');
     
     // Test 1: Send data and immediately close stdin
     log('Test 1: Normal input flow');
