@@ -204,11 +204,6 @@ export default defineComponent({
             doc.filename = null;
             doc.filekey = null;
           }
-          } else {
-            doc.exists = false;
-            doc.filename = null;
-            doc.filekey = null;
-          }
         } else {
           // Update this section to use the new getter
           const uploadedDoc = store.getters.getUploadedDocument(doc.bucket);
