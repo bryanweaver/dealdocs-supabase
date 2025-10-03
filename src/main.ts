@@ -8,14 +8,14 @@ import "file-icon-vectors/dist/file-icon-vivid.min.css";
 
 import App from "./App.vue";
 import router from "@/router/index.js";
-import store from "./store/store";
+import store from "@/store/store";
 import FloatingVue from "floating-vue";
 import { FloatingVueConfig } from "floating-vue/dist/config";
 import Aura from "@primevue/themes/aura";
 import PrimeVue from "primevue/config";
 import ConfirmationService from "primevue/confirmationservice";
 import ToastService from "primevue/toastservice";
-import { Amplify } from "aws-amplify";
+import { supabase, onAuthStateChange } from "@/lib/supabase.js";
 
 const floatingVueConfig: FloatingVueConfig = {
   // Disable popper components
@@ -103,59 +103,43 @@ const floatingVueConfig: FloatingVueConfig = {
   },
 };
 
-// Dynamic import of aws-exports with fallback to mock config for CI/CD
-const loadAmplifyConfig = async () => {
-  try {
-    const awsExports = await import("./aws-exports.js");
-    return awsExports.default;
-  } catch (error) {
-    console.warn("aws-exports.js not found, using mock configuration for CI/CD");
-    // Mock configuration for CI/CD environments
-    return {
-      aws_project_region: "us-east-1",
-      aws_cognito_region: "us-east-1",
-      aws_user_pools_id: "mock-user-pool-id",
-      aws_user_pools_web_client_id: "mock-client-id",
-      aws_appsync_graphqlEndpoint: "https://mock.appsync-api.us-east-1.amazonaws.com/graphql",
-      aws_appsync_region: "us-east-1",
-      aws_appsync_authenticationType: "API_KEY",
-      aws_appsync_apiKey: "mock-api-key",
-      aws_cognito_identity_pool_id: "us-east-1:mock-identity-pool",
-      aws_user_files_s3_bucket: "mock-s3-bucket",
-      aws_user_files_s3_bucket_region: "us-east-1",
-    };
-  }
-};
-
-// Initialize app with async config loading
-const initializeApp = async () => {
-  const amplifyConfig = await loadAmplifyConfig();
-  
-  // Configure Amplify without analytics for now
-  const config = { ...amplifyConfig };
-  delete config.Analytics;
-  delete config.aws_mobile_analytics_app_id;
-  delete config.aws_mobile_analytics_app_region;
-
-  Amplify.configure(config);
-
-  createApp(App)
-    .use(router)
-    .use(store)
-    .use(FloatingVue, floatingVueConfig)
-    .use(PrimeVue, {
-      theme: {
-        preset: Aura,
-        options: {
-          darkModeSelector: ".app-dark",
-        },
-      },
-    })
-    .use(ConfirmationService)
-    .use(ToastService)
-    .mount("#app");
+// Initialize Supabase auth state listener
+const initializeSupabaseAuth = () => {
+  // Listen for auth state changes and update Vuex store
+  onAuthStateChange((event, session) => {
+    console.log('Supabase auth state changed:', event, session?.user?.id);
+    
+    if (event === 'SIGNED_IN' && session?.user) {
+      // Set user data in store if needed
+      store.commit('setUserId', session.user.id);
+      console.log('User signed in:', session.user.email);
+    } else if (event === 'SIGNED_OUT') {
+      // Clear user data from store
+      store.commit('resetStore');
+      console.log('User signed out');
+    }
+  });
 };
 
 // Initialize the app
-initializeApp().catch(console.error);
+const app = createApp(App);
+
+app
+  .use(router)
+  .use(store)
+  .use(FloatingVue, floatingVueConfig)
+  .use(PrimeVue, {
+    theme: {
+      preset: Aura,
+      options: {
+        darkModeSelector: ".app-dark",
+      },
+    },
+  })
+  .use(ConfirmationService)
+  .use(ToastService)
+  .mount("#app");
+
+// Initialize Supabase auth after mounting
+initializeSupabaseAuth();
 

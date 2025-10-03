@@ -130,10 +130,91 @@
         "lastContentCheck": "2025-06-17T15:18:10.713Z"
       },
       "testSessions": []
+    },
+    {
+      "id": "2301-sample-1",
+      "address": "2301 Main St, Houston",
+      "houseNumber": "2301",
+      "source": "Sample",
+      "scrapedAt": "2025-06-17T15:50:00.000Z",
+      "method": "manual-sample",
+      "firstTestedAt": "2025-08-23T23:23:36.458Z",
+      "lastTestedAt": "2025-08-23T23:23:36.458Z",
+      "totalTests": 1,
+      "metrics": {
+        "hasDropdownResults": false,
+        "dropdownResultCount": 0,
+        "reachedPropertyDetails": false,
+        "hasImage": null,
+        "hasPrice": null,
+        "hasDescription": null,
+        "hasBedrooms": null,
+        "hasBathrooms": null,
+        "hasSquareFootage": null,
+        "hasAddress": null,
+        "overallSuccess": false,
+        "contentQualityScore": 0,
+        "lastContentCheck": "2025-08-23T23:23:36.458Z"
+      },
+      "testSessions": []
+    },
+    {
+      "id": "4567-sample-2",
+      "address": "4567 Oak Ave, Houston",
+      "houseNumber": "4567",
+      "source": "Sample",
+      "scrapedAt": "2025-06-17T15:50:00.000Z",
+      "method": "manual-sample",
+      "firstTestedAt": "2025-08-23T23:23:36.458Z",
+      "lastTestedAt": "2025-08-23T23:23:36.458Z",
+      "totalTests": 1,
+      "metrics": {
+        "hasDropdownResults": false,
+        "dropdownResultCount": 0,
+        "reachedPropertyDetails": false,
+        "hasImage": null,
+        "hasPrice": null,
+        "hasDescription": null,
+        "hasBedrooms": null,
+        "hasBathrooms": null,
+        "hasSquareFootage": null,
+        "hasAddress": null,
+        "overallSuccess": false,
+        "contentQualityScore": 0,
+        "lastContentCheck": "2025-08-23T23:23:36.458Z"
+      },
+      "testSessions": []
+    },
+    {
+      "id": "8910-sample-3",
+      "address": "8910 Pine St, Houston",
+      "houseNumber": "8910",
+      "source": "Sample",
+      "scrapedAt": "2025-06-17T15:50:00.000Z",
+      "method": "manual-sample",
+      "firstTestedAt": "2025-08-23T23:23:36.458Z",
+      "lastTestedAt": "2025-08-23T23:23:36.458Z",
+      "totalTests": 1,
+      "metrics": {
+        "hasDropdownResults": false,
+        "dropdownResultCount": 0,
+        "reachedPropertyDetails": false,
+        "hasImage": null,
+        "hasPrice": null,
+        "hasDescription": null,
+        "hasBedrooms": null,
+        "hasBathrooms": null,
+        "hasSquareFootage": null,
+        "hasAddress": null,
+        "overallSuccess": false,
+        "contentQualityScore": 0,
+        "lastContentCheck": "2025-08-23T23:23:36.458Z"
+      },
+      "testSessions": []
     }
   ],
   "summary": {
-    "totalAddresses": 4,
+    "totalAddresses": 7,
     "totalTestSessions": 1,
     "successfulAddresses": 1,
     "addressesWithDropdownResults": 1,
@@ -141,8 +222,8 @@
     "addressesWithImages": 0,
     "addressesWithPrices": 1,
     "addressesWithDescriptions": 0,
-    "averageContentQualityScore": 7.5,
-    "overallSuccessRate": "25.0%",
-    "lastUpdated": "2025-06-17T15:18:10.713Z"
+    "averageContentQualityScore": 4,
+    "overallSuccessRate": "14%",
+    "lastUpdated": "2025-08-23T23:23:36.458Z"
   }
 }

@@ -49,7 +49,7 @@ export default defineComponent({
   emits: ["checklist-status", "files-for-agent-email"],
   setup(_, { emit }) {
     const store = useStore();
-    const documents = ref([
+    const allDocuments = ref([
       {
         name: "Residential Resale Contract",
         bucket: "etch-packets",
@@ -104,54 +104,101 @@ export default defineComponent({
       },
       {
         name: "Proof of Earnest Money Check",
-        bucket: "earnest",
+        bucket: "earnest_check",
         exists: false,
         filename: null,
         filekey: null,
       },
       {
         name: "Proof of Option Fee Check",
-        bucket: "optionfee",
+        bucket: "option_check",
         exists: false,
         filename: null,
         filekey: null,
       },
     ]);
 
+    // Computed property for visible documents
+    const documents = ref([]);
+
     const updateDocumentStatus = () => {
-      const filteredDocuments = documents.value.filter(
+      // Filter documents based on their showIf conditions
+      const filteredDocuments = allDocuments.value.filter(
         (doc) => !doc.showIf || doc.showIf(store.state.formData),
       );
 
+      // Update the visible documents list
+      documents.value = filteredDocuments;
+
       filteredDocuments.forEach((doc) => {
         if (doc.bucket === "etch-packets") {
-          const completedEtchPackets = store.state.etchPackets.filter(
-            (packet) =>
-              packet.documentGroup.signers.every(
-                (signer) => signer.status === "completed",
-              ),
-          );
+          console.log("All etch packets in store:", store.state.etchPackets);
+
+          // Look for etch packets where ALL buyers have signed
+          const completedEtchPackets = store.state.etchPackets.filter((packet) => {
+            console.log("Processing packet:", JSON.stringify(packet, null, 2));
+
+            // Check if packet has signer info - try multiple possible paths
+            let signers = [];
+
+            // Try different paths to find signers
+            if (packet.documentGroup?.signers) {
+              signers = packet.documentGroup.signers;
+              console.log("Found signers in documentGroup.signers");
+            } else if (packet.signer_info?.signers) {
+              signers = packet.signer_info.signers;
+              console.log("Found signers in signer_info.signers");
+            } else if (Array.isArray(packet.signer_info)) {
+              // Sometimes signer_info might be the array directly
+              signers = packet.signer_info;
+              console.log("signer_info is directly an array");
+            } else if (packet.signers) {
+              // Or signers might be at the top level
+              signers = packet.signers;
+              console.log("Found signers at top level");
+            }
+
+            if (signers.length === 0) {
+              console.log("No signers found in packet:", packet);
+              return false;
+            }
+
+            // Check if all signers have completed status
+            const allSignersCompleted = signers.every(
+              (signer) => signer.status === "completed"
+            );
+
+            console.log("Packet signer status check:", {
+              packetId: packet.eid || packet.etch_packet_id,
+              signerCount: signers.length,
+              allCompleted: allSignersCompleted,
+              signerStatuses: signers.map((s) => ({
+                email: s.email || s.signerEmail || "unknown",
+                status: s.status
+              }))
+            });
+
+            return allSignersCompleted;
+          });
+
           if (completedEtchPackets.length > 0) {
-            const latestEtchPacket =
-              completedEtchPackets[completedEtchPackets.length - 1];
-            const signers = latestEtchPacket.documentGroup.signers;
+            const latestEtchPacket = completedEtchPackets[completedEtchPackets.length - 1];
+            const signers = latestEtchPacket.documentGroup?.signers || latestEtchPacket.signer_info?.signers || [];
 
             // Find any uploadKey that contains the formId
             const uploadKey = signers.reduce((found, signer) => {
               if (found) return found;
               return signer.uploadKeys?.find((key) => key.includes(doc.formId));
             }, null);
-            const name = uploadKey ? uploadKey.split("/").pop() : null;
 
-            if (uploadKey) {
-              doc.exists = true;
-              doc.filename = name;
-              doc.filekey = uploadKey;
-            } else {
-              doc.exists = false;
-              doc.filename = null;
-              doc.filekey = null;
-            }
+            // Use upload key filename if available, otherwise use a descriptive name
+            const filename = uploadKey
+              ? uploadKey.split("/").pop()
+              : "Residential Resale Contract (Signed).pdf";
+
+            doc.exists = true;
+            doc.filename = filename;
+            doc.filekey = uploadKey || latestEtchPacket.pdf_url || latestEtchPacket.eid;
           } else {
             doc.exists = false;
             doc.filename = null;
@@ -171,11 +218,18 @@ export default defineComponent({
           }
         }
       });
-      const allDocumentsExist = documents.value.every((doc) => doc.exists);
+      // Only check documents that should be shown based on their conditions
+      const visibleDocuments = documents.value.filter(
+        (doc) => !doc.showIf || doc.showIf(store.state.formData)
+      );
+
+      const allDocumentsExist = visibleDocuments.every((doc) => doc.exists);
       emit("checklist-status", allDocumentsExist);
+
+      // Only include documents that should be shown AND exist
       emit(
         "files-for-agent-email",
-        documents.value.filter((doc) => doc.exists),
+        visibleDocuments.filter((doc) => doc.exists),
       );
     };
 
@@ -191,7 +245,12 @@ export default defineComponent({
       { deep: true },
     );
 
-    onMounted(() => {
+    onMounted(async () => {
+      // Load etch packets from database if not already loaded
+      const contractId = store.state.contractId;
+      if (contractId && (!store.state.etchPackets || store.state.etchPackets.length === 0)) {
+        await store.dispatch("loadEtchPacketsForContract", contractId);
+      }
       updateDocumentStatus();
     });
 

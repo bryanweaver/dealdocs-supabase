@@ -6,14 +6,65 @@
     class="mb-6"
   />
 
+  <!-- Completion Section - Now directly under progress card -->
+  <div v-if="isContractComplete" class="mb-6">
+    <Panel class="w-full mx-auto">
+      <template #header>
+        <h2 class="text-lg font-semibold">Contract Questions Complete! 🎉</h2>
+      </template>
+      <div class="p-4">
+        <p class="text-center mb-2">
+          Congratulations! You've completed all required questions for your
+          contract. You can now proceed with reviewing and signing your contract.
+        </p>
+
+        <!-- Next steps in a more compact layout -->
+        <div class="next-steps mt-4">
+          <h3 class="mb-3 text-base font-semibold">Next Steps:</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <router-link
+              :to="`/contracts/${$route.params.id}/upload-documents`"
+              class="flex items-center p-3 bg-surface-50 dark:bg-surface-800 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
+            >
+              <i class="pi pi-file-export mr-3 text-xl" style="color: var(--primary-color)"></i>
+              <span class="text-sm">Upload contract documents</span>
+            </router-link>
+            
+            <router-link
+              :to="`/contracts/${$route.params.id}/generate-contract`"
+              class="flex items-center p-3 bg-surface-50 dark:bg-surface-800 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
+            >
+              <i class="pi pi-pencil mr-3 text-xl" style="color: var(--primary-color)"></i>
+              <span class="text-sm">Generate and sign contract</span>
+            </router-link>
+            
+            <router-link
+              :to="`/contracts/${$route.params.id}/prepare-contract-package`"
+              class="flex items-center p-3 bg-surface-50 dark:bg-surface-800 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
+            >
+              <i class="pi pi-send mr-3 text-xl" style="color: var(--primary-color)"></i>
+              <span class="text-sm">Email to selling agent</span>
+            </router-link>
+          </div>
+        </div>
+      </div>
+    </Panel>
+  </div>
+
+  <!-- Show navigation cards if not complete -->
+  <div v-else class="flex justify-between gap-6 mb-6 w-full">
+    <GoToFormsCard />
+    <GoToQuestionsCard />
+  </div>
+
   <!-- Referrals Section -->
   <div class="mb-6">
-    <Panel class="referral-status-grid w-full mx-auto min-h-[180px]">
+    <Panel class="referral-status-grid w-full mx-auto">
       <template #header>
         <h2 class="text-lg font-semibold">Referrals</h2>
       </template>
       <div
-        class="flex flex-row justify-center gap-8 items-center p-6 min-h-[100px]"
+        class="flex flex-row justify-center gap-8 items-center p-6"
       >
         <ReferralButton
           label="Get Financing Referral"
@@ -27,73 +78,6 @@
 
   <!-- Add DocumentStatusGrid after ContractProgressCard -->
   <DocumentStatusGrid class="mb-6" />
-
-  <div v-if="isContractComplete" class="completion-message flex justify-center">
-    <Panel class="w-full max-w-3xl">
-      <template #header>
-        <h1 class="text-center">Contract Questions Complete! 🎉</h1>
-      </template>
-      <div class="p-4">
-        <p class="text-center">
-          Congratulations! You've completed all required questions for your
-          contract.
-        </p>
-        <p class="text-center">
-          You can now proceed with reviewing and signing your contract.
-        </p>
-
-        <!-- Maybe show a summary of next steps -->
-        <div class="next-steps mt-4">
-          <h3 class="mb-3 text-xl font-semibold text-center">Next Steps:</h3>
-          <ul class="space-y-3">
-            <li class="flex items-center justify-center">
-              <i
-                class="pi pi-file-export mr-2"
-                style="color: var(--primary-color)"
-              ></i>
-              <router-link
-                :to="`/contracts/${$route.params.id}/upload-documents`"
-                class="hover:underline transition-colors duration-200"
-                style="color: var(--primary-color)"
-              >
-                Upload contract documents
-              </router-link>
-            </li>
-            <li class="flex items-center justify-center">
-              <i
-                class="pi pi-pencil mr-2"
-                style="color: var(--primary-color)"
-              ></i>
-              <router-link
-                :to="`/contracts/${$route.params.id}/generate-contract`"
-                class="hover:underline transition-colors duration-200"
-                style="color: var(--primary-color)"
-              >
-                Generate and sign contract
-              </router-link>
-            </li>
-            <li class="flex items-center justify-center">
-              <i
-                class="pi pi-send mr-2"
-                style="color: var(--primary-color)"
-              ></i>
-              <router-link
-                :to="`/contracts/${$route.params.id}/prepare-contract-package`"
-                class="hover:underline transition-colors duration-200"
-                style="color: var(--primary-color)"
-              >
-                Email your contract to the selling agent
-              </router-link>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </Panel>
-  </div>
-  <div v-else class="flex justify-between gap-6 mb-8 w-full px-4">
-    <GoToFormsCard />
-    <GoToQuestionsCard />
-  </div>
 </template>
 
 <script lang="ts">
@@ -102,7 +86,7 @@ import GoToQuestionsCard from "@/components/GoToQuestionsCard.vue";
 import { computed, defineComponent, onMounted } from "vue";
 import { useStore } from "vuex";
 import { useRoute, useRouter } from "vue-router";
-import { list } from "aws-amplify/storage";
+import { StorageAPI } from "@/services/api.js";
 import ContractProgressCard from "@/components/ContractProgressCard.vue";
 import DocumentStatusGrid from "./DocumentStatusGrid.vue";
 import ReferralButton from "@/components/ReferralButton.vue";
@@ -167,27 +151,25 @@ export default defineComponent({
     const fetchUploads = async () => {
       const accountId = store.state.accountId;
       const contractId = store.state.contractId;
-      const input = {
-        prefix: `accounts/${accountId}/contracts/${contractId}/`,
-      };
-      const result = await list(input);
+      const folderPrefix = `accounts/${accountId}/contracts/${contractId}/`;
+      const result = await StorageAPI.list(folderPrefix, 'contracts');
 
       // Group documents by type based on path
-      const documentsByType = result.items.reduce((acc, item) => {
-        const pathParts = item.key.split("/");
-        const documentType = pathParts[4]; // accounts/accountId/contracts/contractId/documentType/filename
+      const documentsByType = result.reduce((acc, item) => {
+        const pathParts = item.name.split("/");
+        const documentType = pathParts[pathParts.length - 2]; // Get the parent folder name as document type
 
         const document = {
-          key: item.key,
-          filetype: item.key.split(".").pop().toLowerCase(),
-          date: new Date(item.lastModified).toLocaleString([], {
+          key: `${folderPrefix}${item.name}`,
+          filetype: item.name.split(".").pop().toLowerCase(),
+          date: new Date(item.updated_at || item.created_at).toLocaleString([], {
             year: "numeric",
             month: "numeric",
             day: "numeric",
             hour: "numeric",
             minute: "numeric",
           }),
-          name: item.key.split("/").pop().split("-").slice(1).join("-"),
+          name: item.name.split("/").pop().split("-").slice(1).join("-"),
         };
 
         if (!acc[documentType]) {

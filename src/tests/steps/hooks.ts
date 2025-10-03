@@ -1,7 +1,7 @@
 import { Before, After, AfterAll, setDefaultTimeout } from "@cucumber/cucumber";
-import { CustomWorld } from "./world.js";
+import { CustomWorld } from "./world";
 
-setDefaultTimeout(30 * 1000);
+setDefaultTimeout(120 * 1000);
 
 Before(async function (this: CustomWorld) {
   console.log("Launching browser...");

@@ -57,6 +57,7 @@ export const SellersConfig = [
     question: "What is the secondary seller's full name?",
     type: "text",
     fieldId: "secondaryName",
+    required: true,
     dependsOnAll: [
       {
         fieldId: "hasSecondaryParty",
@@ -87,6 +88,7 @@ export const SellersConfig = [
     question: "What is the secondary seller's email address?",
     type: "text",
     fieldId: "secondaryEmail",
+    required: true,
     dependsOnAll: [
       {
         fieldId: "hasSecondaryParty",

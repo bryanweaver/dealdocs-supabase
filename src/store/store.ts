@@ -4,9 +4,10 @@ import {
   getQuestionsForSection,
   QuestionConfig,
 } from "@/config/TX/questionConfig";
-import { EtchPacket } from "@/API";
+// EtchPacket type is now handled by Supabase types
+// import { EtchPacket } from "@/API"; // Deprecated
 import { isQuestionRequired } from "@/utils/questionUtils";
-import { a } from "vitest/dist/suite-ghspeorC";
+import { transformSupabaseDataForVuex, normalizeContractData } from "@/utils/fieldMapUtils";
 
 function removeTypename(obj) {
   if (Array.isArray(obj)) {
@@ -360,6 +361,7 @@ const initialState = {
 const store = createStore({
   state() {
     return {
+      userId: null, // Supabase user ID
       accountId: null,
       contractId: null,
       verifiedAddress: {
@@ -381,7 +383,12 @@ const store = createStore({
     };
   },
   mutations: {
+    setUserId(state, userId) {
+      state.userId = userId;
+      console.log("User ID updated:", state.userId);
+    },
     resetStore(state) {
+      state.userId = null;
       state.contractId = null;
       state.formData = initialState.formData;
       state.requiredFields = initialState.requiredFields;
@@ -393,18 +400,28 @@ const store = createStore({
       state.contracts = initialState.contracts;
     },
     toggleMarkedQuestion(state, { sectionId, fieldId }) {
+      // Ensure we're working with a reactive object
+      if (!state.markedQuestions) {
+        state.markedQuestions = {};
+      }
+      
       if (!state.markedQuestions[sectionId]) {
-        // If the sectionId doesn't exist in markedQuestions, create a new array for it
-        state.markedQuestions[sectionId] = [];
+        // Use object spread to ensure reactivity when adding new section
+        state.markedQuestions = {
+          ...state.markedQuestions,
+          [sectionId]: []
+        };
       }
 
-      const index = state.markedQuestions[sectionId].indexOf(fieldId);
+      const currentArray = [...(state.markedQuestions[sectionId] || [])];
+      const index = currentArray.indexOf(fieldId);
+      
       if (index !== -1) {
         // If the fieldId is already in the array, remove it
-        state.markedQuestions[sectionId].splice(index, 1);
+        currentArray.splice(index, 1);
       } else {
         // Otherwise, add it to the array
-        state.markedQuestions[sectionId].push(fieldId);
+        currentArray.push(fieldId);
 
         // and set the field in state to null
         state.formData[sectionId] = {
@@ -412,7 +429,15 @@ const store = createStore({
           [fieldId]: null,
         };
       }
-      console.log("Marked question updated:", state.markedQuestions);
+      
+      // Replace the entire markedQuestions object to ensure reactivity
+      state.markedQuestions = {
+        ...state.markedQuestions,
+        [sectionId]: currentArray
+      };
+      
+      console.log("Marked question updated:", JSON.stringify(state.markedQuestions));
+      console.log(`Section ${sectionId} marked fields:`, state.markedQuestions[sectionId]);
     },
     setVerifiedAddress(state, address) {
       state.verifiedAddress = address;
@@ -441,49 +466,85 @@ const store = createStore({
     setFormDataFromContract(state, contractInput) {
       const contract = removeTypename(contractInput);
 
+      console.log("setFormDataFromContract - input contract:", contract);
+
+      // The contract from API has been normalized which means:
+      // - JSONB data has been extracted to top-level fields
+      // - Field names have been converted to camelCase
+      // We just need to extract the relevant form data fields
+
+      // Extract only the form data fields, not metadata
+      const formDataFields = [
+        'property', 'buyers', 'sellers', 'finance', 'listingAgent',
+        'title', 'titleObjections', 'titleNotices', 'closing',
+        'leases', 'survey', 'homeownersAssociationAddendum',
+        'buyerProvisions', 'buyerNotices', 'buyerAttorney',
+        'propertyCondition', 'brokerDisclosure', 'possession'
+      ];
+
+      const extractedFormData = {};
+      formDataFields.forEach(field => {
+        if (contract[field] !== undefined) {
+          extractedFormData[field] = contract[field];
+        }
+      });
+
+      console.log("setFormDataFromContract - extracted form data:", extractedFormData);
+      console.log("setFormDataFromContract - listing agent data:", extractedFormData.listingAgent);
+      console.log("setFormDataFromContract - sellers data:", extractedFormData.sellers);
+      console.log("setFormDataFromContract - buyers data:", extractedFormData.buyers);
+
+      // Merge with existing form data
       const mergedFormData = {
         ...state.formData,
-        ...(contract.id && { id: contract.id }),
-        ...(contract.buyers && { buyers: contract.buyers }),
-        ...(contract.sellers && { sellers: contract.sellers }),
-        ...(contract.property && { property: contract.property }),
-        ...(contract.finance && { finance: contract.finance }),
-        ...(contract.leases && { leases: contract.leases }),
-        ...(contract.title && { title: contract.title }),
-        ...(contract.survey && { survey: contract.survey }),
-        ...(contract.titleObjections && {
-          titleObjections: contract.titleObjections,
-        }),
-        ...(contract.titleNotices && { titleNotices: contract.titleNotices }),
-        ...(contract.propertyCondition && {
-          propertyCondition: contract.propertyCondition,
-        }),
-        ...(contract.brokerDisclosure && {
-          brokerDisclosure: contract.brokerDisclosure,
-        }),
-        ...(contract.closing && { closing: contract.closing }),
-        ...(contract.possession && { possession: contract.possession }),
-        ...(contract.buyerProvisions && {
-          buyerProvisions: contract.buyerProvisions,
-        }),
-        ...(contract.buyerNotices && { buyerNotices: contract.buyerNotices }),
-        ...(contract.buyerAttorney && {
-          buyerAttorney: contract.buyerAttorney,
-        }),
-        ...(contract.listingAgent && { listingAgent: contract.listingAgent }),
-        ...(contract.homeownersAssociationAddendum && {
-          homeownersAssociationAddendum: contract.homeownersAssociationAddendum,
-        }),
+        ...extractedFormData,
+        // Preserve the contract ID
+        ...(contract.id && { id: contract.id })
       };
+
       state.formData = Object.assign({}, mergedFormData);
 
-      // Update markedQuestions
-      if (contract.markedQuestions) {
-        state.markedQuestions = JSON.parse(contract.markedQuestions);
+      // Update markedQuestions - handle both string and object formats
+      console.log("setFormDataFromContract - checking for marked questions:", {
+        markedQuestions: contract.markedQuestions,
+        marked_questions: contract.marked_questions
+      });
+
+      if (contract.markedQuestions || contract.marked_questions) {
+        const markedQuestionsData = contract.markedQuestions || contract.marked_questions;
+        console.log("Found marked questions data:", markedQuestionsData);
+
+        // Convert array format from database to object format for Vuex
+        if (Array.isArray(markedQuestionsData)) {
+          // Convert ['section.field', ...] to { section: ['field'], ... }
+          const converted: Record<string, string[]> = {};
+          markedQuestionsData.forEach((item: string) => {
+            if (typeof item === 'string' && item.includes('.')) {
+              const [sectionId, fieldId] = item.split('.');
+              if (!converted[sectionId]) {
+                converted[sectionId] = [];
+              }
+              converted[sectionId].push(fieldId);
+            }
+          });
+          state.markedQuestions = converted;
+          console.log("Converted array format to object:", converted);
+        } else if (typeof markedQuestionsData === 'string') {
+          state.markedQuestions = JSON.parse(markedQuestionsData);
+        } else if (typeof markedQuestionsData === 'object') {
+          // Already in the correct format
+          state.markedQuestions = markedQuestionsData;
+        } else {
+          state.markedQuestions = {};
+        }
+        console.log("Set state.markedQuestions to:", state.markedQuestions);
       } else {
+        console.log("No marked questions found, setting to empty object");
         state.markedQuestions = {};
       }
+      
       console.log("Form data updated:", state.formData);
+      console.log("Property data in final formData:", state.formData.property);
     },
     setPropertyData(state, propertyData) {
       state.formData.property = propertyData;
@@ -520,18 +581,28 @@ const store = createStore({
     updateSectionFormData(state, { sectionId, data }) {
       state.formData[sectionId] = { ...state.formData[sectionId], ...data };
 
-      // Remove the field from markedQuestions if it exists
+      // Only remove fields from markedQuestions if they have actual values
+      // (not empty, null, or undefined) - this preserves "I don't know" marks
       Object.keys(data).forEach((fieldId) => {
-        if (state.markedQuestions[sectionId]) {
+        const value = data[fieldId];
+        const hasActualValue = value !== null && value !== undefined && value !== '';
+        
+        if (hasActualValue && state.markedQuestions[sectionId]) {
           const index = state.markedQuestions[sectionId].indexOf(fieldId);
           if (index !== -1) {
+            console.log(`Removing ${fieldId} from marked questions - has value: ${value}`);
             state.markedQuestions[sectionId].splice(index, 1);
           }
         }
       });
+      
       console.log(
         `Section ${sectionId} form data updated:`,
         state.formData[sectionId],
+      );
+      console.log(
+        `Section ${sectionId} marked questions after update:`,
+        state.markedQuestions[sectionId] || []
       );
     },
     setUploadedDocument(
@@ -546,18 +617,24 @@ const store = createStore({
         isUploaded,
       };
     },
-    deleteUpload(state, documentType: string) {
-      state.uploadedDocuments[documentType] = {
-        isUploaded: false,
-        eTag: null,
-        key: null,
-        lastModified: null,
-        size: null,
-        name: null,
-      };
-      console.log(
-        `Upload for document type '${documentType}' has been deleted from state.`,
-      );
+    deleteUpload(state, { contractId, documentType }) {
+      if (!contractId) {
+        contractId = state.contractId; // Use current contractId if not provided
+      }
+      
+      if (state.uploadedDocuments[contractId]) {
+        state.uploadedDocuments[contractId][documentType] = {
+          isUploaded: false,
+          eTag: null,
+          key: null,
+          lastModified: null,
+          size: null,
+          name: null,
+        };
+        console.log(
+          `Upload for document type '${documentType}' has been deleted from state for contract ${contractId}.`,
+        );
+      }
     },
     updateSignerStatus(
       state,
@@ -568,6 +645,12 @@ const store = createStore({
       const signer = etchPacket.documentGroup.signers[signerIndex];
       signer.status = status;
       signer.uploadKeys = uploadKeys;
+    },
+    updateEtchPacketDocumentGroup(state, { etchPacketIndex, documentGroup }) {
+      // Update the document group for an etch packet
+      if (state.etchPackets[etchPacketIndex]) {
+        state.etchPackets[etchPacketIndex].documentGroup = documentGroup;
+      }
     },
     deleteEtchPacket(state, { etchPacketEid }) {
       const index = state.etchPackets.findIndex(
@@ -612,7 +695,7 @@ const store = createStore({
           size: null,
           name: null,
         },
-        earnest: {
+        earnest_check: {
           isUploaded: false,
           eTag: null,
           key: null,
@@ -620,7 +703,7 @@ const store = createStore({
           size: null,
           name: null,
         },
-        optionfee: {
+        option_check: {
           isUploaded: false,
           eTag: null,
           key: null,
@@ -645,7 +728,7 @@ const store = createStore({
   getters: {
     // Returns the complete uploadedDocuments object
     getUploadedDocuments: (state) => state.uploadedDocuments,
-    // Returns the document for a specific documentType, e.g., "preapproval", "earnest"
+    // Returns the document for a specific documentType, e.g., "preapproval", "earnest_check"
     getUploadedDocument: (state) => (documentType) => {
       const contractId = state.contractId;
       return (
@@ -788,7 +871,7 @@ const store = createStore({
       const contractId = state.contractId;
       if (!state.uploadedDocuments[contractId]) return false;
 
-      const requiredDocs = ["preapproval", "earnest", "optionfee"];
+      const requiredDocs = ["preapproval", "earnest_check", "option_check"];
       return requiredDocs.every(
         (docType) =>
           state.uploadedDocuments[contractId][docType]?.isUploaded === true,
@@ -801,11 +884,19 @@ const store = createStore({
         );
       });
 
-      return (
-        sortedEtchPackets.length > 0 &&
-        sortedEtchPackets[0].documentGroup.signers.every(
-          (signer) => signer.status === "completed",
-        )
+      if (sortedEtchPackets.length === 0) {
+        return false;
+      }
+
+      const latestPacket = sortedEtchPackets[0];
+      
+      // Check if documentGroup exists and has signers
+      if (!latestPacket.documentGroup || !latestPacket.documentGroup.signers) {
+        return false;
+      }
+
+      return latestPacket.documentGroup.signers.every(
+        (signer) => signer.status === "completed",
       );
     },
     getAgentContactCounts: (state) => state.agentContactCounts,
@@ -813,13 +904,59 @@ const store = createStore({
   actions: {
     selectContract({ commit }, contract) {
       commit("setContractId", contract.id);
+      console.log("selectContract action - contract from API:", contract);
+
+      // The contract from API is already normalized, but we need to check
+      // if it has the proper structure for the store
+      // If it has listingAgent with snake_case fields, we have a problem
+
+      console.log("selectContract - checking listingAgent structure:", contract.listingAgent);
+      console.log("selectContract - checking sellers structure:", contract.sellers);
+      console.log("selectContract - checking buyers structure:", contract.buyers);
+
       commit("setFormDataFromContract", contract);
       commit("resetUploadedDocs");
+      
+      // Populate uploaded documents from contract_documents
+      if (contract.contract_documents && Array.isArray(contract.contract_documents)) {
+        console.log("Loading contract documents:", contract.contract_documents);
+        contract.contract_documents.forEach(doc => {
+          // Only load current version documents
+          if (!doc.is_current_version) return;
+          
+          // Use document_type directly without mapping since we fixed DocumentChecklist
+          const documentType = doc.document_type;
+          
+          commit("setUploadedDocument", {
+            contractId: contract.id,
+            documentType: documentType,
+            document: {
+              id: doc.id,
+              name: doc.file_name,
+              key: doc.storage_path,
+              filetype: doc.file_type ? doc.file_type.split('/').pop() : 'unknown',
+              size: doc.file_size,
+              date: new Date(doc.uploaded_at).toLocaleString([], {
+                year: "numeric",
+                month: "numeric",
+                day: "numeric",
+                hour: "numeric",
+                minute: "numeric",
+              }),
+              documentType: documentType
+            },
+            isUploaded: true
+          });
+        });
+      }
     },
-    async deleteUpload({ commit }, { documentType }) {
+    async deleteUpload({ commit, state }, { documentType, uploadKey }) {
       try {
         // You might include any additional backend deletion logic here.
-        commit("deleteUpload", documentType);
+        commit("deleteUpload", { 
+          contractId: state.contractId, 
+          documentType 
+        });
       } catch (error) {
         console.error("Error deleting upload:", error);
       }
@@ -850,42 +987,87 @@ const store = createStore({
         isUploaded,
       });
     },
-    async fetchAgentContactCounts({ commit }, { client, sources }) {
+    async fetchAgentContactCounts({ commit }, { sources }) {
+      const { AgentAPI } = await import("@/services/api.js");
       const counts = {};
+
       for (const src of sources) {
         try {
-          const resp = await client.graphql({
-            query: `query CountAgentsBySource($source: String!) { countAgentsBySource(source: $source) { count } }`,
-            variables: { source: src },
-          });
-          counts[src] = resp.data?.countAgentsBySource?.count ?? 0;
+          // Use the agent list API with source filter
+          const agents = await AgentAPI.list({ source: src });
+          counts[src] = agents.length;
         } catch (e) {
+          console.error(`Error counting agents for source ${src}:`, e);
           counts[src] = 0;
         }
       }
       commit("setAgentContactCounts", counts);
     },
+
+    clearAllData({ commit }) {
+      // Clear all state data on logout
+      commit("setFormData", {});
+      commit("setVerifiedAddress", {});
+      commit("setAccountId", null);
+      commit("setContractId", null);
+      commit("setRequiredFields", {});
+      commit("setMarkedQuestions", {});
+      commit("setCurrentSectionId", null);
+      commit("setSkipCompletedQuestions", false);
+      commit("updateEtchPackets", []);
+      commit("setUploadedDocuments", []);
+      commit("setContracts", []);
+      commit("setAgentContactCounts", {});
+    },
+
+    async loadEtchPacketsForContract({ commit }, contractId) {
+      try {
+        const { EtchAPI } = await import("@/services/api.js");
+        const packets = await EtchAPI.list(contractId);
+        console.log("Raw etch packets from database:", packets);
+
+        if (packets && packets.length > 0) {
+          // Transform the packets to match the expected format
+          const formattedPackets = packets.map(packet => ({
+            eid: packet.etch_packet_id,
+            documentGroup: packet.signer_info,
+            signer_info: packet.signer_info, // Keep both for compatibility
+            status: packet.status,
+            pdf_url: packet.pdf_url,
+            document_urls: packet.document_urls,
+            created_at: packet.created_at
+          }));
+          console.log("Formatted etch packets for store:", formattedPackets);
+          commit("updateEtchPackets", formattedPackets);
+        } else {
+          console.log("No etch packets found for contract:", contractId);
+        }
+      } catch (error) {
+        console.error("Error loading etch packets:", error);
+      }
+    },
   },
   plugins: [
     createPersistedState({
-      paths: ["formData", "verifiedAddress", "accountId", "agentContactCounts"],
-      storage: window.sessionStorage,
-      reducer: (state) => {
-        return {
-          formData: state.formData,
-          verifiedAddress: state.verifiedAddress,
-          accountId: state.accountId,
-          contractId: state.contractId,
-          requiredFields: state.requiredFields,
-          markedQuestions: state.markedQuestions,
-          currentSectionId: state.currentSectionId,
-          skipCompletedQuestions: state.skipCompletedQuestions,
-          uploadedDocuments: state.uploadedDocuments,
-          etchPackets: state.etchPackets,
-          contracts: state.contracts,
-          agentContactCounts: state.agentContactCounts,
-        };
-      },
+      // Include all fields that should persist across sessions
+      paths: [
+        "formData",
+        "verifiedAddress",
+        "accountId",
+        "contractId",
+        "requiredFields",
+        "markedQuestions",
+        "currentSectionId",
+        "skipCompletedQuestions",
+        "uploadedDocuments",
+        "etchPackets",
+        "contracts",
+        "agentContactCounts"
+      ],
+      // Use localStorage for persistence across sessions (survives logout/login)
+      storage: window.localStorage,
+      // Optional: add a key prefix to avoid conflicts
+      key: 'dealdocs-vuex',
     }),
   ],
 });

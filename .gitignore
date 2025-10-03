@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+.env.production
 
 # Editor directories and files
 .vscode/*
@@ -29,7 +30,9 @@ html.meta.json.gz
 coverage/
 test-results/
 playwright-report/
+.playwright-mcp/
 
+# Amplify
 #amplify-do-not-edit-begin
 amplify/\#current-cloud-backend
 amplify/.config/local-*
@@ -39,8 +42,6 @@ amplify/mock-api-resources
 amplify/backend/amplify-meta.json
 amplify/backend/.temp
 build/
-dist/
-node_modules/
 aws-exports.js
 awsconfiguration.json
 amplifyconfiguration.json
@@ -51,4 +52,23 @@ amplifytools.xcconfig
 .secret-*
 **.sample
 #amplify-do-not-edit-end
-.env.production
+
+# Supabase
+supabase/.temp
+
+# Large data files - never commit these
+*.csv
+import-*.sql
+import-*.js
+
+# Temporary test files
+test-*.js
+**/testFieldMapping.js
+
+# Visual regression snapshots (auto-generated)
+**/*.spec.ts-snapshots/
+
+# Temporary migration docs (but keep helpful ones like FIELD_MAPPING_SOLUTION.md)
+MIGRATION_*.md
+IMPLEMENTATION_*.md
+*_IMPORT_README.md

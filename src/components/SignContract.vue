@@ -53,13 +53,10 @@ import {
   mapAllLenderAppraisalTerminationAddendumFields,
   mapAllThirdPartyFinanceAddendumFields,
 } from "../utils/dataMapUtils";
-import { generateClient, post } from "aws-amplify/api";
-import { uploadData } from "aws-amplify/storage";
 import { base64ToArrayBuffer } from "@/utils/pdfUtils";
-import { useAuthenticator } from "@aws-amplify/ui-vue";
-import { createEtchPacket, updateEtchPacket } from "@/graphql/mutations";
-import { getEtchPacket } from "@/graphql/queries";
-import { FinancingType, LoanType } from "@/API";
+import { EtchAPI, StorageAPI } from "@/services/api.js";
+import { AuthService } from "@/services/auth.js";
+import { FinancingType, LoanType } from "@/types/enums.js";
 
 const templateTitle = import.meta.env.VITE_ANVIL_20_17_FORM_TITLE;
 const templateId = import.meta.env.VITE_ANVIL_20_17_FORM_ID;
@@ -73,7 +70,6 @@ const appraisalAddendumTemplateId = import.meta.env
 const appraisalAddendumTemplateTitle = import.meta.env
   .VITE_ANVIL_APPRAISAL_ADDENDUM_FORM_TITLE;
 
-const auth = useAuthenticator();
 
 export default {
   name: "SignContract",
@@ -96,7 +92,7 @@ export default {
       default: "",
     },
   },
-  emits: ["contract-uploaded"],
+  emits: ["contract-uploaded", "etch-packet-created", "etch-packet-updated"],
 
   data() {
     return {
@@ -106,7 +102,6 @@ export default {
       signingUrl: "",
       currentSigner: "",
       signers: [],
-      auth,
     };
   },
   computed: {
@@ -125,9 +120,10 @@ export default {
     contractId() {
       return this.$store.state.contractId;
     },
-    userId() {
-      return this.auth.user?.userId;
-    },
+    // Remove computed userId to avoid async issues
+    // userId() {
+    //   return AuthService.getUser().then(user => user?.id);
+    // },
   },
   methods: {
     async handleSignerComplete({ event }) {
@@ -138,66 +134,55 @@ export default {
         (packet) => packet.eid === event.etchPacketEid,
       );
 
-      //TODO: need to update the etchPacket in store
       const body = {
         documentGroupEid: event.documentGroupEid,
+        etchPacketEid: event.etchPacketEid,
+        accountId: this.$store.state.accountId,
+        contractId: this.$store.state.contractId
       };
-      // Fetch the signed document group from the Lambda function
-      const command = post({
-        apiName: "api0ca09615",
-        path: "/document-group/",
-        options: {
-          body,
-          headers: {
-            "Content-Type": "text/html",
-          },
-        },
-      });
-
-      const response = await command.response;
-      const { statusCode } = response;
-      const responseBody = await response.body.json();
       let uploadKeys = [];
+      
+      // Fetch the signed document group from the edge function
+      try {
+        const session = await AuthService.getSession();
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/document-group`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`
+          },
+          body: JSON.stringify(body)
+        });
+        
+        const statusCode = response.status;
+        const responseBody = await response.json();
 
-      if (statusCode === 200) {
-        for (const document of responseBody.documents) {
-          const pdfArrayBuffer = base64ToArrayBuffer(document.fileData);
-          const pdfBlob = new Blob([pdfArrayBuffer], {
-            type: "application/pdf",
-          });
-
-          const uploadKey = `accounts/${this.accountId}/contracts/${this.contractId}/etch-packets/${event.etchPacketEid}/${document.fileName}`;
-          uploadKeys.push(uploadKey);
-
-          // Save the PDF to S3
-          const result = await uploadData({
-            key: uploadKey,
-            data: pdfBlob,
-            options: {
-              contentType: "application/pdf",
-              // accessLevel: "protected",
-              metadata: {
-                templateId,
-                templateTitle,
-                documentGroupEid: event.documentGroupEid,
-                etchPacketEid: event.etchPacketEid,
-              },
-              onProgress: ({ transferredBytes, totalBytes }) => {
-                if (totalBytes) {
-                  console.log(
-                    `Upload progress ${Math.round(
-                      (transferredBytes / totalBytes) * 100,
-                    )} %`,
-                  );
-                }
-              },
-            },
-          }).result;
-          console.log("Successfully saved PDF to S3:", result);
+        if (statusCode === 200) {
+          // Documents are now stored in Supabase storage by the edge function
+          // We just need to track the storage paths
+          if (responseBody.documents && responseBody.documents.length > 0) {
+            for (const document of responseBody.documents) {
+              if (document.storagePath) {
+                uploadKeys.push(document.storagePath);
+                console.log("Document stored at:", document.storagePath);
+              }
+            }
+          }
+          
+          // Update document group info if we have it
+          if (responseBody.documentGroup && etchPacketIndex !== -1) {
+            // Update the etch packet in store with latest document group info
+            this.$store.commit("updateEtchPacketDocumentGroup", {
+              etchPacketIndex,
+              documentGroup: responseBody.documentGroup
+            });
+          }
+        } else if (statusCode >= 400) {
+          console.warn("Error fetching documents:", responseBody.error);
         }
-      } else if (statusCode >= 400) {
-        console.warn("Validation errors");
-        console.warn("some error");
+      } catch (error) {
+        console.error('Error fetching document group:', error);
+        // Don't return - continue to update status even if document fetch fails
       }
 
       console.log("etchPacketIndex", etchPacketIndex);
@@ -217,43 +202,43 @@ export default {
             etchPacketIndex,
             signerIndex,
             status: event.signerStatus,
-            uploadKeys,
+            uploadKeys: uploadKeys,
           });
         }
       }
 
       const updatedEtchPacket = this.$store.state.etchPackets[etchPacketIndex];
 
-      // Save the updated etchPacket to the document DB
+      // Save the updated etchPacket to Supabase
       await this.saveEtchPacket(updatedEtchPacket);
+      
+      // Emit event to refresh the list
+      this.$emit('etch-packet-updated');
 
-      // if (event.nextSignerEid) {
-      //   // There is a next signer, fetch their signing URL
-      //   this.currentSigner = event.nextSignerEid;
-      //   // this.fetchEsignUrl();
-      // } else {
-      //   // All signers have completed
-      //   this.showIframeDialog = false;
-      //   // Handle final completion (e.g., save the fully signed PDF to S3, update contract status)
-      // }
+      // Close the dialog since signing is complete for this signer
+      this.showIframeDialog = false;
     },
     async fetchEsignUrl() {
+      // Prevent double-clicks
+      if (this.loading) {
+        console.log('Already loading, skipping duplicate call');
+        return;
+      }
+      
       this.loading = true;
       const body = this.getPayload();
       try {
-        const command = post({
-          apiName: "api0ca09615",
-          path: "/esign/",
-          options: {
-            body,
-            headers: {
-              "Content-Type": "text/html",
-            },
+        // Call Supabase Edge Function for e-signing
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/esign`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await AuthService.getSession())?.access_token}`
           },
+          body: JSON.stringify(body)
         });
-
-        const response = await command.response;
-        const responseBody = await response.body.json();
+        
+        const responseBody = await response.json();
 
         const {
           signingUrl: url,
@@ -280,6 +265,10 @@ export default {
       }
     },
     getPayload() {
+      console.log('SignContract - formData from store:', JSON.stringify(this.$store.state.formData, null, 2));
+      console.log('SignContract - buyers data:', this.$store.state.formData.buyers);
+      console.log('SignContract - sellers data:', this.$store.state.formData.sellers);
+
       const contractData = mapAll2017Fields(this.$store.state.formData);
 
       const hasHOA =
@@ -399,7 +388,8 @@ export default {
       );
 
       return {
-        userId: this.userId,
+        userId: this.contractId, // Use contract ID instead of user ID
+        accountId: this.accountId,
         name: "Residential Resale Contract for Signing",
         isDraft: false,
         isTest: true,
@@ -521,7 +511,7 @@ export default {
             {
               id: "primaryBuyerSigner",
               email: buyers.email,
-              name: `${buyers.primaryFirstName} ${buyers.primaryMi} ${buyers.primaryLastName}`,
+              name: `${buyers.primaryName || ''}`, // Use primaryName instead of split fields
               routingOrder: 1,
               signerType: "embedded",
               fields: primaryBuyerFields,
@@ -531,22 +521,45 @@ export default {
       const currentEtchPacket = this.$store.state.etchPackets.find(
         (packet) => packet.eid === this.eid,
       );
+
+      console.log('getSignersInput - currentEtchPacket:', currentEtchPacket);
+      console.log('getSignersInput - local signers:', signers);
+
       let incompleteSigner;
       if (currentEtchPacket) {
         const sortedSigners = currentEtchPacket.documentGroup.signers.sort(
           (a, b) => a.signingOrder - b.signingOrder,
         );
+
+        console.log('getSignersInput - sortedSigners from Anvil:', sortedSigners);
+
         incompleteSigner = sortedSigners.find(
           (signer) => signer.status !== "completed",
         );
-        const currentSigner = incompleteSigner
+
+        console.log('getSignersInput - incompleteSigner:', incompleteSigner);
+
+        // Try to match by aliasId first, then by email as fallback
+        let currentSigner = incompleteSigner
           ? signers.find((signer) => signer.id === incompleteSigner.aliasId)
           : null;
+
+        // If no match by aliasId, try matching by email
+        if (!currentSigner && incompleteSigner) {
+          currentSigner = signers.find((signer) =>
+            signer.email.toLowerCase() === incompleteSigner.email.toLowerCase()
+          );
+          console.log('getSignersInput - matched by email:', currentSigner);
+        }
+
+        console.log('getSignersInput - final currentSigner:', currentSigner);
+
         return {
           signers,
-          currentSigner: currentSigner.id,
+          currentSigner: currentSigner ? currentSigner.id : signers[0].id,
         };
       } else {
+        console.log('getSignersInput - no etch packet, using first signer');
         return {
           signers,
           currentSigner: signers[0].id,
@@ -554,40 +567,36 @@ export default {
       }
     },
     async saveEtchPacket(etchPacket) {
-      const client = generateClient();
-      const { data } = await client.graphql({
-        query: getEtchPacket,
-        variables: {
-          eid: etchPacket.eid,
-        },
-      });
-
-      if (data?.getEtchPacket) {
-        // If the etchPacket exists, update it
-        const { data } = await client.graphql({
-          query: updateEtchPacket,
-          variables: {
-            input: {
-              eid: etchPacket.eid,
-              documentGroup: etchPacket.documentGroup,
-              contractId: this.contractId,
-            },
-          },
-        });
-        console.log("Updated etchPacket:", data.updateEtchPacket);
-      } else {
-        // If the etchPacket doesn't exist, create it
-        const { data } = await client.graphql({
-          query: createEtchPacket,
-          variables: {
-            input: {
-              eid: etchPacket.eid,
-              documentGroup: etchPacket.documentGroup,
-              contractId: this.contractId,
-            },
-          },
-        });
-        console.log("Created etchPacket:", data.createEtchPacket);
+      try {
+        // Check if etch packet exists
+        const existing = await EtchAPI.getByEtchPacketId(etchPacket.eid);
+        
+        if (existing) {
+          // Update existing etch packet
+          const result = await EtchAPI.update(existing.id, {
+            signer_info: etchPacket.documentGroup, // Changed from document_group to signer_info
+            status: etchPacket.status || 'pending'
+          });
+          console.log("Updated etchPacket:", result);
+        } else {
+          // Extract signer emails for database
+          const signerEmails = etchPacket.documentGroup?.signers?.map(s => s.email) || [];
+          const primarySignerEmail = signerEmails[0] || null;
+          
+          // Create new etch packet
+          const result = await EtchAPI.create({
+            etch_packet_id: etchPacket.eid,
+            contract_id: this.contractId,
+            signer_info: etchPacket.documentGroup, // Changed from document_group to signer_info
+            signer_email: primarySignerEmail, // Add primary signer email for indexing
+            status: etchPacket.status || 'pending',
+            created_at: new Date().toISOString()
+          });
+          console.log("Created etchPacket:", result);
+          this.$emit('etch-packet-created', result);
+        }
+      } catch (error) {
+        console.error('Error saving etch packet:', error);
       }
     },
   },

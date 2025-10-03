@@ -454,20 +454,24 @@ Then(
     // Wait for page to load
     await this.page.waitForLoadState("networkidle");
 
-    // Check for property details indicators
+    // Check for property details indicators - use more specific selectors
     const propertyDetailsIndicators = [
-      "text=Property Details",
-      "text=Address",
-      "text=Property Information",
+      'h1:has-text("Property Details")',
+      'h2:has-text("Property Details")',
+      'h3:has-text("Property Details")',
       '[data-testid="property-details"]',
       ".property-details",
       "#property-details",
+      'h1:has-text("Address")',
+      'h2:has-text("Address")',
+      "text=Property Information",
     ];
 
     let found = false;
     for (const indicator of propertyDetailsIndicators) {
       try {
-        await expect(this.page.locator(indicator)).toBeVisible({
+        const locator = this.page.locator(indicator).first();
+        await expect(locator).toBeVisible({
           timeout: 5000,
         });
         console.log(`Property details page confirmed with: ${indicator}`);

@@ -40,11 +40,12 @@ test.describe("Property Search", () => {
       // Wait for property details page
       await TestHelpers.waitForStableUI(page);
 
-      // Verify we're on property details page
+      // Verify we're on property details page - use more specific selectors
       const hasPropertyContent = await page
         .locator(
-          "text=Property Details, text=Address, text=Property Information",
+          'h1:has-text("Property Details"), h2:has-text("Property Details"), text=Property Information',
         )
+        .first()
         .isVisible();
 
       if (hasPropertyContent) {

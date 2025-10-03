@@ -1,12 +1,14 @@
-// Import enums from API.ts instead of DataStore models
-import { FinancingType, PartyType } from "../API";
+// Import enums from types instead of deprecated API.ts
+import { FinancingType, PartyType, LoanType, SurveyType, TerminationOnAppraisalType } from "../types/enums.js";
 import {
   all2017Fields,
   allHOAAddendumFields,
   allThirdPartyFinanceAddendumFields,
   allLenderApprovalTerminationAddendumFields,
 } from "../config/allFields30-17";
-import { LoanType, SurveyType, TerminationOnAppraisalType } from "../API";
+
+// Re-export all enums for convenience
+export { FinancingType, PartyType, LoanType, SurveyType, TerminationOnAppraisalType } from "../types/enums.js";
 import { getMonthName, formatDate } from "./dateUtils";
 
 function joinAddress(address: any) {
@@ -1064,16 +1066,106 @@ export function mapAllLenderAppraisalTerminationAddendumFields(formData: any) {
 }
 
 export function mapDatafinityResponseToPropertyData(propertyData: any) {
+  // Try to extract lot, block, and legal description from various sources
+  let lot = "";
+  let block = "";
+  let legalDescription = "";
+  
+  // First try: Check features array (if it exists)
+  if (propertyData?.features && Array.isArray(propertyData.features)) {
+    // Look for lot number in features
+    const lotFeature = propertyData.features.find?.(
+      (feature) => feature.key === "legalLotNumber1" || 
+                   feature.key === "lotNumber" || 
+                   feature.key === "lot"
+    );
+    if (lotFeature?.value?.[0]) {
+      lot = String(lotFeature.value[0]);
+    }
+    
+    // Look for block in features  
+    const blockFeature = propertyData.features.find?.(
+      (feature) => feature.key === "legalBlock1" || 
+                   feature.key === "block" ||
+                   feature.key === "legalBlock"
+    );
+    if (blockFeature?.value?.[0]) {
+      block = String(blockFeature.value[0]);
+    }
+    
+    // Look for legal description in features
+    const legalFeature = propertyData.features.find?.(
+      (feature) => feature.key === "legalDescription" || 
+                   feature.key === "legal" ||
+                   feature.key === "legalSubdivision"
+    );
+    if (legalFeature?.value?.[0]) {
+      legalDescription = String(legalFeature.value[0]);
+    }
+    
+    // Also check for additional legal fields
+    const sectionFeature = propertyData.features.find?.(f => f.key === "legalSection");
+    const townshipFeature = propertyData.features.find?.(f => f.key === "legalTownship");
+    const rangeFeature = propertyData.features.find?.(f => f.key === "legalRange");
+    
+    // If we have section/township/range but no full legal description, build one
+    if (!legalDescription && (sectionFeature || townshipFeature || rangeFeature)) {
+      const parts = [];
+      if (sectionFeature?.value?.[0]) parts.push(`Section ${sectionFeature.value[0]}`);
+      if (townshipFeature?.value?.[0]) parts.push(`Township ${townshipFeature.value[0]}`);
+      if (rangeFeature?.value?.[0]) parts.push(`Range ${rangeFeature.value[0]}`);
+      if (parts.length > 0) {
+        legalDescription = parts.join(", ");
+      }
+    }
+  }
+  
+  // Second try: Check if legalDescription exists at root level
+  if (!legalDescription && propertyData?.legalDescription) {
+    legalDescription = propertyData.legalDescription;
+  }
+  
+  // Third try: Look for legal description in descriptions array
+  // Look for descriptions that contain "BLOCK" and "Lot" patterns or subdivision info
+  if (propertyData?.descriptions && !legalDescription) {
+    const legalDesc = propertyData.descriptions.find((desc) => {
+      const value = desc.value || "";
+      // Look for patterns like "BLOCK 1, Lot 16" or "LT 5 BLK 4" in descriptions
+      return value.match(/(BLOCK|BLK)\s+\d+.*?(Lot|LT)\s+\d+/i) || 
+             value.match(/(Lot|LT)\s+\d+.*?(BLOCK|BLK)\s+\d+/i) ||
+             value.match(/^[A-Z0-9]+-.*BLOCK.*LOT/i); // Pattern like "S835100 - Riverwood At Oakhurst 01, BLOCK 1, Lot 16"
+    });
+    
+    if (legalDesc) {
+      // Use the legal description if found
+      legalDescription = legalDesc.value;
+      
+      // Try to extract lot and block from the legal description if not already set
+      if (!lot || !block) {
+        // Handle both "BLOCK 1, Lot 16" and "LT 5 BLK 4" patterns
+        const lotMatch = legalDescription.match(/(Lot|LT)\s+(\d+)/i);
+        const blockMatch = legalDescription.match(/(BLOCK|BLK)\s+(\d+)/i);
+        
+        if (lotMatch && !lot) {
+          lot = lotMatch[2];
+        }
+        if (blockMatch && !block) {
+          block = blockMatch[2];
+        }
+      }
+    }
+  }
+  
+  // Fourth try: If still no legal description but we have subdivision, use that
+  if (!legalDescription && propertyData?.subdivision) {
+    legalDescription = propertyData.subdivision;
+  }
+  
   return {
-    lot:
-      propertyData?.features?.find?.(
-        (feature) => feature.key === "legalLotNumber1",
-      )?.value?.[0] || "",
-    block:
-      propertyData?.features?.find?.((feature) => feature.key === "legalBlock1")
-        ?.value?.[0] || "",
+    lot: lot,
+    block: block,
     county: propertyData?.county || "",
-    legalDescription: propertyData?.legalDescription || "",
+    legalDescription: legalDescription,
     mlsNumber: propertyData?.mlsNumber || "",
     streetAddress: propertyData?.address || "",
     city: propertyData?.city || "",
@@ -1104,6 +1196,7 @@ export function mapDatafinityResponseToPropertyData(propertyData: any) {
           new Date(b.dateSeen).getTime() - new Date(a.dateSeen).getTime(),
       )?.[0]?.value || "",
     imageUrl: propertyData.imageURLs?.[0] ?? "",
+    imageUrls: propertyData.imageURLs ?? [],
   };
 }
 

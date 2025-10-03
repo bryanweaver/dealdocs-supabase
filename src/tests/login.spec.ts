@@ -20,7 +20,6 @@ test.describe("Login Flow", () => {
   });
 
   test("should show validation errors for empty fields", async ({ page }) => {
-    // AWS Amplify may require actual input focus to trigger validation
     // Try to focus on email field first
     await page.focus('input[type="email"], input[name="username"]');
     await page.fill('input[type="email"], input[name="username"]', "");
@@ -35,40 +34,29 @@ test.describe("Login Flow", () => {
     // Wait for validation messages with multiple possible selectors
     await Promise.race([
       page
-        .waitForSelector(
-          ".amplify-field-error, .amplify-input-error, .amplify-alert",
-          { timeout: 3000 },
-        )
+        .waitForSelector(".error, .invalid, .field-error", { timeout: 3000 })
         .catch(() => null),
       page
-        .waitForSelector('[data-amplify-error], [role="alert"]', {
+        .waitForSelector('[role="alert"]', {
           timeout: 3000,
         })
-        .catch(() => null),
-      page
-        .waitForSelector(".error, .invalid, .field-error", { timeout: 3000 })
         .catch(() => null),
       page.waitForTimeout(3000),
     ]);
 
-    // Check for AWS Amplify specific error patterns
-    const amplifyErrors = await page
-      .locator(".amplify-field-error, .amplify-input-error, .amplify-alert")
-      .count();
+    // Check for error patterns
     const genericErrors = await page
       .locator('.error, .invalid, [role="alert"]')
       .count();
-    const dataErrors = await page.locator("[data-amplify-error]").count();
 
-    const totalErrors = amplifyErrors + genericErrors + dataErrors;
+    const totalErrors = genericErrors;
 
     if (totalErrors > 0) {
       console.log(
-        `✅ Found ${totalErrors} validation errors (amplify: ${amplifyErrors}, generic: ${genericErrors}, data: ${dataErrors})`,
+        `✅ Found ${totalErrors} validation errors`,
       );
       expect(totalErrors).toBeGreaterThan(0);
     } else {
-      // AWS Amplify might prevent form submission without validation errors
       // Check if the form is still on the login page (not redirected)
       const currentUrl = page.url();
       console.log(`No validation errors found. Current URL: ${currentUrl}`);
@@ -141,7 +129,7 @@ test.describe("Login Flow", () => {
     }
   });
 
-  test("should validate AWS Amplify authentication behavior", async ({
+  test("should validate authentication behavior", async ({
     page,
   }) => {
     // Test with invalid email format
@@ -183,7 +171,7 @@ test.describe("Login Flow", () => {
 
     // Check for any error indicators
     const hasErrorIndicator = await page
-      .locator('.amplify-alert, .amplify-field-error, [role="alert"]')
+      .locator('.error, .alert, [role="alert"]')
       .isVisible();
     console.log(`Has error indicator: ${hasErrorIndicator}`);
 

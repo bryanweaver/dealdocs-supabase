@@ -153,32 +153,6 @@ export function mountWithDefaults(component: any, options: any = {}) {
 }
 
 /**
- * Mock AWS Amplify dependencies
- */
-export function mockAmplify() {
-  vi.mock("aws-amplify/auth", () => ({
-    signIn: vi.fn().mockResolvedValue({}),
-    signOut: vi.fn().mockResolvedValue({}),
-    confirmSignUp: vi.fn().mockResolvedValue({}),
-    signUp: vi.fn().mockResolvedValue({}),
-  }));
-
-  vi.mock("@aws-amplify/ui-vue", () => ({
-    Authenticator: {
-      name: "Authenticator",
-      template: '<div class="authenticator"><slot /></div>',
-      props: ["services", "formFields"],
-    },
-  }));
-
-  vi.mock("aws-amplify", () => ({
-    Amplify: {
-      configure: vi.fn(),
-    },
-  }));
-}
-
-/**
  * Mock PrimeVue components commonly used in tests
  */
 export function mockPrimeVue() {

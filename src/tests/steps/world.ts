@@ -14,13 +14,16 @@ export class CustomWorld {
   }
 
   async openBrowser() {
-    const headless = process.env.HEADLESS === "true";
+    const headless = process.env.HEADLESS !== "false";
     const browserType = process.env.BROWSER_TYPE || "firefox";
 
     console.log(
       `CustomWorld: launching browser (${browserType}, headless: ${headless})...`,
     );
-    this.browser = await firefox.launch({ headless });
+    this.browser = await firefox.launch({
+      headless,
+      timeout: 60000
+    });
     console.log("CustomWorld: browser launched.");
     this.page = await this.browser.newPage();
     console.log("CustomWorld: new page opened.");

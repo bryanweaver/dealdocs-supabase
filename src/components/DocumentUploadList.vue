@@ -107,18 +107,19 @@
         />
       </template>
     </PrimeDialog>
+    <Toast position="bottom-center" />
   </div>
 </template>
 
 <script lang="ts">
-import { uploadData } from "aws-amplify/storage";
-import { getUrl, remove } from "aws-amplify/storage";
+import { StorageAPI, DocumentAPI } from "@/services/api.js";
 import { defineComponent, ref } from "vue";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import PrimeButton from "primevue/button";
 import PrimeDialog from "primevue/dialog";
 import ProgressBar from "primevue/progressbar";
+import Toast from "primevue/toast";
 import { useToast } from "primevue/usetoast";
 
 export default defineComponent({
@@ -129,6 +130,7 @@ export default defineComponent({
     PrimeButton,
     PrimeDialog,
     ProgressBar,
+    Toast,
   },
   props: {
     title: {
@@ -227,45 +229,83 @@ export default defineComponent({
       const now = new Date().getTime();
       const key = `accounts/${this.accountId}/contracts/${this.contractId}/${this.documentType}/${now}-${file.name}`;
 
-      this.uploadProgress = 0;
-      const result = await uploadData({
-        key,
-        data: file,
-        options: {
-          contentType: file.type,
-          onProgress: ({ transferredBytes, totalBytes }) => {
-            if (totalBytes) {
-              // Ensure we're calculating percentage correctly
-              const percentage = (transferredBytes / totalBytes) * 100;
-              this.uploadProgress = Math.min(Math.round(percentage), 100);
-            }
-          },
-        },
-      }).result;
+      this.uploadProgress = 10;
+      
+      try {
+        // Upload file to Supabase Storage
+        const result = await StorageAPI.upload(
+          file,
+          key,
+          'contracts'
+        );
+        
+        this.uploadProgress = 70;
+        console.log("Successfully saved document to storage", result);
+        
+        // Save document metadata to database
+        const documentRecord = {
+          contract_id: this.contractId,
+          storage_path: result.path,  // Required field in database
+          file_path: result.path,      // Also include for compatibility
+          file_name: file.name,
+          file_type: file.type,
+          file_size: file.size,
+          document_type: this.documentType,
+          storage_url: result.publicUrl,
+          is_current_version: true
+        };
+        
+        const savedDoc = await DocumentAPI.create(documentRecord);
+        this.uploadProgress = 90;
+        
+        const document = {
+          key: result.path,
+          filetype: result.path.split(".").pop().toLowerCase(),
+          date: new Date(now).toLocaleString([], {
+            year: "numeric",
+            month: "numeric",
+            day: "numeric",
+            hour: "numeric",
+            minute: "numeric",
+          }),
+          name: result.path.split("/").pop().split("-").slice(1).join("-"),
+          documentType: this.documentType,
+          id: savedDoc.id
+        };
 
-      console.log("successfully saved document", result);
-      const document = {
-        key: result.key,
-        filetype: result.key.split(".").pop().toLowerCase(),
-        date: new Date(now).toLocaleString([], {
-          year: "numeric",
-          month: "numeric",
-          day: "numeric",
-          hour: "numeric",
-          minute: "numeric",
-        }),
-        name: result.key.split("/").pop().split("-").slice(1).join("-"),
-        documentType: this.documentType,
-      };
+        this.$store.dispatch("uploadDocument", {
+          documentType: this.documentType,
+          document: document,
+          isUploaded: true,
+        });
 
-      this.$store.dispatch("uploadDocument", {
-        documentType: this.documentType,
-        document: document,
-        isUploaded: true,
-      });
+        this.uploadProgress = 100;
+        
+        // Show success message
+        this.toast.add({
+          severity: "success",
+          summary: "Upload Complete",
+          detail: `${file.name} has been uploaded successfully.`,
+          life: 3000,
+        });
+        
+        // Reset after brief delay to show completion
+        setTimeout(() => {
+          this.uploadProgress = 0;
+        }, 2000);
 
-      this.file = null;
-      this.uploadProgress = 0;
+      } catch (error) {
+        console.error("Error uploading file:", error);
+        this.toast.add({
+          severity: "error",
+          summary: "Upload Failed",
+          detail: "Failed to upload the file. Please try again.",
+          life: 5000,
+        });
+        this.uploadProgress = 0;
+      } finally {
+        this.file = null;
+      }
     },
 
     confirmDelete(key) {
@@ -281,39 +321,40 @@ export default defineComponent({
       this.showDeleteDialog = false;
     },
     async openUpload(uploadKey) {
-      const signedUrlOutput = await getUrl({
-        key: uploadKey,
-        options: {
-          validateObjectExistence: true,
-        },
-      });
-      window.open(
-        signedUrlOutput.url.toString(),
-        signedUrlOutput.url.toString(),
-        "_blank",
-      );
+      try {
+        // Get signed URL for private bucket access
+        const signedUrl = await StorageAPI.getSignedUrl(uploadKey, 'contracts', 3600);
+        window.open(signedUrl, "_blank");
+      } catch (error) {
+        console.error('Error getting signed URL:', error);
+        this.$toast.add({
+          severity: 'error',
+          summary: 'Access Error',
+          detail: 'Unable to access the file. Please try again.',
+          life: 3000
+        });
+      }
     },
     async deleteUpload(uploadKey) {
-      await remove({
-        key: uploadKey,
-      });
-      // Instead of updating a local array,
-      // dispatch an action (or commit a mutation) so that the store updates its list.
+      // Delete from Supabase Storage
+      await StorageAPI.delete(uploadKey, 'contracts');
+      
+      // Find the document record to delete from database
+      const upload = this.uploads.find(u => u.key === uploadKey);
+      if (upload && upload.id) {
+        await DocumentAPI.delete(upload.id);
+      }
+      
+      // Update store
       this.$store.dispatch("deleteUpload", {
         documentType: this.documentType,
         uploadKey: uploadKey,
       });
-      // Optionally, you may reset the state for this document type in the store.
-      this.$store.dispatch("uploadDocument", {
-        documentType: this.documentType,
-        document: {
-          isUploaded: false,
-          eTag: null,
-          key: null,
-          date: null,
-          size: null,
-        },
-        isUploaded: false,
+      
+      // Reset the state for this document type in the store
+      this.$store.commit("deleteUpload", {
+        contractId: this.contractId,
+        documentType: this.documentType
       });
     },
   },

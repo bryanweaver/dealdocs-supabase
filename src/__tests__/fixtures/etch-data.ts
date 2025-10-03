@@ -1,10 +1,10 @@
 /**
  * Test data factories for Etch/E-signature related data structures
  */
-import { EtchPacket, Signer } from "@/API";
+// import { EtchPacket, Signer } from "@/API"; // Deprecated - using Supabase types
 
 // Define interface types for test fixtures that match the expected shape
-interface TestSigner extends Partial<Signer> {
+interface TestSigner {
   fields?: Array<{
     fieldType: string;
     fieldId: string;

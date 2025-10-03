@@ -17,25 +17,25 @@ import { BuyerNoticesConfig } from "./buyerNoticesConfig";
 import { HomeownersAssociationAddendumConfig } from "./addendumHOAConfig";
 import { SurveyConfig } from "./surveyConfig";
 
-const sections = [
+export const sections = [
   "property",
   "buyers",
   "sellers",
-  "finance",
+  "homeownersAssociationAddendum",
   "leases",
   "title",
-  "survey",
   "titleObjections",
   "titleNotices",
+  "survey",
   "propertyCondition",
-  "brokerDisclosure",
+  "finance",
+  "buyerProvisions",
   "closing",
   "possession",
-  "buyerProvisions",
+  "brokerDisclosure",
   "buyerNotices",
   "buyerAttorney",
   "listingAgent",
-  "homeownersAssociationAddendum",
 ];
 
 // Return the pre-imported question config based on the current section

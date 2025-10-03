@@ -17497,7 +17497,7 @@ b`.split(/\n/).length != 3
       }
     }
     function fw(n, i) {
-      if (n.length > 1 && !/  /.test(n)) return n;
+      if (n.length > 1 && !/ {2}/.test(n)) return n;
       for (var a = i, l = "", c = 0; c < n.length; c++) {
         var p = n.charAt(c);
         p == " " &&

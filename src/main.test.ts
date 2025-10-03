@@ -6,14 +6,6 @@ vi.mock("@/assets/tailwind.css", () => ({}));
 vi.mock("floating-vue/dist/style.css", () => ({}));
 vi.mock("file-icon-vectors/dist/file-icon-vivid.min.css", () => ({}));
 
-vi.mock("aws-amplify", () => ({
-  Amplify: {
-    configure: vi.fn(),
-  },
-}));
-
-vi.mock("./aws-exports", () => ({}));
-
 vi.mock("@/router/index.js", () => ({
   default: {
     push: vi.fn(),
