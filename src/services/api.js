@@ -1,4 +1,4 @@
-// API Service Layer - Compatibility layer to minimize changes from Amplify
+// API Service Layer for Supabase
 import { supabase, getUser, dbQuery } from '@/lib/supabase'
 import { 
   transformVuexDataForSupabase, 

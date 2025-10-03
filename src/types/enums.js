@@ -1,5 +1,4 @@
-// Enums migrated from AWS Amplify GraphQL types
-// These were previously imported from @/API
+// Application enums and constants
 
 export const FinancingType = {
   NONE: 'NONE',

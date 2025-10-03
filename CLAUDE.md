@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-DealDocs is a Vue 3 + AWS Amplify application for real estate contract management. It enables users to create, manage, and digitally sign real estate contracts with automated PDF generation and email delivery to listing agents.
+DealDocs is a Vue 3 + Supabase application for real estate contract management. It enables users to create, manage, and digitally sign real estate contracts with automated PDF generation and email delivery to listing agents.
 
 ## Development Commands
 
@@ -47,14 +47,14 @@ DealDocs is a Vue 3 + AWS Amplify application for real estate contract managemen
 - **Tailwind CSS**: Utility-first CSS framework
 - **Vite**: Build tool and development server
 
-### Backend Architecture (AWS Amplify)
+### Backend Architecture (Supabase)
 
-- **AppSync GraphQL API**: Main API with auto-generated TypeScript types
-- **DynamoDB**: NoSQL database with GSI indexes for efficient querying
-- **Lambda Functions**: PDF processing (Anvil API), email delivery, agent search
-- **S3 Storage**: Document storage for contracts and supporting files
-- **Cognito**: User authentication and authorization
-- **SES**: Email delivery service for contract notifications
+- **PostgreSQL Database**: Main database with RLS (Row Level Security)
+- **Supabase Auth**: User authentication and authorization
+- **Edge Functions**: PDF processing (Anvil API), email delivery, agent search
+- **Storage Buckets**: Document storage for contracts and supporting files
+- **Realtime Subscriptions**: Live updates for contract status changes
+- **Email Service**: Resend API for contract notifications
 
 ### State Management Structure
 
@@ -69,10 +69,10 @@ The Vuex store manages complex form data across multiple sections:
 
 ### Key Data Flow
 
-1. **Contract Creation**: User creates contract → Vuex state → GraphQL mutation → DynamoDB
-2. **PDF Generation**: Form data → Anvil API → PDF stored in S3
+1. **Contract Creation**: User creates contract → Vuex state → Supabase insert → PostgreSQL
+2. **PDF Generation**: Form data → Anvil API → PDF stored in Supabase Storage
 3. **E-Signature**: PDF → Anvil Etch → EtchPacket tracking → Status updates
-4. **Email Delivery**: Contract package → SES → Listing agent notification
+4. **Email Delivery**: Contract package → Resend API → Listing agent notification
 
 ## Important Configuration
 
@@ -105,12 +105,12 @@ The application uses a sophisticated form configuration system in `/src/config/T
 - Required fields determined by question configuration
 - Progress tracking based on completion of required fields
 
-### AWS Integration
+### Supabase Integration
 
-- **GraphQL Schema**: Auto-generated types in `/src/API.ts`
-- **Amplify Configuration**: AWS resources defined in `/amplify/backend/`
-- **Lambda Functions**: Custom resolvers for agent search and statistics
-- **File Storage**: S3 bucket for contract documents and supporting files
+- **Database Schema**: PostgreSQL tables defined in `/supabase/migrations/`
+- **Edge Functions**: Serverless functions in `/supabase/functions/`
+- **Storage Buckets**: Contract documents and supporting files
+- **RLS Policies**: Row-level security for data protection
 
 ## Development Best Practices
 
@@ -146,12 +146,12 @@ The application uses a sophisticated form configuration system in `/src/config/T
 - **Test Data**: Systematic tests use real Texas address database with quality metrics
 - **Results Analysis**: Check `src/tests/data/test-results.json` for detailed reports
 
-### AWS Development
+### Supabase Development
 
-- Use `npm run compile-gql` after schema changes
-- Test Lambda functions locally when possible
-- Monitor DynamoDB usage and optimize queries
-- Use GSI indexes for efficient data access patterns
+- Run `supabase db push` to apply migrations
+- Test Edge Functions locally with `supabase functions serve`
+- Monitor database usage in Supabase dashboard
+- Use RLS policies for secure data access
 
 ## Test Infrastructure Status 🎯
 
