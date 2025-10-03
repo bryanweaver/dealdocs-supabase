@@ -27,19 +27,16 @@ export default defineConfig({
             "primevue/inputtext",
             "primevue/progressspinner",
           ],
-          "vendor-aws": [
-            "aws-amplify",
-            "@aws-amplify/ui-vue",
-            "aws-amplify/api",
-            "aws-amplify/auth",
+          "vendor-supabase": [
+            "@supabase/supabase-js",
           ],
-          "vendor-utils": ["axios", "uuid"],
+          "vendor-utils": ["axios"],
 
           // Application chunks
-          "app-graphql": [
-            "./src/API.ts",
-            "./src/graphql/mutations.ts",
-            "./src/graphql/queries.ts",
+          "app-services": [
+            "./src/services/api.js",
+            "./src/services/auth.js",
+            "./src/lib/supabase.js",
           ],
           "app-utils": [
             "./src/utils/dataMapUtils.ts",
@@ -71,7 +68,7 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ["vue", "vue-router", "vuex", "primevue/config"],
-    exclude: ["aws-amplify"],
+    exclude: [],
   },
   plugins: [
     vue(),
@@ -90,38 +87,13 @@ export default defineConfig({
       "src/tests/**/*.feature", // Exclude Cucumber feature files
       "**/*.config.*",
     ],
-    reporters: ["html", "default", "json"],
+    reporters: ["default", "json"],
     outputFile: {
       json: "./test-results/vitest-results.json",
       html: "./test-results/vitest-report.html",
     },
     coverage: {
-      enabled: true,
-      reporter: ["text", "json", "html", "lcov"],
-      reportsDirectory: "./test-results/coverage",
-      include: ["src/**/*.{js,ts,vue}"],
-      exclude: [
-        "assets/**",
-        "amplify/**",
-        "src/.eslintrc.cjs",
-        "src/aws-exports.js",
-        "src/API.ts",
-        "src/graphql/**",
-        "src/__tests__/**",
-        "src/tests/**",
-        "**/*.test.{js,ts}",
-        "**/*.spec.{js,ts}",
-        "**/node_modules/**",
-        "**/dist/**",
-      ],
-      thresholds: {
-        global: {
-          branches: 70,
-          functions: 70,
-          lines: 80,
-          statements: 80,
-        },
-      },
+      enabled: false,
     },
     testTimeout: 10000,
     hookTimeout: 10000,

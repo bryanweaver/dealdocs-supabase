@@ -76,19 +76,17 @@ export default {
     sectionData: {
       deep: true,
       handler() {
-        this.calculateProgress();
+        // Progress is automatically updated via computed properties
+        // No need to manually calculate
       },
     },
   },
   mounted() {
-    this.calculateProgress();
+    // Progress is automatically calculated via computed properties
+    // No need to manually calculate
   },
   methods: {
-    calculateProgress() {
-      const progressData = this.getSectionProgress(this.sectionId);
-      this.totalQuestions = progressData.totalQuestions;
-      this.completedQuestions = progressData.completedQuestions;
-    },
+    // Remove calculateProgress method as it's not needed
   },
 };
 </script>

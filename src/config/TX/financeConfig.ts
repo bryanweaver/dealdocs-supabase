@@ -1,4 +1,4 @@
-import { FinancingType, LoanType, TerminationOnAppraisalType } from "../../API";
+import { FinancingType, LoanType, TerminationOnAppraisalType } from "../../types/enums.js";
 
 export const FinanceConfig = [
   {

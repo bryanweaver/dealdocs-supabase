@@ -5,9 +5,17 @@
 import { FullConfig } from "@playwright/test";
 import fs from "fs";
 import path from "path";
+import { cleanupTestUsers } from "./test-users";
 
 async function globalTeardown(config: FullConfig) {
   console.log("🧹 Running global teardown...");
+
+  // Clean up all test users created during the test run
+  try {
+    await cleanupTestUsers();
+  } catch (error) {
+    console.warn("⚠️ Failed to clean up test users:", error.message);
+  }
 
   // Clean up authentication files if they exist
   const authFile = "playwright/.auth/user.json";

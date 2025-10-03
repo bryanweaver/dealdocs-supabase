@@ -1,51 +1,79 @@
 <template>
-  <DataTable
-    v-if="etchPackets.length > 0"
-    :value="etchPackets"
-    row-group-mode="subheader"
-    group-rows-by="createdAt"
-    sort-mode="single"
-    sort-field="createdAt"
-    size="small"
-    scrollable
-  >
-    <template #groupheader="slotProps">
-      <div class="flex font-bold items-center gap-2">
-        <span>Created: {{ slotProps.data.createdAt }}</span>
-        <!-- <span>(ID: {{ slotProps.data.etchPacketEid }})</span> -->
-        <PrimeButton
-          class="p-button-danger p-button-text p-button-rounded ml-auto"
-          icon="pi pi-trash"
-          @click="confirmDelete(slotProps.data.etchPacketEid)"
-        />
-      </div>
-    </template>
-    <Column field="createdAt" header="Created At"></Column>
-    <Column field="signerName" header="Signer"></Column>
-    <Column field="signerStatus" header="Status">
-      <template #body="slotProps">
-        <Tag :status="slotProps.data.signerStatus" />
-      </template>
-    </Column>
-    <Column header="Actions" class="w-24 !text-end">
-      <template #body="slotProps">
-        <div class="flex gap-3">
-          <SignContract
-            v-if="slotProps.data.signerStatus !== 'completed'"
-            :key="slotProps.data.key"
-            label="Sign"
-            size="medium"
-            :eid="slotProps.data.etchPacketEid"
-          />
-          <PrimeButton
-            class="p-button-secondary"
-            label="View"
-            @click="openContract(slotProps.data)"
-          />
-        </div>
-      </template>
-    </Column>
-  </DataTable>
+  <div class="contract-generation-container">
+    <!-- Loading indicator -->
+    <div v-if="isLoadingContract" class="loading-container">
+      <i class="pi pi-spin pi-spinner loading-spinner"></i>
+      <span class="loading-text">Loading contract data...</span>
+    </div>
+
+    <!-- Contracts Table -->
+    <div v-else-if="etchPackets.length > 0" class="contracts-table-wrapper">
+      <DataTable
+        :value="etchPackets"
+        row-group-mode="subheader"
+        group-rows-by="createdAt"
+        sort-mode="single"
+        sort-field="createdAt"
+        size="small"
+        scrollable
+        class="contracts-table"
+      >
+        <template #groupheader="slotProps">
+          <div class="group-header">
+            <div class="group-header-left">
+              <i class="pi pi-calendar group-icon"></i>
+              <span class="group-date">{{ slotProps.data.createdAt }}</span>
+            </div>
+            <div class="group-header-actions">
+              <PrimeButton
+                v-if="slotProps.data.signerStatus === 'completed'"
+                class="p-button-info p-button-sm view-docs-btn"
+                :icon="loadingDocuments ? 'pi pi-spin pi-spinner' : 'pi pi-file-pdf'"
+                label="View Documents"
+                severity="info"
+                :loading="loadingDocuments"
+                @click="toggleDocumentList(slotProps.data.etchPacketEid)"
+              />
+              <PrimeButton
+                class="p-button-danger p-button-text p-button-rounded delete-btn"
+                icon="pi pi-trash"
+                @click="confirmDelete(slotProps.data.etchPacketEid)"
+              />
+            </div>
+          </div>
+        </template>
+        <Column field="createdAt" header="Created At" class="created-column"></Column>
+        <Column field="signerName" header="Signer" class="signer-column"></Column>
+        <Column field="signerStatus" header="Status" class="status-column">
+          <template #body="slotProps">
+            <Tag :status="slotProps.data.signerStatus" />
+          </template>
+        </Column>
+        <Column header="Actions" class="actions-column">
+          <template #body="slotProps">
+            <div class="action-buttons">
+              <SignContract
+                v-if="slotProps.data.signerStatus !== 'completed'"
+                :key="slotProps.data.key"
+                label="Sign"
+                size="small"
+                class="sign-btn"
+                :eid="slotProps.data.etchPacketEid"
+                @etch-packet-created="fetchEtchPackets"
+                @etch-packet-updated="fetchEtchPackets"
+              />
+            </div>
+          </template>
+        </Column>
+      </DataTable>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else class="empty-state">
+      <i class="pi pi-file-o empty-icon"></i>
+      <h3 class="empty-title">No Contracts Yet</h3>
+      <p class="empty-description">Generate your first contract to get started</p>
+    </div>
   <Dialog
     v-model:visible="displayConfirmation"
     header="Confirmation"
@@ -74,22 +102,65 @@
       />
     </template>
   </Dialog>
-  <div class="mt-4 flex justify-center">
-    <SignContract label="Generate New Contract" size="large" />
+
+  <!-- Documents Dialog -->
+  <Dialog
+    v-model:visible="showDocumentsDialog"
+    header="Signed Documents"
+    :style="{ width: '600px' }"
+    :modal="true"
+  >
+    <div v-if="selectedPacketDocuments.length > 0" class="space-y-3">
+      <div
+        v-for="doc in selectedPacketDocuments"
+        :key="doc.fileName"
+        class="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+      >
+        <div class="flex items-center gap-3">
+          <i class="pi pi-file-pdf text-2xl text-red-600"></i>
+          <div>
+            <p class="font-semibold">{{ formatDocumentName(doc.fileName) }}</p>
+            <p class="text-sm text-gray-500">{{ doc.type === 'signed' ? 'Signed Document' : 'Generated Document' }}</p>
+          </div>
+        </div>
+        <PrimeButton
+          icon="pi pi-external-link"
+          label="Open"
+          class="p-button-sm"
+          @click="openDocument(doc)"
+        />
+      </div>
+    </div>
+    <div v-else class="text-center py-8">
+      <i class="pi pi-inbox text-4xl text-gray-400 mb-3"></i>
+      <p class="text-gray-500">No documents available yet</p>
+    </div>
+  </Dialog>
+
+    <!-- Generate Button -->
+    <div v-if="!isLoadingContract" class="generate-button-container">
+      <SignContract
+        label="Generate New Contract"
+        size="large"
+        class="generate-btn"
+        @etch-packet-created="fetchEtchPackets"
+      />
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import { ref, onMounted, computed } from "vue";
-import { list, remove, getUrl } from "aws-amplify/storage";
 import { useStore } from "vuex";
+import { useRoute } from "vue-router";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import Button from "primevue/button";
 import { formatDate } from "@/utils/dateUtils";
-import { generateClient } from "aws-amplify/api";
-import { deleteEtchPacket } from "@/graphql/mutations";
+import { ContractAPI, EtchAPI, StorageAPI } from "@/services/api.js";
 import Tag from "@/components/Tag.vue";
+import SignContract from "@/components/SignContract.vue";
+import { useToast } from "primevue/usetoast";
 
 export default {
   name: "GenerateContract",
@@ -98,86 +169,392 @@ export default {
     Column,
     PrimeButton: Button,
     Tag,
+    SignContract,
   },
   setup() {
     const store = useStore();
+    const route = useRoute();
     const contracts = ref([]);
+    const toast = useToast();
+    const dbEtchPackets = ref([]);
+    const isLoadingContract = ref(false);
 
-    console.log("etchPackets", store.state.etchPackets);
+    // Use database etch packets instead of Vuex state
     const etchPackets = computed(() => {
-      return store.state.etchPackets.flatMap((packet) => {
-        return packet.documentGroup.signers.map((signer) => ({
-          key: `${packet.eid}-${signer.email}`,
-          name: packet.name,
-          createdAt: formatDate(packet.createdAt, "YYYY-MM-DD hh:mm A"),
-          signerName: signer.name,
-          signerStatus: signer.status,
-          etchPacketEid: packet.eid,
-          uploadKeys: signer.uploadKeys,
-        }));
-      });
+      if (dbEtchPackets.value.length > 0) {
+        // Use data from database
+        return dbEtchPackets.value.flatMap((packet) => {
+          const signerInfo = packet.signer_info || {};
+          const signers = signerInfo.signers || [];
+          
+          if (signers.length === 0) {
+            // If no signers in signer_info, create a single entry
+            return [{
+              key: packet.etch_packet_id,
+              name: packet.etch_packet_id,
+              createdAt: packet.created_at ? formatDate(packet.created_at, "YYYY-MM-DD hh:mm A") : 'Recently',
+              signerName: packet.signer_email || 'Pending',
+              signerStatus: packet.status || 'pending',
+              etchPacketEid: packet.etch_packet_id,
+              pdfUrl: packet.pdf_url,
+              signedPdfUrl: packet.signed_pdf_url,
+              documentUrls: packet.document_urls || []
+            }];
+          }
+          
+          return signers.map((signer) => ({
+            key: `${packet.etch_packet_id}-${signer.email}`,
+            name: packet.etch_packet_id,
+            createdAt: packet.created_at ? formatDate(packet.created_at, "YYYY-MM-DD hh:mm A") : 'Recently',
+            signerName: signer.name || signer.email || 'Pending',
+            signerStatus: signer.status || packet.status || 'pending',
+            etchPacketEid: packet.etch_packet_id,
+            pdfUrl: packet.pdf_url,
+            signedPdfUrl: packet.signed_pdf_url,
+            documentUrls: packet.document_urls || []
+          }));
+        });
+      } else if (store.state.etchPackets && store.state.etchPackets.length > 0) {
+        // Fallback to Vuex state if available
+        return store.state.etchPackets.flatMap((packet) => {
+          // Check if documentGroup exists
+          if (!packet.documentGroup || !packet.documentGroup.signers) {
+            return [];
+          }
+          return packet.documentGroup.signers.map((signer) => ({
+            key: `${packet.eid}-${signer.email}`,
+            name: packet.name,
+            createdAt: formatDate(packet.createdAt, "YYYY-MM-DD hh:mm A"),
+            signerName: signer.name,
+            signerStatus: signer.status,
+            etchPacketEid: packet.eid,
+            uploadKeys: signer.uploadKeys,
+          }));
+        });
+      }
+      return [];
     });
 
     console.log(etchPackets.value);
     const displayConfirmation = ref(false);
     const selectedEtchPacketEid = ref("");
+    const showDocumentsDialog = ref(false);
+    const selectedPacketDocuments = ref([]);
+    const loadingDocuments = ref(false);
 
     const fetchEtchPackets = async () => {
-      const accountId = store.state.accountId;
       const contractId = store.state.contractId;
-      const input = {
-        prefix: `accounts/${accountId}/contracts/${contractId}/etch-packets/`,
-      };
-      const result = await list(input);
-      contracts.value = await Promise.all(
-        result.items.map(async (item) => {
-          const getUrlInput = {
-            key: item.key,
-            options: {
-              validateObjectExistence: true,
-              expiresIn: 3600 // 1 hour expiration
+      
+      if (!contractId) {
+        console.warn('No contract ID available');
+        dbEtchPackets.value = [];
+        return;
+      }
+      
+      try {
+        // Fetch etch packets from Supabase
+        const packets = await EtchAPI.list(contractId);
+        console.log("Raw packets from database:", packets);
+
+        // Just use the packets as-is since we're doing hard delete
+        dbEtchPackets.value = packets || [];
+        console.log("Fetched etch packets from database:", dbEtchPackets.value);
+
+        // Also update the store with the fetched packets
+        if (packets && packets.length > 0) {
+          const formattedPackets = packets.map(packet => ({
+            eid: packet.etch_packet_id,
+            documentGroup: packet.signer_info,
+            status: packet.status,
+            pdf_url: packet.pdf_url,
+            document_urls: packet.document_urls,
+            createdAt: packet.created_at
+          }));
+          store.commit("updateEtchPackets", formattedPackets);
+        }
+        
+        // Fetch associated files from storage
+        const contractsWithFiles = await Promise.all(
+          dbEtchPackets.value.map(async (packet) => {
+            const folderPath = `accounts/${store.state.accountId}/contracts/${contractId}/etch-packets/${packet.etch_packet_id}/`;
+            
+            try {
+              const files = await StorageAPI.list(folderPath);
+              return files.map(file => ({
+                key: `${folderPath}${file.name}`,
+                filetype: file.name.split(".").pop().toLowerCase(),
+                name: new Date(packet.created_at).toLocaleString([], {
+                  year: "numeric",
+                  month: "numeric", 
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "numeric",
+                }),
+                metadata: null,
+                etchPacketEid: packet.etch_packet_id,
+              }));
+            } catch (error) {
+              console.warn('No files found for packet:', packet.etch_packet_id);
+              return [];
             }
-          };
-          const urlResult = await getUrl(getUrlInput);
-          // Note: Metadata is not available via getUrl in v6
-          const metadata = null;
-          return {
-            key: item.key,
-            filetype: item.key.split(".").pop().toLowerCase(),
-            name: new Date(item.lastModified).toLocaleString([], {
-              year: "numeric",
-              month: "numeric",
-              day: "numeric",
-              hour: "numeric",
-              minute: "numeric",
-            }),
-            metadata,
-            etchPacketEid: item.key.split("etch-packets/")[1].split("/")[0],
-          };
-        }),
-      );
-      console.log("contracts", contracts.value);
+          })
+        );
+        
+        contracts.value = contractsWithFiles.flat();
+        console.log("contracts", contracts.value);
+      } catch (error) {
+        console.error('Error fetching etch packets:', error);
+        dbEtchPackets.value = [];
+      }
     };
 
-    const openContract = async (data) => {
-      const signedUrlOutputs = await Promise.all(
-        data.uploadKeys.map(async (uploadKey) => {
-          return await getUrl({
-            key: uploadKey,
-            options: {
-              validateObjectExistence: true,
-            },
-          });
-        }),
-      );
+    const viewSignedDocument = async (data) => {
+      // Fetch and view signed documents
+      try {
+        console.log('Viewing signed document for:', data);
 
-      signedUrlOutputs.forEach((signedUrlOutput) => {
-        window.open(
-          signedUrlOutput.url.toString(),
-          signedUrlOutput.url.toString(),
-          "_blank",
-        );
-      });
+        // First check if we have stored PDF URLs in the database
+        const etchPacket = await EtchAPI.getByEtchPacketId(data.etchPacketEid);
+        console.log('Etch packet from database:', etchPacket);
+
+        // Check if we have stored document paths (not URLs, as URLs expire)
+        if (etchPacket?.document_urls && etchPacket.document_urls.length > 0) {
+          console.log('Found stored document paths:', etchPacket.document_urls);
+
+          // Generate fresh signed URLs for each stored document path
+          try {
+            const freshUrls = await Promise.all(
+              etchPacket.document_urls.map(async (doc) => {
+                // Generate a fresh signed URL valid for 1 hour
+                const signedUrl = await StorageAPI.getSignedUrl(doc.path, 'contracts', 3600);
+                return {
+                  ...doc,
+                  url: signedUrl
+                };
+              })
+            );
+
+            // Open all documents with fresh URLs
+            freshUrls.forEach((doc, index) => {
+              const delay = index === 0 ? 0 : index * 500;
+              setTimeout(() => {
+                console.log(`Opening document ${index + 1}: ${doc.type} - ${doc.path}`);
+                const newWindow = window.open(doc.url, `_blank_${index}`);
+                if (!newWindow) {
+                  console.warn(`Failed to open window for document ${index + 1} - popup may be blocked`);
+                }
+              }, delay);
+            });
+
+            toast.add({
+              severity: 'success',
+              summary: 'Documents Found',
+              detail: `Opening ${freshUrls.length} document(s)`,
+              life: 3000
+            });
+            return;
+          } catch (urlError) {
+            console.error('Error generating fresh signed URLs:', urlError);
+            // Fall through to try other methods
+          }
+        }
+        
+        // Check if all signers have completed
+        const allSignersCompleted = data.signerStatus === 'completed' || 
+          (etchPacket?.signer_info?.signers?.every(s => s.status === 'completed'));
+        
+        if (allSignersCompleted) {
+          // Call the document-group edge function to fetch/store documents
+          try {
+            const { AuthService } = await import('@/services/auth.js');
+            const session = await AuthService.getSession();
+            
+            let response;
+            try {
+              response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/document-group`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${session?.access_token}`,
+                },
+                body: JSON.stringify({
+                  etchPacketEid: data.etchPacketEid,
+                  accountId: store.state.accountId,
+                  contractId: store.state.contractId
+                })
+              });
+            } catch (networkError) {
+              console.error('Network error calling edge function:', networkError);
+              toast.add({
+                severity: 'error',
+                summary: 'Connection Error',
+                detail: 'Unable to connect to document service. Please ensure Supabase functions are running.',
+                life: 5000
+              });
+              throw networkError;
+            }
+            
+            // Check if response is OK (status 200-299)
+            if (!response.ok) {
+              console.error('Edge function returned error status:', response.status, response.statusText);
+              
+              // Special handling for service unavailable or gateway errors
+              if (response.status === 502 || response.status === 503 || response.status === 504) {
+                toast.add({
+                  severity: 'error',
+                  summary: 'Service Unavailable',
+                  detail: 'Document service is not running. Please ensure Supabase functions are deployed and running.',
+                  life: 5000
+                });
+              } else {
+                toast.add({
+                  severity: 'error',
+                  summary: 'Document Service Error',
+                  detail: `Failed to fetch documents: ${response.statusText || 'Unknown error'}`,
+                  life: 5000
+                });
+              }
+              throw new Error(`Edge function error: ${response.status} ${response.statusText}`);
+            }
+            
+            const { documents } = await response.json();
+            console.log('Fetched documents from Anvil:', documents);
+
+            // Show documents in dialog instead of auto-opening
+            if (documents && documents.length > 0) {
+                console.log(`Found ${documents.length} documents`);
+
+                // Filter out certificates and invalid docs
+                const validDocs = documents.filter(doc =>
+                  doc && doc.signedUrl &&
+                  !doc.fileName.toLowerCase().includes('anvil certificate') &&
+                  !doc.fileName.toLowerCase().includes('certificate')
+                );
+
+                console.log(`Filtered to ${validDocs.length} valid documents`);
+
+                if (validDocs.length === 0) {
+                  toast.add({
+                    severity: 'warning',
+                    summary: 'No Valid Documents',
+                    detail: 'Documents were found but URLs are missing',
+                    life: 4000
+                  });
+                  return;
+                }
+
+                // Format documents for the dialog
+                const formattedDocs = validDocs.map(doc => ({
+                  type: 'signed',
+                  path: doc.storagePath,
+                  fileName: doc.fileName,
+                  freshUrl: doc.signedUrl // Use freshUrl since it's already fresh from Anvil
+                }));
+
+                // Show the documents dialog
+                selectedPacketDocuments.value = formattedDocs;
+                showDocumentsDialog.value = true;
+
+                toast.add({
+                  severity: 'success',
+                  summary: 'Documents Ready',
+                  detail: `Found ${formattedDocs.length} document(s) - click to open`,
+                  life: 3000
+                });
+
+                // Refresh the etch packets list to get updated document_urls
+                await fetchEtchPackets();
+                return;
+              }
+          } catch (err) {
+            console.error('Error fetching from document-group function:', err);
+          }
+        }
+        
+        // Check multiple storage locations for documents
+        const storagePaths = [
+          `signed-documents/${data.etchPacketEid}/`, // New path from document-group function
+          `accounts/${store.state.accountId}/contracts/${store.state.contractId}/etch-packets/${data.etchPacketEid}/` // Legacy path
+        ];
+        
+        for (const folderPath of storagePaths) {
+          try {
+            const files = await StorageAPI.list(folderPath, 'contracts');
+            console.log(`Found files in ${folderPath}:`, files);
+            
+            if (files && files.length > 0) {
+              // Open all PDF files found
+              const pdfFiles = files.filter(file => file.name.toLowerCase().endsWith('.pdf'));
+              
+              if (pdfFiles.length > 0) {
+                console.log(`Found ${pdfFiles.length} PDFs in storage, opening...`);
+                
+                // Get all signed URLs first
+                const signedUrls = await Promise.all(
+                  pdfFiles.map(async file => {
+                    const filePath = `${folderPath}${file.name}`;
+                    const signedUrl = await StorageAPI.getSignedUrl(filePath, 'contracts', 3600);
+                    return { name: file.name, url: signedUrl };
+                  })
+                );
+                
+                // Open each document with a delay to avoid popup blocking
+                signedUrls.forEach((doc, index) => {
+                  const delay = index === 0 ? 0 : index * 500;
+                  setTimeout(() => {
+                    console.log(`Opening document ${index + 1}/${signedUrls.length}: ${doc.name}`);
+                    const newWindow = window.open(doc.url, `_blank_${index}`);
+                    if (!newWindow) {
+                      console.warn(`Failed to open window for document ${index + 1}: ${doc.name} - popup may be blocked`);
+                    }
+                  }, delay); // 500ms delay between each window
+                });
+                
+                toast.add({
+                  severity: 'success',
+                  summary: 'Documents Found',
+                  detail: `Opening ${pdfFiles.length} document(s)`,
+                  life: 3000
+                });
+                return;
+              }
+            }
+          } catch (storageError) {
+            console.warn(`No documents in ${folderPath}:`, storageError);
+          }
+        }
+        
+        // If we have a signed_pdf_url in the database, use it
+        if (etchPacket?.signed_pdf_url) {
+          window.open(etchPacket.signed_pdf_url, "_blank");
+          return;
+        }
+        
+        // If nothing found and not all signers completed, show info
+        if (!allSignersCompleted) {
+          toast.add({
+            severity: 'info',
+            summary: 'Signing In Progress',
+            detail: 'Not all signers have completed. Documents will be available once all parties have signed.',
+            life: 4000
+          });
+        } else {
+          toast.add({
+            severity: 'warning',
+            summary: 'No Documents Found',
+            detail: 'Documents may still be processing. Please try again in a moment.',
+            life: 4000
+          });
+        }
+      } catch (error) {
+        console.error('Error viewing signed document:', error);
+        toast.add({
+          severity: 'error',
+          summary: 'View Error',
+          detail: 'Unable to access the document. Please try again.',
+          life: 3000
+        });
+      }
     };
 
     const confirmDelete = (etchPacketEid) => {
@@ -185,49 +562,180 @@ export default {
       displayConfirmation.value = true;
     };
 
-    const deleteEtchPacketFromDocumentDb = async (etchPacketEid) => {
-      const client = generateClient();
-      // Delete the etch packet from the store
-      store.commit("deleteEtchPacket", { etchPacketEid });
+    const formatDocumentName = (fileName) => {
+      if (!fileName) return 'Document';
 
-      // Delete the etch packet from the API
+      // Remove timestamp and extension
+      let name = fileName.replace(/_signed_\d+\.pdf$/i, '');
+      name = name.replace(/\.pdf$/i, '');
+
+      // Replace underscores with spaces and capitalize
+      name = name.replace(/_/g, ' ');
+
+      // Special formatting for known document types
+      const formatMap = {
+        'residential resale contract': 'Residential Resale Contract',
+        'third party finance addendum': 'Third Party Finance Addendum',
+        'lender appraisal termination addendum': 'Lender Appraisal Termination Addendum',
+        'homeowners addendum': 'Homeowners Association Addendum',
+        'anvil certificate': 'Anvil Certificate',
+        'contract': 'Main Contract'
+      };
+
+      const lowerName = name.toLowerCase();
+      for (const [key, value] of Object.entries(formatMap)) {
+        if (lowerName.includes(key)) {
+          return value;
+        }
+      }
+
+      // Capitalize first letter of each word
+      return name.replace(/\b\w/g, (l) => l.toUpperCase());
+    };
+
+    const toggleDocumentList = async (etchPacketEid) => {
+      console.log('toggleDocumentList called with:', etchPacketEid);
+
+      loadingDocuments.value = true;
+
       try {
-        const deleteEtchPacketInput = {
-          input: {
-            eid: etchPacketEid,
-          },
-        };
-        await client.graphql({
-          query: deleteEtchPacket,
-          variables: deleteEtchPacketInput,
+        // Always fetch the latest packet data to ensure we have current document_urls
+        await fetchEtchPackets();
+
+        // Fetch documents for this packet
+        const packet = dbEtchPackets.value.find(p => p.etch_packet_id === etchPacketEid);
+        console.log('Found packet:', packet);
+        console.log('Packet document_urls:', packet?.document_urls);
+
+        if (packet && packet.document_urls && packet.document_urls.length > 0) {
+          // Generate fresh signed URLs for all documents
+          try {
+            const docsWithFreshUrls = await Promise.all(
+              packet.document_urls
+                .filter(doc => !doc.fileName?.toLowerCase().includes('anvil certificate'))
+                .map(async (doc) => {
+                  // Generate a fresh signed URL valid for 1 hour
+                  const freshUrl = await StorageAPI.getSignedUrl(doc.path, 'contracts', 3600);
+                  return {
+                    ...doc,
+                    freshUrl // Store the fresh URL separately to preserve original
+                  };
+                })
+            );
+
+            selectedPacketDocuments.value = docsWithFreshUrls;
+            showDocumentsDialog.value = true;
+          } catch (error) {
+            console.error('Error generating fresh URLs for documents:', error);
+            toast.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'Unable to load document links. Please try again.',
+              life: 3000
+            });
+          }
+        } else {
+          // Fetch documents from storage or Anvil - this will populate document_urls
+          await viewSignedDocument({ etchPacketEid, signerStatus: 'completed' });
+        }
+      } finally {
+        loadingDocuments.value = false;
+      }
+    };
+
+    const openDocument = async (doc) => {
+      // Always generate a fresh signed URL when opening
+      try {
+        const freshUrl = doc.freshUrl || await StorageAPI.getSignedUrl(doc.path, 'contracts', 3600);
+        window.open(freshUrl, '_blank');
+      } catch (error) {
+        console.error('Error opening document:', error);
+        toast.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Unable to open document. Please try again.',
+          life: 3000
         });
-        console.log(
-          `Deleted etch packet from documentDB with eid: ${etchPacketEid}`,
-        );
+      }
+    };
+
+    const deleteEtchPacketFromDocumentDb = async (etchPacketEid) => {
+      console.log(`Starting deletion of etch packet: ${etchPacketEid}`);
+      
+      // Delete the etch packet from the store if it exists
+      if (store.state.etchPackets) {
+        store.commit("deleteEtchPacket", { etchPacketEid });
+      }
+
+      // Delete the etch packet from Supabase
+      try {
+        const etchPacket = await EtchAPI.getByEtchPacketId(etchPacketEid);
+        console.log(`Found etch packet in database:`, etchPacket);
+        
+        if (etchPacket && etchPacket.id) {
+          // Actually delete the record from database
+          console.log(`Deleting etch packet with database ID: ${etchPacket.id}`);
+          await EtchAPI.delete(etchPacket.id);
+          
+          // Verify deletion
+          const checkDeleted = await EtchAPI.getByEtchPacketId(etchPacketEid);
+          if (checkDeleted) {
+            console.error(`Etch packet ${etchPacketEid} still exists after deletion!`);
+            toast.add({
+              severity: 'error',
+              summary: 'Delete Failed',
+              detail: 'The packet could not be deleted from the database.',
+              life: 3000
+            });
+            return false;
+          }
+          
+          console.log(
+            `Successfully deleted etch packet from Supabase with eid: ${etchPacketEid}`,
+          );
+          
+          toast.add({
+            severity: 'success',
+            summary: 'Deleted',
+            detail: 'Etch packet deleted successfully.',
+            life: 3000
+          });
+          
+          // Return true to indicate successful deletion
+          return true;
+        } else {
+          console.log(`Etch packet ${etchPacketEid} not found in database`);
+          // Remove from UI if it somehow exists there but not in DB
+          return true;
+        }
       } catch (err) {
         console.error(
-          `Error deleting etch packet from documentDB with eid: ${etchPacketEid}`,
+          `Error deleting etch packet from Supabase with eid: ${etchPacketEid}`,
           err,
         );
+        toast.add({
+          severity: 'error',
+          summary: 'Delete Failed',
+          detail: err.message || 'Unable to delete the etch packet. Please try again.',
+          life: 3000
+        });
+        return false;
       }
     };
 
     const deleteContract = async (etchPacketEid) => {
-      // Delete all contracts matching this etchPacketEid from AWS
+      // Delete all contracts matching this etchPacketEid from Supabase Storage
       const accountId = store.state.accountId;
       const contractId = store.state.contractId;
-      const prefix = `accounts/${accountId}/contracts/${contractId}/etch-packets/${etchPacketEid}/`;
+      const folderPath = `accounts/${accountId}/contracts/${contractId}/etch-packets/${etchPacketEid}/`;
 
       try {
-        const listInput = { prefix };
-        const listOutput = await list(listInput);
-
-        await Promise.all(
-          listOutput.items.map(async (item) => {
-            const deleteInput = { key: item.key };
-            await remove(deleteInput);
-          }),
-        );
+        const files = await StorageAPI.list(folderPath);
+        
+        if (files.length > 0) {
+          const filePaths = files.map(file => `${folderPath}${file.name}`);
+          await StorageAPI.delete(filePaths, 'contracts');
+        }
 
         console.log(
           `Deleted all contracts for etchPacketEid: ${etchPacketEid}`,
@@ -239,23 +747,316 @@ export default {
         );
       }
 
-      await deleteEtchPacketFromDocumentDb(etchPacketEid);
+      // Delete from database and wait for completion
+      const deleted = await deleteEtchPacketFromDocumentDb(etchPacketEid);
+      
+      // Close dialog
       displayConfirmation.value = false;
+      
+      // Refresh the list after deletion completes
+      if (deleted) {
+        await fetchEtchPackets();
+      }
     };
 
-    onMounted(fetchEtchPackets);
+    // Load contract if not already loaded
+    const loadContractIfNeeded = async () => {
+      const contractIdFromRoute = route.params.id;
+      const contractIdInStore = store.state.contractId;
+
+      console.log('GenerateContract - Route ID:', contractIdFromRoute);
+      console.log('GenerateContract - Store contract ID:', contractIdInStore);
+      console.log('GenerateContract - Store has form data:', !!store.state.property);
+
+      // Check if we need to load the contract
+      // Either: no contract ID in store, or different contract ID, or missing form data
+      if (!contractIdInStore ||
+          contractIdInStore !== contractIdFromRoute ||
+          !store.state.property?.address) {
+
+        console.log('Loading contract from database...');
+        isLoadingContract.value = true;
+
+        try {
+          const contract = await ContractAPI.get(contractIdFromRoute);
+          console.log('Loaded contract:', contract);
+
+          // Use the selectContract action to load all the data properly
+          store.dispatch('selectContract', contract);
+
+          toast.add({
+            severity: 'success',
+            summary: 'Contract Loaded',
+            detail: 'Contract data has been loaded successfully.',
+            life: 3000
+          });
+        } catch (error) {
+          console.error('Error loading contract:', error);
+          toast.add({
+            severity: 'error',
+            summary: 'Load Failed',
+            detail: 'Unable to load contract data. Please try again.',
+            life: 5000
+          });
+        } finally {
+          isLoadingContract.value = false;
+        }
+      }
+    };
+
+    onMounted(async () => {
+      await loadContractIfNeeded();
+      await fetchEtchPackets();
+    });
 
     return {
       contracts,
       etchPackets,
       selectedEtchPacketEid,
-      openContract,
+      viewSignedDocument,
       confirmDelete,
       deleteContract,
       fetchEtchPackets,
       displayConfirmation,
       formatDate,
+      showDocumentsDialog,
+      selectedPacketDocuments,
+      formatDocumentName,
+      toggleDocumentList,
+      openDocument,
+      dbEtchPackets,
+      isLoadingContract,
+      loadingDocuments,
     };
   },
 };
 </script>
+
+<style scoped>
+/* Container Styles */
+.contract-generation-container {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Loading State */
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  gap: 0.75rem;
+}
+
+.loading-spinner {
+  font-size: 2rem;
+  color: var(--primary-color);
+}
+
+.loading-text {
+  font-size: 1.125rem;
+  color: var(--text-color);
+}
+
+/* Table Wrapper */
+.contracts-table-wrapper {
+  background: var(--surface-card);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.contracts-table {
+  border: none;
+}
+
+/* Group Header */
+.group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--surface-50);
+  border-left: 4px solid var(--primary-color);
+}
+
+.group-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.group-icon {
+  color: var(--primary-color);
+  font-size: 1rem;
+}
+
+.group-date {
+  color: var(--text-color);
+  font-size: 0.95rem;
+}
+
+.group-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-color-secondary);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  color: var(--surface-400);
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.empty-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+}
+
+.empty-description {
+  color: var(--text-color-secondary);
+  margin-bottom: 2rem;
+}
+
+/* Generate Button Container */
+.generate-button-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+/* Button Styles */
+.view-docs-btn {
+  font-size: 0.875rem;
+}
+
+.delete-btn:hover {
+  background-color: var(--red-50) !important;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Column Styles */
+:deep(.created-column) {
+  display: none;
+}
+
+:deep(.signer-column) {
+  font-weight: 500;
+}
+
+:deep(.status-column) {
+  width: 120px;
+}
+
+:deep(.actions-column) {
+  width: 100px;
+  text-align: right;
+}
+
+/* Document Dialog Enhancement */
+:deep(.p-dialog-content) {
+  padding: 1.25rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .contract-generation-container {
+    padding: 1rem;
+  }
+
+  .group-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .group-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  :deep(.p-datatable) {
+    font-size: 0.875rem;
+  }
+}
+
+/* Tag Component Override */
+:deep(.p-tag) {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  font-weight: 600;
+}
+
+/* DataTable Row Hover */
+:deep(.p-datatable-tbody > tr:hover) {
+  background-color: var(--surface-50);
+}
+
+/* DataTable Borders */
+:deep(.p-datatable .p-datatable-thead > tr > th) {
+  border-bottom: 2px solid var(--surface-200);
+  background-color: var(--surface-50);
+  color: var(--text-color-secondary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+:deep(.p-datatable .p-datatable-tbody > tr > td) {
+  border-bottom: 1px solid var(--surface-100);
+  padding: 0.75rem;
+}
+
+/* Document List Styles */
+.space-y-3 > * + * {
+  margin-top: 0.75rem;
+}
+
+.document-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  border: 1px solid var(--surface-200);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.document-item:hover {
+  background-color: var(--surface-50);
+  border-color: var(--primary-color-light);
+}
+
+/* Enhance Primary Button */
+:deep(.p-button.generate-btn) {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+:deep(.p-button.generate-btn:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+</style>

@@ -49,7 +49,7 @@
                 <InputGroup>
                   <InputText
                     v-model="inputValues[question.fieldId]"
-                    :disabled="isContractStarted && sectionId === 'property'"
+                    :disabled="(isContractStarted && sectionId === 'property') || question.readOnly"
                     :class="{
                       'p-invalid': validationErrors[question.fieldId]?.length,
                       'marked-input': isMarked(
@@ -60,7 +60,7 @@
                     class="w-full"
                     @blur="setInputValue(question, $event.target.value)"
                   />
-                  <div class="flex justify-center items-center ml-4">
+                  <div v-if="sectionId !== 'property' && !question.readOnly" class="flex justify-center items-center ml-4">
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -108,7 +108,7 @@
                     :max-fraction-digits="2"
                     @input="setInputValue(question, $event.value)"
                   />
-                  <div class="flex justify-center items-center ml-4">
+                  <div v-if="sectionId !== 'property'" class="flex justify-center items-center ml-4">
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -159,7 +159,7 @@
                     locale="en-US"
                     @input="setInputValue(question, $event.value)"
                   />
-                  <div class="flex justify-center items-center ml-4">
+                  <div v-if="sectionId !== 'property'" class="flex justify-center items-center ml-4">
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -206,7 +206,7 @@
                     class="w-full"
                     @update:model-value="setInputValue(question, $event)"
                   />
-                  <div class="flex justify-center items-center ml-4">
+                  <div v-if="sectionId !== 'property'" class="flex justify-center items-center ml-4">
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -238,7 +238,7 @@
               <!-- Select Input -->
               <div v-else-if="question.type === 'select'" class="flex flex-col">
                 <InputGroup>
-                  <Listbox
+                  <Dropdown
                     v-model="inputValues[question.fieldId]"
                     :disabled="isContractStarted && sectionId === 'property'"
                     :class="{
@@ -253,9 +253,9 @@
                     option-value="value"
                     placeholder="Select an option"
                     class="w-full"
-                    @change="setInputValue(question, $event.value)"
+                    @update:model-value="setInputValue(question, $event)"
                   />
-                  <div class="flex justify-center items-center ml-4">
+                  <div v-if="sectionId !== 'property'" class="flex justify-center items-center ml-4">
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -309,7 +309,7 @@
                     class="mr-2"
                     @update:model-value="setInputValue(question, $event)"
                   />
-                  <div class="flex justify-center items-center ml-4">
+                  <div v-if="sectionId !== 'property'" class="flex justify-center items-center ml-4">
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -355,7 +355,7 @@
                     class="w-full"
                     @blur="setInputValue(question, $event.target.value)"
                   />
-                  <div class="flex justify-center items-center ml-4">
+                  <div v-if="sectionId !== 'property'" class="flex justify-center items-center ml-4">
                     <PrimeButton
                       label="I don't know"
                       :icon="
@@ -414,7 +414,7 @@
             label="Next Section"
             icon="pi pi-arrow-right"
             icon-pos="right"
-            @click.prevent="submitFormAndLoadNextSection"
+            @click="handleNextButtonClick"
           />
         </div>
       </form>
@@ -431,9 +431,10 @@
 </template>
 
 <script>
-import { getQuestionsForSection } from "../config/TX";
-import { graphqlRequest } from "../utils/graphqlClient";
-import { updateContract } from "../graphql/mutations";
+import { getQuestionsForSection, sections } from "../config/TX";
+import { ContractAPI } from "@/services/api.js";
+import { createContractPayload } from "@/utils/fieldMapUtils";
+import { AuthService } from "@/services/auth.js";
 
 import SectionProgressBar from "@/components/SectionProgressBar.vue";
 
@@ -441,7 +442,7 @@ import SectionProgressBar from "@/components/SectionProgressBar.vue";
 import Panel from "primevue/panel";
 import InputText from "primevue/inputtext";
 import InputNumber from "primevue/inputnumber";
-import Listbox from "primevue/listbox";
+import Dropdown from "primevue/dropdown";
 import Button from "primevue/button";
 import InputMask from "primevue/inputmask";
 import DatePicker from "primevue/datepicker";
@@ -458,22 +459,60 @@ export default {
     InputText,
     InputNumber,
     DatePicker,
-    Listbox,
+    Dropdown,
     PrimeButton: Button,
     InputMask,
     SectionProgressBar,
     TooltipPopover,
     ReferralButton,
   },
+  async beforeRouteUpdate(to, from, next) {
+    // Auto-save when navigating between sections (for menu navigation)
+    console.log(`[FormPage beforeRouteUpdate] CALLED - from ${from.params.sectionId} to ${to.params.sectionId}`);
+    const oldSectionId = from.params.sectionId;
+    const newSectionId = to.params.sectionId;
+
+    if (oldSectionId && oldSectionId !== newSectionId && !this.isSaving) {
+      console.log(`[FormPage beforeRouteUpdate] Auto-saving ${oldSectionId} before switching to ${newSectionId}`);
+      this.isSaving = true;
+      try {
+        await this.saveCurrentSection();
+        console.log(`[FormPage beforeRouteUpdate] Save completed for ${oldSectionId}`);
+      } catch (error) {
+        console.error(`[FormPage beforeRouteUpdate] Save failed:`, error);
+      } finally {
+        this.isSaving = false;
+      }
+    }
+    next();
+  },
+  async beforeRouteLeave(to, from, next) {
+    // Auto-save before leaving the page completely
+    console.log(`[FormPage beforeRouteLeave] CALLED - leaving ${from.params.sectionId}`);
+    if (this.sectionId && !this.isSaving) {
+      console.log(`[FormPage beforeRouteLeave] Auto-saving ${this.sectionId} before leaving`);
+      this.isSaving = true;
+      try {
+        await this.saveCurrentSection();
+        console.log(`[FormPage beforeRouteLeave] Save completed for ${this.sectionId}`);
+      } catch (error) {
+        console.error(`[FormPage beforeRouteLeave] Save failed:`, error);
+      } finally {
+        this.isSaving = false;
+      }
+    }
+    next();
+  },
   data() {
     return {
       sectionId: this.$route.params.sectionId,
       sectionIndex: null,
       formData: {},
-      inputValues: {},
+      inputValues: {}, // This will be made reactive via Vue.set in updateFormData
       questions: [],
       section: "",
       validationErrors: {},
+      isSaving: false, // Flag to prevent data clearing during save
     };
   },
   computed: {
@@ -481,7 +520,9 @@ export default {
       return !!this.$store.state.contractId; // Assuming contractId is set when a contract is started
     },
     formDataKeys() {
-      return Object.keys(this.$store.state.formData);
+      // Use the fixed list of navigable sections from the config
+      // instead of all keys from formData
+      return sections;
     },
     invisibleQuestions() {
       console.log("checking invisible questions...");
@@ -572,20 +613,55 @@ export default {
   },
   watch: {
     "$route.params.sectionId"(newVal) {
-      this.sectionId = newVal;
-      this.sectionIndex = this.formDataKeys.indexOf(this.sectionId);
-      this.updateFormData();
+      // Update section when route changes (save happens in beforeRouteUpdate)
+      if (newVal && this.formDataKeys.includes(newVal)) {
+        this.sectionId = newVal;
+        this.sectionIndex = this.formDataKeys.indexOf(this.sectionId);
+        this.updateFormData();
+      }
     },
     "$store.state.formData": {
       handler() {
-        this.updateFormData();
+        // Don't update form data if we're in the middle of saving
+        // This prevents the inputValues from being cleared while we're trying to save them
+        if (!this.isSaving) {
+          this.updateFormData();
+        }
       },
       deep: true,
     },
   },
-  created() {
+  async created() {
     this.sectionIndex = this.formDataKeys.indexOf(this.sectionId);
     this.updateFormData();
+    
+    // If we're on the buyers section, populate the primaryName and email from user profile
+    if (this.sectionId === 'buyers') {
+      const user = await AuthService.getUser();
+      if (user) {
+        // Set the primaryName field with the user's full name
+        if (user.user_metadata?.full_name) {
+          this.inputValues.primaryName = user.user_metadata.full_name;
+          // Also update the store
+          this.$store.commit("updateFormData", {
+            sectionId: 'buyers',
+            fieldId: 'primaryName',
+            value: user.user_metadata.full_name,
+          });
+        }
+        
+        // Always populate the email field from the user profile (immutable)
+        if (user.email) {
+          this.inputValues.email = user.email;
+          this.$store.commit("updateFormData", {
+            sectionId: 'buyers',
+            fieldId: 'email',
+            value: user.email,
+          });
+        }
+      }
+    }
+    
     window.scrollTo(0, 0);
   },
   methods: {
@@ -604,6 +680,7 @@ export default {
         this.$store.state.formData[this.sectionId] || {},
       );
       Object.assign(this.inputValues, this.formData);
+
       this.questions = getQuestionsForSection(this.sectionId);
       this.section = this.questions[0]?.section || "";
     },
@@ -637,7 +714,15 @@ export default {
         formattedValue = formatDate(value, "YYYY-MM-DD");
       }
 
+      // Debug logging for critical fields
+      if (question.fieldId === 'hasListingAgentInfo' || question.fieldId === 'primaryName' || question.fieldId === 'secondaryName') {
+      }
+
       this.inputValues[question.fieldId] = formattedValue;
+
+      // Log after setting
+      if (question.fieldId === 'primaryName' || question.fieldId === 'secondaryName') {
+      }
 
       // Update the store's formData
       this.$store.commit("updateFormData", {
@@ -645,6 +730,10 @@ export default {
         fieldId: question.fieldId,
         value: formattedValue,
       });
+
+      // Debug log the store update for boolean fields
+      if (question.fieldId === 'hasListingAgentInfo') {
+      }
 
       const isRequired = this.isFieldRequired(question);
 
@@ -690,91 +779,115 @@ export default {
         params: { sectionId: sectionId, questionIndex: questionIndex },
       });
     },
-    async submitFormAndLoadNextSection() {
-      // Validate all visible fields
-      this.visibleQuestions.forEach((question) => {
-        const value = this.inputValues[question.fieldId];
-        const isRequired = this.isFieldRequired(question);
+    handleNextButtonClick(event) {
+      event.preventDefault();
+      this.submitFormAndLoadNextSection();
+    },
+    async saveCurrentSection() {
+      try {
 
-        if (!this.isMarked(question.sectionId, question.fieldId)) {
-          const errors = validateField(question, value, isRequired);
-          this.validationErrors[question.fieldId] = errors;
-        } else {
-          // Clear validation errors for marked questions
-          this.validationErrors[question.fieldId] = [];
-        }
-      });
+        // Extract save logic into reusable function
+        const markedFields = this.$store.state.markedQuestions[this.sectionId] || [];
+        const storeData = this.$store.state.formData[this.sectionId] || {};
+        const dataToSave = {};
 
-      // Allow save even if there are validation errors
-      // if (hasErrors) {
-      //   console.log("Validation errors:", this.validationErrors);
-      //   return;
-      // }
+        Object.keys(storeData).forEach(fieldId => {
+          if (!markedFields.includes(fieldId)) {
+            dataToSave[fieldId] = storeData[fieldId];
+          }
+        });
 
-      // No validation errors, update the store's formData
-      this.$store.commit("updateSectionFormData", {
-        sectionId: this.sectionId,
-        data: { ...this.inputValues },
-      });
 
-      const sectionDataCopy = JSON.parse(JSON.stringify(this.inputValues));
-      // Create the properly typed payload based on section
-      let payload = {
-        input: {
-          id: this.$store.state.contractId,
-          markedQuestions: JSON.stringify(this.$store.state.markedQuestions),
-        },
-      };
+        // Update the store's formData with non-marked fields only
+        this.$store.commit("updateSectionFormData", {
+          sectionId: this.sectionId,
+          data: dataToSave,
+        });
 
-      if (this.sectionId === "property") {
-        // Transform the data to match PropertyInput type
-        const propertyInput = {
-          lot: sectionDataCopy.lot,
-          block: sectionDataCopy.block,
-          county: sectionDataCopy.county,
-          legalDescription: sectionDataCopy.legalDescription,
-          mlsNumber: sectionDataCopy.mlsNumber,
-          streetAddress: sectionDataCopy.streetAddress,
-          city: sectionDataCopy.city,
-          state: sectionDataCopy.state,
-          postalCode: sectionDataCopy.postalCode,
-          subdivision: sectionDataCopy.subdivision,
-          yearBuilt: parseInt(sectionDataCopy.yearBuilt) || null,
-          numBedroom: parseInt(sectionDataCopy.numBedroom) || null,
-          numBathroom: parseInt(sectionDataCopy.numBathroom) || null,
-          numFloor: parseInt(sectionDataCopy.numFloor) || null,
-          floorSizeValue: parseFloat(sectionDataCopy.floorSizeValue) || null,
-          floorSizeUnit: sectionDataCopy.floorSizeUnit,
-          lotSizeValue: parseFloat(sectionDataCopy.lotSizeValue) || null,
-          lotSizeUnit: sectionDataCopy.lotSizeUnit,
-          mostRecentPriceAmount:
-            parseInt(sectionDataCopy.mostRecentPriceAmount) || null,
-          mostRecentPriceDate: sectionDataCopy.mostRecentPriceDate,
-          dateAdded: sectionDataCopy.dateAdded,
-          dateUpdated: sectionDataCopy.dateUpdated,
-          description: sectionDataCopy.description,
-          imageUrl: sectionDataCopy.imageUrl,
+        // Create update payload with the current section's data (excluding marked fields)
+        let sectionUpdate = {
+          [this.sectionId]: dataToSave
         };
 
-        // Remove any undefined or null values
-        Object.keys(propertyInput).forEach((key) =>
-          propertyInput[key] === undefined || propertyInput[key] === null
-            ? delete propertyInput[key]
-            : {},
-        );
+        // Special handling for sections that share JSONB columns
+        // When saving sellers, also include buyers data (both go to 'parties' column)
+        if (this.sectionId === 'sellers') {
+          sectionUpdate.buyers = this.$store.state.formData.buyers || {};
+        }
+        // When saving buyers, also include sellers data (both go to 'parties' column)
+        else if (this.sectionId === 'buyers') {
+          sectionUpdate.sellers = this.$store.state.formData.sellers || {};
+        }
+        // When saving HOA addendum, include other legal sections
+        else if (this.sectionId === 'homeownersAssociationAddendum') {
+          const legalSections = ['leases', 'survey', 'buyerProvisions', 'buyerNotices', 'buyerAttorney'];
+          legalSections.forEach(section => {
+            if (this.$store.state.formData[section]) {
+              sectionUpdate[section] = this.$store.state.formData[section];
+            }
+          });
+        }
+        // When saving listing agent, include other additional_info sections
+        else if (this.sectionId === 'listingAgent') {
+          const additionalSections = ['propertyCondition', 'brokerDisclosure', 'possession'];
+          additionalSections.forEach(section => {
+            if (this.$store.state.formData[section]) {
+              sectionUpdate[section] = this.$store.state.formData[section];
+            }
+          });
+        }
+        // When saving any legal section, include all other legal sections
+        else if (['leases', 'survey', 'buyerProvisions', 'buyerNotices', 'buyerAttorney'].includes(this.sectionId)) {
+          const legalSections = ['leases', 'survey', 'homeownersAssociationAddendum', 'buyerProvisions', 'buyerNotices', 'buyerAttorney'];
+          legalSections.forEach(section => {
+            if (section !== this.sectionId && this.$store.state.formData[section]) {
+              sectionUpdate[section] = this.$store.state.formData[section];
+            }
+          });
+        }
+        // When saving any additional_info section, include all other additional_info sections
+        else if (['propertyCondition', 'brokerDisclosure', 'possession'].includes(this.sectionId)) {
+          const additionalSections = ['propertyCondition', 'brokerDisclosure', 'possession', 'listingAgent'];
+          additionalSections.forEach(section => {
+            if (section !== this.sectionId && this.$store.state.formData[section]) {
+              sectionUpdate[section] = this.$store.state.formData[section];
+            }
+          });
+        }
+        // When saving any title/closing section, include all other title/closing sections
+        else if (['title', 'titleObjections', 'titleNotices', 'closing'].includes(this.sectionId)) {
+          const titleSections = ['title', 'titleObjections', 'titleNotices', 'closing'];
+          titleSections.forEach(section => {
+            if (section !== this.sectionId && this.$store.state.formData[section]) {
+              sectionUpdate[section] = this.$store.state.formData[section];
+            }
+          });
+        }
 
-        payload.input.property = propertyInput;
-      } else {
-        // Handle other sections as before
-        payload.input[this.sectionId] = sectionDataCopy;
+
+        // Use the field mapping utilities to create the proper payload
+        const updatePayload = createContractPayload(sectionUpdate, {
+          markedQuestions: this.$store.state.markedQuestions
+        });
+
+
+        // Update the contract using Supabase API
+        const response = await ContractAPI.update(this.$store.state.contractId, updatePayload);
+
+        // If a new contract was created (because the old one didn't exist), update the store
+        if (response.id !== this.$store.state.contractId) {
+          this.$store.commit("setContractId", response.id);
+        }
+      } catch (error) {
+        console.error('[FormPage SAVE] ERROR in saveCurrentSection:', error);
+        throw error;
       }
+    },
+    async submitFormAndLoadNextSection() {
+      this.isSaving = true;
 
       try {
-        payload.input.markedQuestions = JSON.stringify(
-          this.$store.state.markedQuestions,
-        );
-        const response = await graphqlRequest(updateContract, payload);
-        console.log("Contract updated:", response);
+        await this.saveCurrentSection();
 
         // Navigate to the next section if it exists
         if (this.formDataKeys[this.sectionIndex + 1]) {
@@ -783,11 +896,16 @@ export default {
             params: { sectionId: this.formDataKeys[this.sectionIndex + 1] },
           });
         } else {
-          // Handle end of form (e.g., navigate to a summary page)
-          console.log("Form completed.");
+          // All form sections completed - navigate to the contract dashboard
+          this.$router.push({
+            name: "ContractDashboard",
+            params: { id: this.$store.state.contractId },
+          });
         }
       } catch (error) {
         console.error("Error updating contract:", error);
+      } finally {
+        this.isSaving = false;
       }
     },
   },

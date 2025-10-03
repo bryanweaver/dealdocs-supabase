@@ -131,7 +131,7 @@ const goToNext = () => {
       <!-- Introduction Only -->
       <div v-if="currentQuestion.intro" class="intro-container">
         <div class="intro-content">
-          <p v-html="currentQuestion.intro"></p>
+          <p v-text="currentQuestion.intro"></p>
         </div>
       </div>
 

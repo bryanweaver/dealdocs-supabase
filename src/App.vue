@@ -1,102 +1,22 @@
 <script setup lang="ts">
-// import { configureAutoTrack } from "@aws-amplify/analytics";
-import { Authenticator } from "@aws-amplify/ui-vue";
-import "@aws-amplify/ui-vue/styles.css";
-import { onMounted, computed } from "vue";
+import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { confirmSignUp, signIn, signOut, signUp } from "aws-amplify/auth";
-import { I18n } from "aws-amplify/utils";
-
-// Analytics disabled temporarily - requires proper Pinpoint configuration
-// configureAutoTrack({
-//   type: "session",
-//   enable: true,
-// });
-
-// Customize the text labels
-I18n.putVocabulariesForLanguage("en", {
-  "Sign In": "Login",
-  "Sign in": "Log in",
-  "Sign in to your account": "Welcome back to DocuDeals",
-  "Create Account": "Register",
-  "Create a new account": "Join DocuDeals",
-  Username: "Email",
-  Password: "Password",
-  "Forgot your password?": "Reset Password",
-  "Reset your password": "Forgot your password?",
-  "Enter your username": "Enter your email",
-  "Send code": "Reset my password",
-  "Back to Sign In": "Back to Login",
-});
+import { useStore } from "vuex";
+import { AuthService } from "@/services/auth.js";
+import { ContractAPI } from "@/services/api.js";
 
 const router = useRouter();
+const store = useStore();
+const isAuthenticated = ref(false);
 
-// Form fields customization
-const formFields = {
-  signIn: {
-    username: {
-      placeholder: "Enter your email",
-      label: "Email",
-      isRequired: true,
-    },
-    password: {
-      placeholder: "Enter your password",
-      label: "Password",
-      isRequired: true,
-    },
-  },
-  signUp: {
-    email: {
-      order: 1,
-      placeholder: "Enter your email",
-    },
-    password: {
-      order: 2,
-      placeholder: "Create a password",
-    },
-    confirm_password: {
-      order: 3,
-      placeholder: "Confirm your password",
-    },
-  },
-};
-
-// Service overrides
-const services = {
-  async handleSignIn(formData) {
-    try {
-      const signInResult = await signIn(formData);
-      localStorage.setItem("loginTimestamp", new Date().getTime().toString());
-      router.push("/#/contracts");
-      return signInResult;
-    } catch (error) {
-      console.error("Error signing in:", error);
-    }
-  },
-  async handleSignUp(formData) {
-    try {
-      const email = formData.username.toLowerCase();
-      const signUpResult = await signUp({
-        ...formData,
-        username: email,
-      });
-      return signUpResult;
-    } catch (error) {
-      console.error("Error signing up:", error);
-      throw error;
-    }
-  },
-  // Add this new handler for the confirmation step
-  async handleConfirmSignUp(formData) {
-    try {
-      const result = await confirmSignUp(formData);
-      // After confirmation, we'll let the user sign in manually
-      return result;
-    } catch (error) {
-      console.error("Error confirming signup:", error);
-      throw error;
-    }
-  },
+// Check authentication status
+const checkAuthStatus = async () => {
+  try {
+    isAuthenticated.value = await AuthService.isAuthenticated();
+  } catch (error) {
+    console.error("Error checking auth status:", error);
+    isAuthenticated.value = false;
+  }
 };
 
 // Session management
@@ -113,134 +33,84 @@ const checkAndHandleSessionExpiry = () => {
 
 const handleSignOut = async () => {
   localStorage.removeItem("loginTimestamp");
-  await signOut();
-  router.push("/");
+  // Clear all vuex persisted state
+  localStorage.removeItem("dealdocs-vuex");
+  // Clear the store state
+  store.dispatch("clearAllData");
+  await AuthService.signOut();
+  isAuthenticated.value = false;
+  window.location.href = "/#/auth"; // Force reload to auth page
 };
 
-onMounted(() => {
+// Load contract if contractId exists in localStorage
+const loadStoredContract = async () => {
+  const contractId = localStorage.getItem("contractId");
+  if (contractId && isAuthenticated.value) {
+    try {
+      console.log("Loading stored contract:", contractId);
+      const contract = await ContractAPI.get(contractId);
+      if (contract) {
+        console.log("Raw contract data from database:", JSON.stringify(contract, null, 2));
+        store.dispatch("selectContract", contract);
+        console.log("Contract loaded and dispatched to store");
+        console.log("Store formData after loading:", JSON.stringify(store.state.formData, null, 2));
+
+        // Also load etch packets for this contract
+        await store.dispatch("loadEtchPacketsForContract", contractId);
+        console.log("Etch packets loaded for contract");
+      }
+    } catch (error) {
+      console.error("Error loading stored contract:", error);
+      // Clear invalid contractId
+      localStorage.removeItem("contractId");
+    }
+  }
+};
+
+onMounted(async () => {
+  await checkAuthStatus();
+  
+  // Load stored contract after authentication check
+  if (isAuthenticated.value) {
+    await loadStoredContract();
+  }
+  
+  // Listen for auth state changes
+  AuthService.onAuthStateChange(async (event, session) => {
+    isAuthenticated.value = !!session?.user;
+    
+    // Load contract when user logs in
+    if (event === 'SIGNED_IN' && session?.user) {
+      await loadStoredContract();
+    }
+  });
+  
   const intervalId = setInterval(checkAndHandleSessionExpiry, 60000);
   return () => clearInterval(intervalId);
 });
 
-const currentYear = computed(() => new Date().getFullYear());
+// const currentYear = computed(() => new Date().getFullYear()); // Not currently used
 </script>
 
 <template>
-  <div class="auth-wrapper">
-    <Authenticator :services="services" :form-fields="formFields">
-      <!-- Default slot for authenticated state -->
-      <template #default>
-        <router-view />
-      </template>
-
-      <!-- Custom header slots -->
-      <template #header>
-        <div class="custom-header">
-          <img
-            src="@/assets/docudeals_logo_v1.png"
-            alt="DocuDeals Logo"
-            class="logo"
-          />
-          <!-- <h1>DealDocs</h1> -->
-        </div>
-      </template>
-
-      <!-- Custom footer -->
-      <template #footer>
-        <div class="custom-footer">
-          <small>© {{ currentYear }} DocuDeals. All Rights Reserved.</small>
-        </div>
-      </template>
-    </Authenticator>
+  <div class="app-wrapper">
+    <!-- Show main app if authenticated -->
+    <router-view v-if="isAuthenticated" />
+    
+    <!-- Show auth component if not authenticated -->
+    <router-view v-else />
   </div>
 </template>
 
 <style>
-/* Global styles for the Amplify Authenticator */
-[data-amplify-authenticator] {
-  --amplify-colors-background-primary: var(--primary-color);
-  --amplify-colors-background-secondary: var(--surface-color);
-  --amplify-colors-brand-primary-10: var(--primary-color);
-  --amplify-colors-brand-primary-80: var(--primary-color);
-  --amplify-colors-brand-primary-90: var(--primary-color);
-  --amplify-colors-brand-primary-100: var(--primary-color);
-  --amplify-components-button-primary-background-color: var(--primary-color);
-  --amplify-components-button-primary-hover-background-color: #178a46;
-  --amplify-components-button-primary-focus-background-color: #178a46;
-  --amplify-components-tabs-item-active-color: var(--primary-color);
-  --amplify-components-tabs-item-active-border-color: var(--primary-color);
-  --amplify-components-tabs-item-color: var(--text-color);
-  --amplify-components-fieldcontrol-focus-border-color: var(--primary-color);
-  --amplify-components-fieldcontrol-focus-box-shadow: 0 0 0 2px
-    var(--primary-color-light);
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* Global app styles */
+.app-wrapper {
   min-height: 100vh;
+  background-color: var(--surface-ground);
 }
 
-/* Auth-specific wrapper styles */
-[data-amplify-authenticator] .auth-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1rem;
-  width: 100%;
-  position: relative;
-  z-index: 1;
-}
-
-/* Custom header styling */
-.custom-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.custom-header .logo {
-  width: 400px;
-  height: auto;
-  margin-bottom: 1rem;
-}
-
-.custom-header h1 {
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--primary-color);
-  margin: 0;
-}
-
-/* Custom footer styling */
-.custom-footer {
-  text-align: center;
-  margin-top: 2rem;
-  color: var(--text-color);
-  font-size: 0.875rem;
-}
-
-/* Override Amplify's default container styles */
-:deep(.amplify-authenticator__container) {
-  background-color: #fff;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
-  max-width: 420px;
-  width: 100%;
-}
-
-/* Style form inputs */
-:deep(.amplify-field) {
-  margin-bottom: 1.5rem;
-}
-
-:deep(.amplify-button) {
-  width: 100%;
-  height: 48px;
-  font-weight: 600;
-  border-radius: 0.375rem;
-}
-
-:deep(.amplify-tabs) {
-  margin-bottom: 2rem;
+/* Ensure router-view takes full height */
+.app-wrapper > div {
+  min-height: 100vh;
 }
 </style>

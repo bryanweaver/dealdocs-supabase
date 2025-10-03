@@ -11,7 +11,6 @@
 </template>
 
 <script lang="ts">
-// import { uploadData } from "aws-amplify/storage";
 export default {
   props: {
     signingUrl: {

@@ -1,4 +1,4 @@
-import { PartyType } from "../../API";
+import { PartyType } from "../../types/enums.js";
 
 export const HomeownersAssociationAddendumConfig = [
   {
