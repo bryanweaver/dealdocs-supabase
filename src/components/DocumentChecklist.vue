@@ -172,7 +172,7 @@ export default defineComponent({
               packetId: packet.eid || packet.etch_packet_id,
               signerCount: signers.length,
               allCompleted: allSignersCompleted,
-              signerStatuses: signers.map(s => ({
+              signerStatuses: signers.map((s) => ({
                 email: s.email || s.signerEmail || "unknown",
                 status: s.status
               }))
