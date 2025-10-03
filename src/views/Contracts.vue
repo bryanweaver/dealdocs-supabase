@@ -275,7 +275,7 @@ onMounted(async () => {
     </div>
   </div>
   <ConfirmDialog></ConfirmDialog>
-  <Toast />
+  <Toast position="bottom-center" />
 </template>
 
 <style scoped>

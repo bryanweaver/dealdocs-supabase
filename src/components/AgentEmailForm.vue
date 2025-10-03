@@ -86,7 +86,7 @@
         </table>
       </div>
     </div>
-    <Toast />
+    <Toast position="bottom-center" />
   </div>
 </template>
 

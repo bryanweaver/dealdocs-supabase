@@ -87,6 +87,7 @@ import PrimeButton from "primevue/button";
 import { formatDate } from "@/utils/dateUtils";
 import { EtchAPI, StorageAPI } from "@/services/api.js";
 import Tag from "./Tag.vue";
+import { useToast } from "primevue/usetoast";
 
 export default {
   name: "ContractList",
@@ -98,6 +99,7 @@ export default {
   },
   setup() {
     const store = useStore();
+    const toast = useToast();
     const contracts = ref([]);
 
     console.log("etchPackets", store.state.etchPackets);

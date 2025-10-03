@@ -107,7 +107,7 @@
         />
       </template>
     </PrimeDialog>
-    <Toast />
+    <Toast position="bottom-center" />
   </div>
 </template>
 
