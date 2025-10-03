@@ -133,9 +133,9 @@ export default defineComponent({
         const records = await EmailAPI.list(contractId);
         emailRecords.value = records.map(record => ({
           id: record.id,
-          agentName: record.agent_name,
-          agentEmail: record.agent_email,
-          comments: record.comments,
+          agentName: record.recipient_name,
+          agentEmail: record.recipient_email,
+          comments: record.attachments?.comments || '',
           status: record.status,
           createdAt: record.sent_at
         }));
