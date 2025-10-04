@@ -152,6 +152,15 @@ const router = createRouter({
       },
     },
     {
+      path: "/forgot-password",
+      name: "forgotPassword",
+      component: Auth,
+      meta: {
+        title: "Forgot Password | DocuDeals",
+        isForgotPassword: true
+      },
+    },
+    {
       path: "/reset-password",
       name: "resetPassword",
       component: Auth,

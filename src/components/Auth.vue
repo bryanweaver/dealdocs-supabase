@@ -19,6 +19,7 @@ const isLoading = ref(false);
 const loadingMessage = ref("");
 const isSignUp = ref(false);
 const isPasswordResetMode = ref(false);
+const isForgotPasswordMode = ref(false);
 const formData = ref({
   email: "",
   password: "",
@@ -222,11 +223,20 @@ onMounted(async () => {
     return;
   }
 
+  if (route.meta.isForgotPassword) {
+    isForgotPasswordMode.value = true;
+    return;
+  }
+
   if (route.meta.isPasswordReset) {
     // Check if we have a recovery session
     const session = await AuthService.getSession();
     if (!session) {
       error.value = "Auth session missing! Please request a new password reset link.";
+      // Redirect to forgot password page
+      setTimeout(() => {
+        router.push("/forgot-password");
+      }, 3000);
     } else {
       isPasswordResetMode.value = true;
     }
@@ -235,7 +245,7 @@ onMounted(async () => {
 
   // Check if user is already authenticated
   const isAuthenticated = await AuthService.isAuthenticated();
-  if (isAuthenticated && !route.meta.isPasswordReset) {
+  if (isAuthenticated && !route.meta.isPasswordReset && !route.meta.isForgotPassword) {
     router.push("/contracts");
     return;
   }
@@ -256,7 +266,7 @@ onMounted(async () => {
           class="mx-auto h-24 w-auto mb-6"
         />
         <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
-          {{ isPasswordResetMode ? 'Reset Your Password' : isSignUp ? 'Create your account' : 'Sign in to your account' }}
+          {{ isPasswordResetMode ? 'Reset Your Password' : isForgotPasswordMode ? 'Forgot Password' : isSignUp ? 'Create your account' : 'Sign in to your account' }}
         </h2>
         <p class="mt-2 text-sm text-gray-600">
           Real Estate Contract Management Platform
@@ -273,8 +283,56 @@ onMounted(async () => {
         </div>
 
         <template #content>
+          <!-- Forgot Password Form -->
+          <form v-if="isForgotPasswordMode" class="space-y-6" @submit.prevent="handleResetPassword">
+            <!-- Error Message -->
+            <Message v-if="error" severity="error" :closable="false">
+              {{ error }}
+            </Message>
+
+            <!-- Success Message -->
+            <Message v-if="message" severity="success" :closable="false">
+              {{ message }}
+            </Message>
+
+            <div class="text-sm text-gray-600 mb-4">
+              Enter your email address and we'll send you a link to reset your password.
+            </div>
+
+            <!-- Email -->
+            <div class="flex flex-col gap-2">
+              <label for="email" class="text-sm font-medium text-gray-700">Email Address</label>
+              <InputText
+                v-model="formData.email"
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                :disabled="isLoading"
+                autofocus
+              />
+            </div>
+
+            <!-- Submit Button -->
+            <Button
+              type="submit"
+              label="Send Reset Link"
+              class="w-full"
+              :disabled="isLoading || !formData.email"
+            />
+
+            <!-- Back to Login -->
+            <div class="text-center">
+              <a
+                href="/#/auth"
+                class="text-sm text-blue-600 hover:text-blue-500"
+              >
+                Back to Sign In
+              </a>
+            </div>
+          </form>
+
           <!-- Password Reset Form -->
-          <form v-if="isPasswordResetMode" class="space-y-6" @submit.prevent="handleUpdatePassword">
+          <form v-else-if="isPasswordResetMode" class="space-y-6" @submit.prevent="handleUpdatePassword">
             <!-- Error Message -->
             <Message v-if="error" severity="error" :closable="false">
               {{ error }}
@@ -423,13 +481,12 @@ onMounted(async () => {
             
             <!-- Password Reset (Sign In only) -->
             <div v-if="!isSignUp" class="text-center">
-              <Button
-                label="Forgot your password?"
-                link
-                size="small"
-                :disabled="isLoading"
-                @click="handleResetPassword"
-              />
+              <a
+                href="/#/forgot-password"
+                class="text-sm text-blue-600 hover:text-blue-500"
+              >
+                Forgot your password?
+              </a>
             </div>
           </div>
         </template>
