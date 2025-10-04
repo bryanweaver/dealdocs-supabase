@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineOptions({ name: "AuthComponent" })
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { AuthService } from "@/services/auth.js";
 import Card from "primevue/card";
@@ -217,9 +217,16 @@ const handleUpdatePassword = async () => {
   }
 };
 
-// Check session expiry every minute
-onMounted(async () => {
-  // Check for email confirmation or password reset
+// Handle route changes
+const handleRouteChange = async () => {
+  // Reset all modes
+  isSignUp.value = false;
+  isPasswordResetMode.value = false;
+  isForgotPasswordMode.value = false;
+  error.value = "";
+  message.value = "";
+
+  // Check for email confirmation
   if (route.meta.isConfirmation) {
     message.value = "Email confirmed successfully! You can now sign in.";
     // Auto-redirect to login after showing message
@@ -229,11 +236,13 @@ onMounted(async () => {
     return;
   }
 
+  // Check for forgot password
   if (route.meta.isForgotPassword) {
     isForgotPasswordMode.value = true;
     return;
   }
 
+  // Check for password reset
   if (route.meta.isPasswordReset) {
     // Check if we have a recovery session
     const session = await AuthService.getSession();
@@ -248,6 +257,19 @@ onMounted(async () => {
     }
     return;
   }
+
+  // Default is sign-in mode (no special flags set)
+};
+
+// Watch for route changes
+watch(() => route.path, () => {
+  handleRouteChange();
+});
+
+// Check session expiry every minute
+onMounted(async () => {
+  // Handle initial route
+  await handleRouteChange();
 
   // Check if user is already authenticated
   const isAuthenticated = await AuthService.isAuthenticated();
