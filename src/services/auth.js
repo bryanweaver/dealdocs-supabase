@@ -71,8 +71,10 @@ export const AuthService = {
    */
   async resetPassword(email) {
     try {
+      // Use the base URL without any hash or path
+      const baseUrl = `${window.location.protocol}//${window.location.host}`
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: baseUrl,
       })
       
       if (error) throw error
