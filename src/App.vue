@@ -68,20 +68,6 @@ const loadStoredContract = async () => {
 };
 
 onMounted(async () => {
-  // Handle recovery tokens from email links (password reset, email confirmation)
-  // This must happen BEFORE Vue router processes the hash
-  const hashParams = new URLSearchParams(window.location.hash.substring(1));
-  const accessToken = hashParams.get('access_token');
-  const type = hashParams.get('type');
-
-  if (accessToken && type === 'recovery') {
-    // This is a password reset link - let Supabase handle it
-    // The recovery session will be established automatically
-    console.log('Password recovery token detected');
-    // Wait a moment for Supabase to process the recovery token
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-
   await checkAuthStatus();
 
   // Load stored contract after authentication check

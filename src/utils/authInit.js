@@ -21,25 +21,37 @@ export async function initializeAuth() {
   }
 
   // Handle recovery tokens (password reset)
-  if (accessToken && type === 'recovery') {
-    console.log('Password recovery token detected, establishing session...')
+  if (type === 'recovery') {
+    console.log('Password recovery token detected')
 
-    // Let Supabase process the recovery token
-    // The detectSessionInUrl setting will handle this automatically
-    // We just need to wait for it to complete
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // For recovery tokens, Supabase should auto-detect and establish session
+    // since we have detectSessionInUrl: true in our config
+    // We need to give it time to process
+    await new Promise(resolve => setTimeout(resolve, 1500))
 
-    // Check if the session was established
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    try {
+      // Check if the recovery session was established
+      const { data: { session }, error } = await supabase.auth.getSession()
 
-    if (session) {
-      console.log('Recovery session established successfully')
-      // Clean up URL and redirect to reset password page
-      window.location.hash = '#/reset-password'
-      return { type: 'recovery', session }
-    } else {
-      console.error('Failed to establish recovery session:', sessionError)
-      window.location.hash = '#/auth'
+      if (error) {
+        console.error('Error getting session:', error)
+        throw error
+      }
+
+      if (session) {
+        console.log('Recovery session established successfully')
+        // Keep the URL params for now, the Auth component will handle cleanup
+        // Just navigate to reset password with the params intact
+        return { type: 'recovery', session }
+      } else {
+        // Session not established, but we have recovery token
+        // This might happen if Supabase hasn't processed it yet
+        console.log('Session not yet established, will retry in component')
+        return { type: 'recovery', pending: true }
+      }
+    } catch (err) {
+      console.error('Failed to establish recovery session:', err)
+      window.location.hash = '#/forgot-password'
       return { error: 'Failed to establish recovery session. Please request a new password reset link.' }
     }
   }

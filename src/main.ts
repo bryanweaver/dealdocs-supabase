@@ -20,7 +20,13 @@ import { initializeAuth } from "@/utils/authInit.js";
 
 // Initialize auth handling before creating the app
 // This ensures recovery tokens are processed before Vue Router takes over
-await initializeAuth();
+const authResult = await initializeAuth();
+
+// If we detected a recovery token, navigate to reset password
+if (authResult.type === 'recovery' && !authResult.error) {
+  // Recovery session should be established
+  window.location.hash = '#/reset-password';
+}
 
 const floatingVueConfig: FloatingVueConfig = {
   // Disable popper components
