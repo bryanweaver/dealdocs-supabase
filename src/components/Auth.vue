@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineOptions({ name: "AuthComponent" })
 import { ref, onMounted, computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { AuthService } from "@/services/auth.js";
 import Card from "primevue/card";
 import Button from "primevue/button";
@@ -12,17 +12,20 @@ import TooltipPopover from "@/components/TooltipPopover.vue";
 // import ProgressSpinner from "primevue/progressspinner"; // Not currently used
 
 const router = useRouter();
+const route = useRoute();
 
 // Component state
 const isLoading = ref(false);
 const loadingMessage = ref("");
 const isSignUp = ref(false);
+const isPasswordResetMode = ref(false);
 const formData = ref({
   email: "",
   password: "",
   confirmPassword: "",
   fullName: "",
-  company: ""
+  company: "",
+  newPassword: ""
 });
 const error = ref("");
 const message = ref("");
@@ -181,15 +184,56 @@ const toggleMode = () => {
   formData.value.company = "";
 };
 
+const handleUpdatePassword = async () => {
+  if (!formData.value.newPassword || formData.value.newPassword.length < 6) {
+    error.value = "Password must be at least 6 characters";
+    return;
+  }
+
+  isLoading.value = true;
+  error.value = "";
+
+  try {
+    const result = await AuthService.updatePassword(formData.value.newPassword);
+    if (result.success) {
+      message.value = "Password updated successfully! Redirecting...";
+      setTimeout(() => {
+        router.push("/contracts");
+      }, 2000);
+    } else {
+      error.value = result.error;
+    }
+  } catch (err) {
+    error.value = "Failed to update password";
+  } finally {
+    isLoading.value = false;
+  }
+};
+
 // Check session expiry every minute
 onMounted(async () => {
+  // Check for email confirmation or password reset
+  if (route.meta.isConfirmation) {
+    message.value = "Email confirmed successfully! You can now sign in.";
+    // Auto-redirect to login after showing message
+    setTimeout(() => {
+      router.push("/auth");
+    }, 3000);
+    return;
+  }
+
+  if (route.meta.isPasswordReset) {
+    isPasswordResetMode.value = true;
+    return;
+  }
+
   // Check if user is already authenticated
   const isAuthenticated = await AuthService.isAuthenticated();
   if (isAuthenticated) {
     router.push("/contracts");
     return;
   }
-  
+
   const intervalId = setInterval(checkAndHandleSessionExpiry, 60000);
   // Clean up interval on component unmount
   return () => clearInterval(intervalId);
@@ -206,7 +250,7 @@ onMounted(async () => {
           class="mx-auto h-24 w-auto mb-6"
         />
         <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
-          {{ isSignUp ? 'Create your account' : 'Sign in to your account' }}
+          {{ isPasswordResetMode ? 'Reset Your Password' : isSignUp ? 'Create your account' : 'Sign in to your account' }}
         </h2>
         <p class="mt-2 text-sm text-gray-600">
           Real Estate Contract Management Platform
@@ -223,7 +267,52 @@ onMounted(async () => {
         </div>
 
         <template #content>
-          <form class="space-y-6" @submit.prevent="handleAuth">
+          <!-- Password Reset Form -->
+          <form v-if="isPasswordResetMode" class="space-y-6" @submit.prevent="handleUpdatePassword">
+            <!-- Error Message -->
+            <Message v-if="error" severity="error" :closable="false">
+              {{ error }}
+            </Message>
+
+            <!-- Success Message -->
+            <Message v-if="message" severity="success" :closable="false">
+              {{ message }}
+            </Message>
+
+            <!-- New Password -->
+            <div class="flex flex-col gap-2">
+              <label for="newPassword" class="text-sm font-medium text-gray-700">New Password</label>
+              <Password
+                v-model="formData.newPassword"
+                id="newPassword"
+                placeholder="Enter new password (min 6 characters)"
+                :feedback="false"
+                toggleMask
+                :disabled="isLoading"
+              />
+            </div>
+
+            <!-- Submit Button -->
+            <Button
+              type="submit"
+              label="Update Password"
+              class="w-full"
+              :disabled="isLoading || !formData.newPassword || formData.newPassword.length < 6"
+            />
+
+            <!-- Back to Login -->
+            <div class="text-center">
+              <a
+                href="/#/auth"
+                class="text-sm text-blue-600 hover:text-blue-500"
+              >
+                Back to Sign In
+              </a>
+            </div>
+          </form>
+
+          <!-- Regular Auth Form -->
+          <form v-else class="space-y-6" @submit.prevent="handleAuth">
 
             <!-- Error Message -->
             <Message v-if="error" severity="error" :closable="false">

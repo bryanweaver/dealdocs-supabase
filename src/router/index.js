@@ -142,6 +142,24 @@ const router = createRouter({
         title: "Login | DocuDeals",
       },
     },
+    {
+      path: "/auth/confirm",
+      name: "authConfirm",
+      component: Auth,
+      meta: {
+        title: "Email Confirmed | DocuDeals",
+        isConfirmation: true
+      },
+    },
+    {
+      path: "/reset-password",
+      name: "resetPassword",
+      component: Auth,
+      meta: {
+        title: "Reset Password | DocuDeals",
+        isPasswordReset: true
+      },
+    },
   ],
 });
 
