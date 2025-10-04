@@ -78,16 +78,20 @@ onMounted(async () => {
   // Listen for auth state changes
   AuthService.onAuthStateChange(async (event, session) => {
     console.log('Auth state change:', event, session?.user?.email);
+
+    // Handle password recovery session FIRST
+    if (event === 'PASSWORD_RECOVERY') {
+      console.log('Password recovery session established');
+      isAuthenticated.value = false; // Don't show main app
+      // Navigate to reset password page
+      await router.push('/reset-password');
+      return;
+    }
+
     isAuthenticated.value = !!session?.user;
 
-    // Handle password recovery session
-    if (event === 'PASSWORD_RECOVERY' && session?.user) {
-      console.log('Password recovery session established');
-      // Redirect to reset password page
-      router.push('/reset-password');
-    }
     // Load contract when user logs in normally
-    else if (event === 'SIGNED_IN' && session?.user) {
+    if (event === 'SIGNED_IN' && session?.user) {
       await loadStoredContract();
     }
   });
