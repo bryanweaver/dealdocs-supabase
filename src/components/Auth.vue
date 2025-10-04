@@ -244,36 +244,30 @@ const handleRouteChange = async () => {
 
   // Check for password reset
   if (route.meta.isPasswordReset) {
-    // Wait a bit for Supabase to process the recovery token
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Check if we have a recovery session flag from authInit
+    const hasRecoveryFlag = localStorage.getItem('recovery_session') === 'true';
+
+    if (hasRecoveryFlag) {
+      // Clear the flag
+      localStorage.removeItem('recovery_session');
+
+      // Verify we have an active session
+      const session = await AuthService.getSession();
+      if (session) {
+        console.log('Recovery session verified');
+        isPasswordResetMode.value = true;
+        return;
+      }
+    }
 
     // Check if we have a recovery session
     const session = await AuthService.getSession();
     if (!session) {
-      // Listen for the PASSWORD_RECOVERY event
-      const unsubscribe = AuthService.onAuthStateChange((event, session) => {
-        if (event === 'PASSWORD_RECOVERY' && session) {
-          console.log('Recovery session established in Auth component');
-          isPasswordResetMode.value = true;
-          error.value = "";
-          unsubscribe();
-        }
-      });
-
-      // Wait a bit more for the event
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Final check
-      const finalSession = await AuthService.getSession();
-      if (!finalSession) {
-        error.value = "Auth session missing! Please request a new password reset link.";
-        // Redirect to forgot password page
-        setTimeout(() => {
-          router.push("/forgot-password");
-        }, 3000);
-      } else {
-        isPasswordResetMode.value = true;
-      }
+      error.value = "Auth session missing! Please request a new password reset link.";
+      // Redirect to forgot password page
+      setTimeout(() => {
+        router.push("/forgot-password");
+      }, 3000);
     } else {
       isPasswordResetMode.value = true;
     }

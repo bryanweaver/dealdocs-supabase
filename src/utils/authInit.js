@@ -5,13 +5,14 @@ import { supabase } from '@/lib/supabase'
  * This must be called BEFORE Vue Router initializes to properly handle auth tokens
  */
 export async function initializeAuth() {
-  // For Supabase v2 with detectSessionInUrl: true,
-  // the client should automatically handle the tokens
-  // We just need to check what type of auth event occurred
+  // Store the original hash for later processing
+  const originalHash = window.location.hash
 
   // Parse the URL to check what type of auth flow this is
   const hashFragment = window.location.hash.substring(1)
   const hashParams = new URLSearchParams(hashFragment)
+  const accessToken = hashParams.get('access_token')
+  const refreshToken = hashParams.get('refresh_token')
   const type = hashParams.get('type')
   const error = hashParams.get('error')
   const errorDescription = hashParams.get('error_description')
@@ -25,13 +26,34 @@ export async function initializeAuth() {
   }
 
   // Handle recovery tokens (password reset)
-  if (type === 'recovery') {
-    console.log('Password recovery flow detected')
+  if (type === 'recovery' && accessToken && refreshToken) {
+    console.log('Password recovery flow detected with tokens')
 
-    // Supabase should handle this automatically with detectSessionInUrl: true
-    // The recovery session will be available after the auth state changes
-    // We don't need to do anything here, just return the type
-    return { type: 'recovery' }
+    try {
+      // Manually set the session with the provided tokens
+      const { data, error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      })
+
+      if (error) {
+        console.error('Failed to set recovery session:', error)
+        throw error
+      }
+
+      if (data.session) {
+        console.log('Recovery session established successfully!')
+        // Store the session info
+        localStorage.setItem('recovery_session', 'true')
+        // Clear the URL hash of tokens
+        window.location.hash = '#/reset-password'
+        return { type: 'recovery', session: data.session }
+      }
+    } catch (err) {
+      console.error('Error establishing recovery session:', err)
+      // Keep the original URL so user can try again
+      return { type: 'recovery', error: err.message }
+    }
   }
 
   // Handle email confirmation
