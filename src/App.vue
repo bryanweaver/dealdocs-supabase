@@ -68,23 +68,44 @@ const loadStoredContract = async () => {
 };
 
 onMounted(async () => {
+  // Handle recovery tokens from email links (password reset, email confirmation)
+  // This must happen BEFORE Vue router processes the hash
+  const hashParams = new URLSearchParams(window.location.hash.substring(1));
+  const accessToken = hashParams.get('access_token');
+  const type = hashParams.get('type');
+
+  if (accessToken && type === 'recovery') {
+    // This is a password reset link - let Supabase handle it
+    // The recovery session will be established automatically
+    console.log('Password recovery token detected');
+    // Wait a moment for Supabase to process the recovery token
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
   await checkAuthStatus();
-  
+
   // Load stored contract after authentication check
   if (isAuthenticated.value) {
     await loadStoredContract();
   }
-  
+
   // Listen for auth state changes
   AuthService.onAuthStateChange(async (event, session) => {
+    console.log('Auth state change:', event, session?.user?.email);
     isAuthenticated.value = !!session?.user;
-    
-    // Load contract when user logs in
-    if (event === 'SIGNED_IN' && session?.user) {
+
+    // Handle password recovery session
+    if (event === 'PASSWORD_RECOVERY' && session?.user) {
+      console.log('Password recovery session established');
+      // Redirect to reset password page
+      router.push('/reset-password');
+    }
+    // Load contract when user logs in normally
+    else if (event === 'SIGNED_IN' && session?.user) {
       await loadStoredContract();
     }
   });
-  
+
   const intervalId = setInterval(checkAndHandleSessionExpiry, 60000);
   return () => clearInterval(intervalId);
 });

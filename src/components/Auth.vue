@@ -223,13 +223,19 @@ onMounted(async () => {
   }
 
   if (route.meta.isPasswordReset) {
-    isPasswordResetMode.value = true;
+    // Check if we have a recovery session
+    const session = await AuthService.getSession();
+    if (!session) {
+      error.value = "Auth session missing! Please request a new password reset link.";
+    } else {
+      isPasswordResetMode.value = true;
+    }
     return;
   }
 
   // Check if user is already authenticated
   const isAuthenticated = await AuthService.isAuthenticated();
-  if (isAuthenticated) {
+  if (isAuthenticated && !route.meta.isPasswordReset) {
     router.push("/contracts");
     return;
   }

@@ -16,6 +16,11 @@ import PrimeVue from "primevue/config";
 import ConfirmationService from "primevue/confirmationservice";
 import ToastService from "primevue/toastservice";
 import { supabase, onAuthStateChange } from "@/lib/supabase.js";
+import { initializeAuth } from "@/utils/authInit.js";
+
+// Initialize auth handling before creating the app
+// This ensures recovery tokens are processed before Vue Router takes over
+await initializeAuth();
 
 const floatingVueConfig: FloatingVueConfig = {
   // Disable popper components
