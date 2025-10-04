@@ -19,14 +19,16 @@ import { supabase, onAuthStateChange } from "@/lib/supabase.js";
 import { initializeAuth } from "@/utils/authInit.js";
 
 // Initialize auth handling before creating the app
-// This ensures recovery tokens are processed before Vue Router takes over
-const authResult = await initializeAuth();
+// Wrapped in an IIFE to handle async initialization
+(async () => {
+  const authResult = await initializeAuth();
 
-// If we detected a recovery token, navigate to reset password
-if (authResult.type === 'recovery' && !authResult.error) {
-  // Recovery session should be established
-  window.location.hash = '#/reset-password';
-}
+  // If we detected a recovery token, navigate to reset password
+  if (authResult.type === 'recovery' && !authResult.error) {
+    // Recovery session should be established
+    window.location.hash = '#/reset-password';
+  }
+})();
 
 const floatingVueConfig: FloatingVueConfig = {
   // Disable popper components
