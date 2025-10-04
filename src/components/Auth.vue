@@ -157,18 +157,24 @@ const handleResetPassword = async () => {
     error.value = "Please enter your email address";
     return;
   }
-  
+
   isLoading.value = true;
+  loadingMessage.value = "Sending password reset email...";
   error.value = "";
-  
+  message.value = "";
+
   try {
+    console.log('Sending password reset for:', formData.value.email);
     const result = await AuthService.resetPassword(formData.value.email);
     if (result.success) {
-      message.value = "Password reset email sent. Check your inbox.";
+      message.value = "Password reset email sent! Please check your inbox.";
+      // Clear the email field after success
+      formData.value.email = "";
     } else {
-      error.value = result.error;
+      error.value = result.error || "Failed to send reset email";
     }
   } catch (err) {
+    console.error('Password reset error:', err);
     error.value = "Failed to send reset email";
   } finally {
     isLoading.value = false;
@@ -301,13 +307,14 @@ onMounted(async () => {
 
             <!-- Email -->
             <div class="flex flex-col gap-2">
-              <label for="email" class="text-sm font-medium text-gray-700">Email Address</label>
+              <label for="forgot-email" class="text-sm font-medium text-gray-700">Email Address</label>
               <InputText
                 v-model="formData.email"
-                id="email"
+                id="forgot-email"
                 type="email"
                 placeholder="Enter your email"
                 :disabled="isLoading"
+                @keyup.enter="handleResetPassword"
                 autofocus
               />
             </div>
