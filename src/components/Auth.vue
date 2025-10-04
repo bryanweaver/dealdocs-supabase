@@ -322,12 +322,12 @@ onMounted(async () => {
 
             <!-- Back to Login -->
             <div class="text-center">
-              <a
-                href="/#/auth"
-                class="text-sm text-blue-600 hover:text-blue-500"
-              >
-                Back to Sign In
-              </a>
+              <Button
+                label="Back to Sign In"
+                link
+                size="small"
+                @click="router.push('/auth')"
+              />
             </div>
           </form>
 
@@ -366,12 +366,12 @@ onMounted(async () => {
 
             <!-- Back to Login -->
             <div class="text-center">
-              <a
-                href="/#/auth"
-                class="text-sm text-blue-600 hover:text-blue-500"
-              >
-                Back to Sign In
-              </a>
+              <Button
+                label="Back to Sign In"
+                link
+                size="small"
+                @click="router.push('/auth')"
+              />
             </div>
           </form>
 
@@ -481,12 +481,12 @@ onMounted(async () => {
             
             <!-- Password Reset (Sign In only) -->
             <div v-if="!isSignUp" class="text-center">
-              <a
-                href="/#/forgot-password"
-                class="text-sm text-blue-600 hover:text-blue-500"
-              >
-                Forgot your password?
-              </a>
+              <Button
+                label="Forgot your password?"
+                link
+                size="small"
+                @click="router.push('/forgot-password')"
+              />
             </div>
           </div>
         </template>
