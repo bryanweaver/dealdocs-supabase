@@ -69,22 +69,33 @@ const loadStoredContract = async () => {
 
 onMounted(async () => {
   await checkAuthStatus();
-  
+
   // Load stored contract after authentication check
   if (isAuthenticated.value) {
     await loadStoredContract();
   }
-  
+
   // Listen for auth state changes
   AuthService.onAuthStateChange(async (event, session) => {
+    console.log('Auth state change:', event, session?.user?.email);
+
+    // Handle password recovery session FIRST
+    if (event === 'PASSWORD_RECOVERY') {
+      console.log('Password recovery session established');
+      isAuthenticated.value = false; // Don't show main app
+      // Navigate to reset password page
+      await router.push('/reset-password');
+      return;
+    }
+
     isAuthenticated.value = !!session?.user;
-    
-    // Load contract when user logs in
+
+    // Load contract when user logs in normally
     if (event === 'SIGNED_IN' && session?.user) {
       await loadStoredContract();
     }
   });
-  
+
   const intervalId = setInterval(checkAndHandleSessionExpiry, 60000);
   return () => clearInterval(intervalId);
 });

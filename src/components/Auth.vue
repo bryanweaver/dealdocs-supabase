@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineOptions({ name: "AuthComponent" })
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { AuthService } from "@/services/auth.js";
 import Card from "primevue/card";
@@ -19,6 +19,7 @@ const isLoading = ref(false);
 const loadingMessage = ref("");
 const isSignUp = ref(false);
 const isPasswordResetMode = ref(false);
+const isForgotPasswordMode = ref(false);
 const formData = ref({
   email: "",
   password: "",
@@ -156,18 +157,24 @@ const handleResetPassword = async () => {
     error.value = "Please enter your email address";
     return;
   }
-  
+
   isLoading.value = true;
+  loadingMessage.value = "Sending password reset email...";
   error.value = "";
-  
+  message.value = "";
+
   try {
+    console.log('Sending password reset for:', formData.value.email);
     const result = await AuthService.resetPassword(formData.value.email);
     if (result.success) {
-      message.value = "Password reset email sent. Check your inbox.";
+      message.value = "Password reset email sent! Please check your inbox.";
+      // Clear the email field after success
+      formData.value.email = "";
     } else {
-      error.value = result.error;
+      error.value = result.error || "Failed to send reset email";
     }
   } catch (err) {
+    console.error('Password reset error:', err);
     error.value = "Failed to send reset email";
   } finally {
     isLoading.value = false;
@@ -210,9 +217,16 @@ const handleUpdatePassword = async () => {
   }
 };
 
-// Check session expiry every minute
-onMounted(async () => {
-  // Check for email confirmation or password reset
+// Handle route changes
+const handleRouteChange = async () => {
+  // Reset all modes
+  isSignUp.value = false;
+  isPasswordResetMode.value = false;
+  isForgotPasswordMode.value = false;
+  error.value = "";
+  message.value = "";
+
+  // Check for email confirmation
   if (route.meta.isConfirmation) {
     message.value = "Email confirmed successfully! You can now sign in.";
     // Auto-redirect to login after showing message
@@ -222,14 +236,60 @@ onMounted(async () => {
     return;
   }
 
-  if (route.meta.isPasswordReset) {
-    isPasswordResetMode.value = true;
+  // Check for forgot password
+  if (route.meta.isForgotPassword) {
+    isForgotPasswordMode.value = true;
     return;
   }
 
+  // Check for password reset
+  if (route.meta.isPasswordReset) {
+    // Check if we have a recovery session flag from authInit
+    const hasRecoveryFlag = localStorage.getItem('recovery_session') === 'true';
+
+    if (hasRecoveryFlag) {
+      // Clear the flag
+      localStorage.removeItem('recovery_session');
+
+      // Verify we have an active session
+      const session = await AuthService.getSession();
+      if (session) {
+        console.log('Recovery session verified');
+        isPasswordResetMode.value = true;
+        return;
+      }
+    }
+
+    // Check if we have a recovery session
+    const session = await AuthService.getSession();
+    if (!session) {
+      error.value = "Auth session missing! Please request a new password reset link.";
+      // Redirect to forgot password page
+      setTimeout(() => {
+        router.push("/forgot-password");
+      }, 3000);
+    } else {
+      isPasswordResetMode.value = true;
+    }
+    return;
+  }
+
+  // Default is sign-in mode (no special flags set)
+};
+
+// Watch for route changes
+watch(() => route.path, () => {
+  handleRouteChange();
+});
+
+// Check session expiry every minute
+onMounted(async () => {
+  // Handle initial route
+  await handleRouteChange();
+
   // Check if user is already authenticated
   const isAuthenticated = await AuthService.isAuthenticated();
-  if (isAuthenticated) {
+  if (isAuthenticated && !route.meta.isPasswordReset && !route.meta.isForgotPassword) {
     router.push("/contracts");
     return;
   }
@@ -250,7 +310,7 @@ onMounted(async () => {
           class="mx-auto h-24 w-auto mb-6"
         />
         <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
-          {{ isPasswordResetMode ? 'Reset Your Password' : isSignUp ? 'Create your account' : 'Sign in to your account' }}
+          {{ isPasswordResetMode ? 'Reset Your Password' : isForgotPasswordMode ? 'Forgot Password' : isSignUp ? 'Create your account' : 'Sign in to your account' }}
         </h2>
         <p class="mt-2 text-sm text-gray-600">
           Real Estate Contract Management Platform
@@ -267,8 +327,57 @@ onMounted(async () => {
         </div>
 
         <template #content>
+          <!-- Forgot Password Form -->
+          <form v-if="isForgotPasswordMode" class="space-y-6" @submit.prevent="handleResetPassword">
+            <!-- Error Message -->
+            <Message v-if="error" severity="error" :closable="false">
+              {{ error }}
+            </Message>
+
+            <!-- Success Message -->
+            <Message v-if="message" severity="success" :closable="false">
+              {{ message }}
+            </Message>
+
+            <div class="text-sm text-gray-600 mb-4">
+              Enter your email address and we'll send you a link to reset your password.
+            </div>
+
+            <!-- Email -->
+            <div class="flex flex-col gap-2">
+              <label for="forgot-email" class="text-sm font-medium text-gray-700">Email Address</label>
+              <InputText
+                v-model="formData.email"
+                id="forgot-email"
+                type="email"
+                placeholder="Enter your email"
+                :disabled="isLoading"
+                @keyup.enter="handleResetPassword"
+                autofocus
+              />
+            </div>
+
+            <!-- Submit Button -->
+            <Button
+              type="submit"
+              label="Send Reset Link"
+              class="w-full"
+              :disabled="isLoading || !formData.email"
+            />
+
+            <!-- Back to Login -->
+            <div class="text-center">
+              <Button
+                label="Back to Sign In"
+                link
+                size="small"
+                @click="router.push('/auth')"
+              />
+            </div>
+          </form>
+
           <!-- Password Reset Form -->
-          <form v-if="isPasswordResetMode" class="space-y-6" @submit.prevent="handleUpdatePassword">
+          <form v-else-if="isPasswordResetMode" class="space-y-6" @submit.prevent="handleUpdatePassword">
             <!-- Error Message -->
             <Message v-if="error" severity="error" :closable="false">
               {{ error }}
@@ -302,12 +411,12 @@ onMounted(async () => {
 
             <!-- Back to Login -->
             <div class="text-center">
-              <a
-                href="/#/auth"
-                class="text-sm text-blue-600 hover:text-blue-500"
-              >
-                Back to Sign In
-              </a>
+              <Button
+                label="Back to Sign In"
+                link
+                size="small"
+                @click="router.push('/auth')"
+              />
             </div>
           </form>
 
@@ -421,8 +530,7 @@ onMounted(async () => {
                 label="Forgot your password?"
                 link
                 size="small"
-                :disabled="isLoading"
-                @click="handleResetPassword"
+                @click="router.push('/forgot-password')"
               />
             </div>
           </div>

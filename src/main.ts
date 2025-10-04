@@ -16,6 +16,19 @@ import PrimeVue from "primevue/config";
 import ConfirmationService from "primevue/confirmationservice";
 import ToastService from "primevue/toastservice";
 import { supabase, onAuthStateChange } from "@/lib/supabase.js";
+import { initializeAuth } from "@/utils/authInit.js";
+
+// Initialize auth handling before creating the app
+// Wrapped in an IIFE to handle async initialization
+(async () => {
+  const authResult = await initializeAuth();
+
+  // If we detected a recovery token, navigate to reset password
+  if (authResult.type === 'recovery' && !authResult.error) {
+    // Recovery session should be established
+    window.location.hash = '#/reset-password';
+  }
+})();
 
 const floatingVueConfig: FloatingVueConfig = {
   // Disable popper components
