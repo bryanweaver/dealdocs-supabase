@@ -15,6 +15,10 @@ export async function initializeAuth() {
   // Check if tokens are in the hash
   if (window.location.hash && window.location.hash.includes('access_token')) {
     hashFragment = window.location.hash.substring(1)
+    // Remove leading slash if present (Vue Router adds it)
+    if (hashFragment.startsWith('/')) {
+      hashFragment = hashFragment.substring(1)
+    }
   }
   // Check if tokens are in the pathname (Vue Router issue)
   else if (window.location.pathname.includes('access_token')) {
@@ -36,6 +40,13 @@ export async function initializeAuth() {
   const type = hashParams.get('type')
   const error = hashParams.get('error')
   const errorDescription = hashParams.get('error_description')
+
+  console.log('Parsed params:', {
+    hasAccessToken: !!accessToken,
+    hasRefreshToken: !!refreshToken,
+    type: type,
+    error: error
+  })
 
   // Handle auth errors from Supabase
   if (error) {
