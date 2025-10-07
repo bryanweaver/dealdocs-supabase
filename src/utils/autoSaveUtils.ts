@@ -39,18 +39,22 @@ export async function autoSaveSection(
   const timeoutId = setTimeout(async () => {
     try {
       console.log(`Auto-saving section ${sectionId} for contract ${contractId}`);
-      
+
       // Create update payload with just this section's data
       const sectionUpdate = {
         [sectionId]: sectionData
       };
-      
+
+      console.log(`[DEBUG] Section data being saved (${sectionId}):`, JSON.stringify(sectionData, null, 2));
+
       const updatePayload = createContractPayload(sectionUpdate, {
         markedQuestions: markedQuestions
       });
-      
+
+      console.log(`[DEBUG] Update payload after transformation:`, JSON.stringify(updatePayload, null, 2));
+
       await ContractAPI.update(contractId, updatePayload);
-      
+
       console.log(`Auto-save complete for section ${sectionId}`);
       
       // Remove from pending operations

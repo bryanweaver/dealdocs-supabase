@@ -14,8 +14,14 @@ export const ContractAPI = {
     const user = await getUser()
     if (!user) throw new Error('User not authenticated')
 
-    // Check if data is already transformed (has property_info instead of property)
-    const isAlreadyTransformed = 'property_info' in contractData || 'parties' in contractData
+    // Check if data is already transformed (has any JSONB column names)
+    const isAlreadyTransformed =
+      'property_info' in contractData ||
+      'parties' in contractData ||
+      'financial_details' in contractData ||
+      'title_closing' in contractData ||
+      'legal_sections' in contractData ||
+      'additional_info' in contractData
 
     // Only transform if not already transformed
     const dataToInsert = isAlreadyTransformed
@@ -193,8 +199,17 @@ export const ContractAPI = {
     }
     
 
-    // Check if data is already transformed (has property_info or parties instead of property/buyers/sellers)
-    const isAlreadyTransformed = 'property_info' in updates || 'parties' in updates
+    // Check if data is already transformed (has any JSONB column names)
+    const isAlreadyTransformed =
+      'property_info' in updates ||
+      'parties' in updates ||
+      'financial_details' in updates ||
+      'title_closing' in updates ||
+      'legal_sections' in updates ||
+      'additional_info' in updates
+
+    console.log(`[DEBUG] Raw updates received:`, JSON.stringify(updates, null, 2));
+    console.log(`[DEBUG] Is already transformed:`, isAlreadyTransformed);
 
     // Transform the updates using the comprehensive mapping utilities
     // Only transform if not already transformed (to prevent double transformation)
@@ -202,6 +217,8 @@ export const ContractAPI = {
       ? updates
       : transformVuexDataForSupabase(updates)
     const searchableFields = extractSearchableFields(updates)
+
+    console.log(`[DEBUG] Transformed updates:`, JSON.stringify(transformedUpdates, null, 2));
 
     // Extract listing agent data to handle separately
     const { listing_agent_data, ...contractUpdates } = transformedUpdates
@@ -327,6 +344,13 @@ export const ContractAPI = {
       // Update listing_agent_id if we have one
       ...(listing_agent_id && { listing_agent_id })
     };
+
+    console.log(`[DEBUG] Final update being sent to Supabase:`, JSON.stringify({
+      financial_details: finalUpdate.financial_details,
+      title_closing: finalUpdate.title_closing,
+      legal_sections: finalUpdate.legal_sections,
+      additional_info: finalUpdate.additional_info
+    }, null, 2));
 
     const { data, error } = await supabase
       .from('contracts')
