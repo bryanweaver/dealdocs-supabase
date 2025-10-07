@@ -13,20 +13,6 @@
     <div class="card flex flex-col gap-6 p-6">
       <div class="text-l font-bold mb-4 text-center">Send Email</div>
 
-      <!-- Test Mode Warning -->
-      <div v-if="isTestMode" class="test-mode-banner">
-        <div class="flex items-center gap-3">
-          <i class="pi pi-exclamation-triangle text-2xl"></i>
-          <div class="flex-1">
-            <h3 class="font-semibold text-lg">🧪 Test Mode Active</h3>
-            <p class="text-sm mt-1">
-              All emails will be sent to <strong>bryan@docu.deals</strong> instead of the actual recipient.
-              This is for testing purposes only.
-            </p>
-          </div>
-        </div>
-      </div>
-
       <!-- Listing Agent Information -->
       <div v-if="listingAgent.listingAssociateName" class="agent-info-card">
         <div class="flex items-start gap-3">
@@ -55,11 +41,30 @@
         </div>
       </div>
 
+      <!-- Test Mode Warning -->
+      <div v-if="isTestMode" class="test-mode-banner">
+        <div class="flex items-center gap-3">
+          <i class="pi pi-exclamation-triangle text-2xl"></i>
+          <div class="flex-1">
+            <h3 class="font-semibold text-lg">🧪 Test Mode Active</h3>
+            <p class="text-sm mt-1">
+              All emails will be sent to <strong>bryan@docu.deals</strong> instead of the actual recipient.
+              This is for testing purposes only.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div class="form-container">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="flex flex-col gap-2">
             <label for="to-email" class="font-semibold">To:</label>
+            <div v-if="isTestMode && listingAgent.listingAssociateEmail" class="w-full px-3 py-2 border rounded bg-gray-50 text-gray-700">
+              <span class="line-through text-gray-400">{{ listingAgent.listingAssociateEmail }}</span>
+              <span class="ml-2 font-semibold text-blue-600">bryan@docu.deals</span>
+            </div>
             <InputText
+              v-else
               id="to-email"
               v-model="toEmail"
               type="email"
@@ -208,8 +213,10 @@ export default defineComponent({
     onMounted(async () => {
       fetchEmailRecords();
 
-      // Pre-populate To field with listing agent email if available
-      if (listingAgent.listingAssociateEmail) {
+      // Pre-populate To field - use test email if test mode is active
+      if (isTestMode.value) {
+        toEmail.value = 'bryan@docu.deals';
+      } else if (listingAgent.listingAssociateEmail) {
         toEmail.value = listingAgent.listingAssociateEmail;
       }
 
@@ -253,9 +260,12 @@ export default defineComponent({
         ? `Dear ${listingAgent.listingAssociateName},`
         : 'To Whom It May Concern,';
 
+      // In test mode, force recipient to bryan@docu.deals (frontend protection)
+      const actualRecipient = isTestMode.value ? 'bryan@docu.deals' : toEmail.value;
+
       pendingEmailPayload.value = {
         contractId,
-        agentEmail: toEmail.value,
+        agentEmail: actualRecipient,
         agentName: agentName,
         ccEmail: ccEmail.value,
         comments: comments.value,
@@ -318,7 +328,11 @@ export default defineComponent({
       isSending.value = false;
 
       // Reset form fields after successful send (except CC which stays for convenience)
-      toEmail.value = listingAgent.listingAssociateEmail || "";
+      if (isTestMode.value) {
+        toEmail.value = 'bryan@docu.deals';
+      } else {
+        toEmail.value = listingAgent.listingAssociateEmail || "";
+      }
       comments.value = "";
 
       // Refresh the email records list after sending a new email
