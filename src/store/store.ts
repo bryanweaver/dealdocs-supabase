@@ -681,6 +681,9 @@ const store = createStore({
     setEtchPackets(state, etchPackets) {
       state.etchPackets = etchPackets?.items;
     },
+    updateEtchPackets(state, etchPackets) {
+      state.etchPackets = etchPackets;
+    },
     resetUploadedDocs(state) {
       const contractId = state.contractId;
       if (!state.uploadedDocuments[contractId]) {

@@ -41,12 +41,25 @@ serve(async (req) => {
 
     console.log("Sending email for contract:", emailData.contractId)
 
-    // Create email record in database
+    // Check if test email override is enabled
+    const sendToTestEmail = Deno.env.get("SEND_TO_TEST_EMAIL") === "true"
+    const testEmailAddress = "bryan@docu.deals"
+
+    let actualToEmail = emailData.agentEmail
+    let actualCcEmail = emailData.ccEmail
+
+    if (sendToTestEmail) {
+      console.log(`[TEST MODE] Overriding email recipients to ${testEmailAddress}`)
+      actualToEmail = testEmailAddress
+      actualCcEmail = null // Don't CC in test mode
+    }
+
+    // Create email record in database (store original recipient info)
     const { data: emailRecord, error: dbError } = await supabase
       .from("email_packets")
       .insert({
         contract_id: emailData.contractId,
-        recipient_email: emailData.agentEmail,
+        recipient_email: emailData.agentEmail, // Store original recipient
         recipient_name: emailData.agentName,
         email_type: 'listing_agent',
         subject: emailData.subject,
@@ -59,7 +72,10 @@ serve(async (req) => {
           preApprovalFile: emailData.preApprovalFile || "",
           earnestFile: emailData.earnestFile || "",
           optionFile: emailData.optionFile || "",
-          comments: emailData.comments || ""
+          comments: emailData.comments || "",
+          ccEmail: emailData.ccEmail || "",
+          testMode: sendToTestEmail,
+          actualRecipient: sendToTestEmail ? testEmailAddress : emailData.agentEmail
         }
       })
       .select()
@@ -72,15 +88,22 @@ serve(async (req) => {
 
     console.log("Sending email to:", emailData.agentEmail)
 
-    // Send email via Mailpit API (local development)
+    // Send email via Resend
     try {
-      // Prepare email content
+      // Get Resend API key from environment
+      const resendApiKey = Deno.env.get("RESEND_API_KEY")
+      if (!resendApiKey) {
+        throw new Error("RESEND_API_KEY not configured")
+      }
+
+      // Prepare email content with proper line breaks
+      const bodyParagraphs = emailData.body.split('\n').filter(p => p.trim()).map(p => `<p>${p}</p>`).join('');
+
       let emailContent = `
         <html>
           <body>
-            <h2>${emailData.subject}</h2>
-            <p>${emailData.body}</p>
-            ${emailData.comments ? `<hr><p><strong>Additional Comments:</strong><br>${emailData.comments}</p>` : ''}
+            ${bodyParagraphs}
+            ${emailData.comments ? `<hr><p><strong>Additional Comments:</strong><br>${emailData.comments.replace(/\n/g, '<br>')}</p>` : ''}
             <hr>
             <p><strong>Attached Documents:</strong></p>
             <ul>
@@ -89,49 +112,78 @@ serve(async (req) => {
               ${emailData.earnestFile ? '<li>Earnest Money Check</li>' : ''}
               ${emailData.optionFile ? '<li>Option Fee Check</li>' : ''}
             </ul>
-            <p><em>Note: In production, these would be actual file attachments.</em></p>
           </body>
         </html>
       `
 
-      // Send to Mailpit via JSON API
-      const mailpitResponse = await fetch('http://supabase_inbucket_dealdocs-supabase:8025/api/v1/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: {
-            email: "noreply@dealdocs.local",
-            name: "DealDocs"
-          },
-          to: [{
-            email: emailData.agentEmail,
-            name: emailData.agentName || ""
-          }],
-          subject: emailData.subject,
-          html: emailContent,
-        }),
-      })
+      // Prepare recipients (use test email if override is enabled)
+      const toRecipients = [actualToEmail];
+      const ccRecipients = actualCcEmail ? [actualCcEmail] : [];
 
-      if (!mailpitResponse.ok) {
-        throw new Error(`Mailpit API error: ${mailpitResponse.status} ${await mailpitResponse.text()}`)
+      // Send to Resend via API
+      const resendPayload = {
+        from: "DealDocs <noreply@docu.deals>",
+        to: toRecipients,
+        subject: emailData.subject,
+        html: emailContent,
+      };
+
+      // Only add CC if present
+      if (ccRecipients.length > 0) {
+        resendPayload.cc = ccRecipients;
       }
 
-      console.log("Email sent successfully via Mailpit")
+      console.log("Sending email via Resend:", { to: toRecipients, cc: ccRecipients, subject: emailData.subject });
+
+      const resendResponse = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(resendPayload),
+      })
+
+      const resendResult = await resendResponse.json()
+
+      if (!resendResponse.ok) {
+        console.error("Resend API error:", resendResult)
+        throw new Error(`Resend API error: ${resendResult.message || resendResponse.statusText}`)
+      }
+
+      console.log("Email sent successfully via Resend:", resendResult.id)
+
+      // Update email record with Resend email ID
+      await supabase
+        .from("email_packets")
+        .update({
+          external_email_id: resendResult.id,
+          status: "sent"
+        })
+        .eq("id", emailRecord.id)
+
     } catch (emailError) {
       console.error("Email sending error:", emailError)
-      // Don't fail the whole operation if email fails in dev
-      console.log("Email sending failed but continuing (dev mode)")
-    }
 
-    // Email status already set to "sent" during creation
+      // Update email record to failed status
+      await supabase
+        .from("email_packets")
+        .update({
+          status: "failed",
+          error_message: emailError.message
+        })
+        .eq("id", emailRecord.id)
+
+      throw new Error(`Failed to send email: ${emailError.message}`)
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         emailId: emailRecord.id,
-        message: "Email sent successfully"
+        message: "Email sent successfully",
+        testMode: sendToTestEmail,
+        actualRecipient: sendToTestEmail ? testEmailAddress : emailData.agentEmail
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -12,6 +12,49 @@
 
     <div class="card flex flex-col gap-6 p-6">
       <div class="text-l font-bold mb-4 text-center">Send Email</div>
+
+      <!-- Test Mode Warning -->
+      <div v-if="isTestMode" class="test-mode-banner">
+        <div class="flex items-center gap-3">
+          <i class="pi pi-exclamation-triangle text-2xl"></i>
+          <div class="flex-1">
+            <h3 class="font-semibold text-lg">🧪 Test Mode Active</h3>
+            <p class="text-sm mt-1">
+              All emails will be sent to <strong>bryan@docu.deals</strong> instead of the actual recipient.
+              This is for testing purposes only.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Listing Agent Information -->
+      <div v-if="listingAgent.listingAssociateName" class="agent-info-card">
+        <div class="flex items-start gap-3">
+          <i class="pi pi-user text-2xl text-blue-600 mt-1"></i>
+          <div class="flex-1">
+            <h3 class="font-semibold text-lg mb-2">Listing Agent</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+              <div>
+                <span class="text-gray-600">Name:</span>
+                <span class="ml-2 font-medium">{{ listingAgent.listingAssociateName }}</span>
+              </div>
+              <div v-if="listingAgent.listingAssociateEmail">
+                <span class="text-gray-600">Email:</span>
+                <span class="ml-2 font-medium">{{ listingAgent.listingAssociateEmail }}</span>
+              </div>
+              <div v-if="listingAgent.listingAssociatePhone">
+                <span class="text-gray-600">Phone:</span>
+                <span class="ml-2 font-medium">{{ listingAgent.listingAssociatePhone }}</span>
+              </div>
+              <div v-if="listingAgent.firmName">
+                <span class="text-gray-600">Firm:</span>
+                <span class="ml-2 font-medium">{{ listingAgent.firmName }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="form-container">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="flex flex-col gap-2">
@@ -22,6 +65,20 @@
               type="email"
               placeholder="Enter email address"
               class="w-full"
+              readonly
+              disabled
+            />
+          </div>
+          <div class="flex flex-col gap-2">
+            <label for="cc-email" class="font-semibold">CC:</label>
+            <InputText
+              id="cc-email"
+              v-model="ccEmail"
+              type="email"
+              placeholder="Your email (for receipt)"
+              class="w-full"
+              readonly
+              disabled
             />
           </div>
         </div>
@@ -118,14 +175,17 @@ export default defineComponent({
     const accountId = store.state.accountId;
     const contractId = store.state.contractId;
     const streetAddress = store.state.formData.property.streetAddress;
+    const listingAgent = store.state.formData.listingAgent;
 
     const toEmail = ref("");
+    const ccEmail = ref("");
     const comments = ref("");
     const emailRecords = ref([]);
     const isSending = ref(false);
     const showAnimation = ref(false);
     const emailAnimation = ref(null);
     const pendingEmailPayload = ref(null);
+    const isTestMode = ref(import.meta.env.VITE_SEND_TO_TEST_EMAIL === 'true');
 
     // Function to fetch the email records for the current contract
     const fetchEmailRecords = async () => {
@@ -145,8 +205,23 @@ export default defineComponent({
     };
 
     // Fetch on component mount
-    onMounted(() => {
+    onMounted(async () => {
       fetchEmailRecords();
+
+      // Pre-populate To field with listing agent email if available
+      if (listingAgent.listingAssociateEmail) {
+        toEmail.value = listingAgent.listingAssociateEmail;
+      }
+
+      // Pre-populate CC field with current user's email
+      try {
+        const user = await AuthService.getUser();
+        if (user?.email) {
+          ccEmail.value = user.email;
+        }
+      } catch (error) {
+        console.error("Error getting user email:", error);
+      }
     });
 
     const sendEmail = async () => {
@@ -172,17 +247,24 @@ export default defineComponent({
         return map;
       }, {});
 
+      // Prepare greeting based on agent name availability
+      const agentName = listingAgent.listingAssociateName || toEmail.value.split('@')[0];
+      const greeting = listingAgent.listingAssociateName
+        ? `Dear ${listingAgent.listingAssociateName},`
+        : 'To Whom It May Concern,';
+
       pendingEmailPayload.value = {
         contractId,
         agentEmail: toEmail.value,
-        agentName: toEmail.value.split('@')[0], // Extract name from email for now
+        agentName: agentName,
+        ccEmail: ccEmail.value,
         comments: comments.value,
         contractFiles,
         preApprovalFile: otherFiles["preapproval"] || "",
         earnestFile: otherFiles["earnest"] || "",
         optionFile: otherFiles["optionfee"] || "",
         subject: `Contract Package for ${streetAddress}`,
-        body: `Please find attached the contract package for ${streetAddress}.`,
+        body: `${greeting}\n\nPlease find attached the contract package for ${streetAddress}.`,
       };
 
       // Show animation and handle actual sending
@@ -217,6 +299,11 @@ export default defineComponent({
 
           console.log("Email sent:", result);
 
+          // Log test mode info if active
+          if (result.testMode) {
+            console.log(`[TEST MODE] Email was sent to ${result.actualRecipient} instead of ${toEmail.value}`);
+          }
+
           // Animation will auto-complete and trigger handleAnimationComplete
         } catch (error) {
           console.error("Error sending email:", error);
@@ -230,8 +317,8 @@ export default defineComponent({
       showAnimation.value = false;
       isSending.value = false;
 
-      // Reset form fields after successful send
-      toEmail.value = "";
+      // Reset form fields after successful send (except CC which stays for convenience)
+      toEmail.value = listingAgent.listingAssociateEmail || "";
       comments.value = "";
 
       // Refresh the email records list after sending a new email
@@ -281,6 +368,7 @@ export default defineComponent({
     return {
       formatDate,
       toEmail,
+      ccEmail,
       comments,
       sendEmail,
       emailRecords,
@@ -288,6 +376,8 @@ export default defineComponent({
       showAnimation,
       emailAnimation,
       streetAddress,
+      listingAgent,
+      isTestMode,
       handleAnimationComplete,
       retryEmail,
       cancelAnimation,
@@ -307,5 +397,33 @@ export default defineComponent({
   overflow-y: auto;
   max-height: calc(100% - 120px);
   /* Adjust the max-height as needed */
+}
+
+.agent-info-card {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 2px solid #3b82f6;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+:global(.dark) .agent-info-card {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+  border-color: #60a5fa;
+}
+
+.test-mode-banner {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  color: #92400e;
+}
+
+:global(.dark) .test-mode-banner {
+  background: linear-gradient(135deg, #451a03 0%, #78350f 100%);
+  border-color: #f59e0b;
+  color: #fde68a;
 }
 </style>

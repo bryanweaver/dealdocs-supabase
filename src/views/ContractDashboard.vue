@@ -19,31 +19,45 @@
         </p>
 
         <!-- Next steps in a more compact layout -->
-        <div class="next-steps mt-4">
-          <h3 class="mb-3 text-base font-semibold">Next Steps:</h3>
+        <div class="next-steps mt-6">
+          <h3 class="mb-4 text-lg font-semibold">Next Steps:</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <router-link
               :to="`/contracts/${$route.params.id}/upload-documents`"
-              class="flex items-center p-3 bg-surface-50 dark:bg-surface-800 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
+              class="next-step-card"
+              :class="{ 'is-next-step': nextBestStep === 'upload', 'is-completed': allDocsUploaded }"
             >
-              <i class="pi pi-file-export mr-3 text-xl" style="color: var(--primary-color)"></i>
-              <span class="text-sm">Upload contract documents</span>
+              <div class="step-icon-circle" :class="{ 'is-completed': allDocsUploaded, 'is-next': nextBestStep === 'upload' }">
+                <i v-if="allDocsUploaded" class="pi pi-check text-2xl"></i>
+                <i v-else class="pi pi-file-export text-2xl"></i>
+              </div>
+              <div class="step-title">Upload Documents</div>
+              <div class="step-description">Pre-approval, earnest & option checks</div>
             </router-link>
-            
+
             <router-link
               :to="`/contracts/${$route.params.id}/generate-contract`"
-              class="flex items-center p-3 bg-surface-50 dark:bg-surface-800 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
+              class="next-step-card"
+              :class="{ 'is-next-step': nextBestStep === 'generate', 'is-completed': allSignersCompleted }"
             >
-              <i class="pi pi-pencil mr-3 text-xl" style="color: var(--primary-color)"></i>
-              <span class="text-sm">Generate and sign contract</span>
+              <div class="step-icon-circle" :class="{ 'is-completed': allSignersCompleted, 'is-next': nextBestStep === 'generate' }">
+                <i v-if="allSignersCompleted" class="pi pi-check text-2xl"></i>
+                <i v-else class="pi pi-pencil text-2xl"></i>
+              </div>
+              <div class="step-title">Generate & Sign</div>
+              <div class="step-description">Create PDF and collect signatures</div>
             </router-link>
-            
+
             <router-link
               :to="`/contracts/${$route.params.id}/prepare-contract-package`"
-              class="flex items-center p-3 bg-surface-50 dark:bg-surface-800 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
+              class="next-step-card"
+              :class="{ 'is-next-step': nextBestStep === 'email' }"
             >
-              <i class="pi pi-send mr-3 text-xl" style="color: var(--primary-color)"></i>
-              <span class="text-sm">Email to selling agent</span>
+              <div class="step-icon-circle" :class="{ 'is-next': nextBestStep === 'email' }">
+                <i class="pi pi-send text-2xl"></i>
+              </div>
+              <div class="step-title">Email to Agent</div>
+              <div class="step-description">Send to selling agent</div>
             </router-link>
           </div>
         </div>
@@ -139,6 +153,26 @@ export default defineComponent({
     });
 
     const isContractComplete = computed(() => store.getters.isContractComplete);
+    const allDocsUploaded = computed(() => store.getters.allDocsAreUploaded);
+    const allSignersCompleted = computed(() => store.getters.allSignersCompleted);
+
+    // Determine the next best step based on what's been completed
+    const nextBestStep = computed(() => {
+      // Step 1: Upload documents (if not done yet)
+      if (!allDocsUploaded.value) {
+        return 'upload';
+      }
+      // Step 2: Generate and sign (if docs uploaded but not signed)
+      if (allDocsUploaded.value && !allSignersCompleted.value) {
+        return 'generate';
+      }
+      // Step 3: Email to agent (if everything else is done)
+      if (allDocsUploaded.value && allSignersCompleted.value) {
+        return 'email';
+      }
+      // Default: start with upload
+      return 'upload';
+    });
 
     const financingReferralUrl =
       import.meta.env?.VITE_FINANCING_REFERRAL_URL ||
@@ -197,8 +231,16 @@ export default defineComponent({
       });
     };
 
-    onMounted(() => {
+    onMounted(async () => {
       fetchUploads();
+
+      // Load etch packets with proper transformation
+      try {
+        const contractId = store.state.contractId;
+        await store.dispatch("loadEtchPacketsForContract", contractId);
+      } catch (error) {
+        console.error("Error loading etch packets:", error);
+      }
     });
 
     return {
@@ -208,31 +250,135 @@ export default defineComponent({
       completedSections,
       totalSections,
       financingReferralUrl,
+      allDocsUploaded,
+      allSignersCompleted,
+      nextBestStep,
     };
   },
 });
 </script>
 
 <style scoped>
-/* .contract-landing {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-} */
-
-/* .card-container {
-  display: flex;
-  justify-content: space-around;
-  width: 100%;
-  max-width: 1000px;
-  margin-bottom: 40px;
-} */
-
 .card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
   cursor: pointer;
+}
+
+/* Next Steps Styling */
+.next-step-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--text-color);
+  transition: all 0.25s ease;
+  text-align: center;
+  min-height: 180px;
+  position: relative;
+  cursor: pointer;
+}
+
+.next-step-card:hover {
+  border-color: #3b82f6;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
+}
+
+/* Next step highlight - blue border */
+.next-step-card.is-next-step {
+  border-color: #3b82f6;
+  border-width: 3px;
+  background: #eff6ff;
+}
+
+.next-step-card.is-next-step:hover {
+  border-color: #2563eb;
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.25);
+}
+
+/* Completed step styling */
+.next-step-card.is-completed {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.next-step-card.is-completed:hover {
+  border-color: #4ade80;
+}
+
+/* Icon circle */
+.step-icon-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  color: #6b7280;
+  transition: all 0.25s ease;
+}
+
+.step-icon-circle.is-next {
+  background: #3b82f6;
+  color: white;
+}
+
+.step-icon-circle.is-completed {
+  background: #22c55e;
+  color: white;
+}
+
+.step-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.step-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* Dark mode adjustments */
+:global(.dark) .next-step-card {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+:global(.dark) .next-step-card:hover {
+  border-color: #3b82f6;
+}
+
+:global(.dark) .next-step-card.is-next-step {
+  background: #1e3a5f;
+  border-color: #3b82f6;
+}
+
+:global(.dark) .next-step-card.is-completed {
+  background: #064e3b;
+  border-color: #86efac;
+}
+
+:global(.dark) .step-icon-circle {
+  background: #374151;
+  color: #9ca3af;
+}
+
+:global(.dark) .step-title {
+  color: #f9fafb;
+}
+
+:global(.dark) .step-description {
+  color: #9ca3af;
 }
 </style>

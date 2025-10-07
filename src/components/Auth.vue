@@ -347,13 +347,13 @@ onMounted(async () => {
             <div class="flex flex-col gap-2">
               <label for="forgot-email" class="text-sm font-medium text-gray-700">Email Address</label>
               <InputText
-                v-model="formData.email"
                 id="forgot-email"
+                v-model="formData.email"
                 type="email"
                 placeholder="Enter your email"
                 :disabled="isLoading"
-                @keyup.enter="handleResetPassword"
                 autofocus
+                @keyup.enter="handleResetPassword"
               />
             </div>
 
@@ -392,8 +392,8 @@ onMounted(async () => {
             <div class="flex flex-col gap-2">
               <label for="newPassword" class="text-sm font-medium text-gray-700">New Password</label>
               <Password
-                v-model="formData.newPassword"
                 id="newPassword"
+                v-model="formData.newPassword"
                 placeholder="Enter new password (min 6 characters)"
                 :feedback="false"
                 toggleMask
